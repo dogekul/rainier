@@ -1,0 +1,11 @@
+# Test profile. v0 does not query any DB, so no H2 datasource is configured.
+# (design.md §9 originally proposed H2; SLICE-B01 deviation: no JDBC dep needed
+#  because backend code does not reference DataSource at all. See pending-adjustments.md.)
+spring:
+  main:
+    banner-mode: "off"
+
+logging:
+  level:
+    root: WARN
+    com.rainier: INFO

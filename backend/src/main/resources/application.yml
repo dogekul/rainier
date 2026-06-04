@@ -1,0 +1,28 @@
+spring:
+  application:
+    name: rainier
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
+  mvc:
+    throw-exception-if-no-handler-found: true
+  web:
+    resources:
+      add-mappings: false
+
+server:
+  port: 8080
+
+app:
+  security:
+    jwt:
+      # DO NOT USE IN PROD — replace via SPRING env override.
+      secret: "rainier-dev-only-jwt-secret-must-be-at-least-256-bits-long-changeme-changeme"
+      expiration-hours: 24
+  cors:
+    # Comma-separated list bound to List&lt;String&gt; in CorsConfig via Spring's default converter.
+    allowed-origins: "http://localhost:5173,http://localhost"
+
+logging:
+  level:
+    root: INFO
+    com.rainier: DEBUG

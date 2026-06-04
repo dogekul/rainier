@@ -1,0 +1,62 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: rainier-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: rainier_root
+      MYSQL_DATABASE: rainier
+      MYSQL_USER: rainier
+      MYSQL_PASSWORD: rainier
+    volumes:
+      - rainier-mysql-data:/var/lib/mysql
+    networks:
+      - rainier-net
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-prainier_root"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: rainier-backend
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+    depends_on:
+      mysql:
+        condition: service_healthy
+    ports:
+      # Override host port if 8080 is already in use locally:
+      #   RAINIER_BACKEND_HOST_PORT=8081 docker compose up
+      - "${RAINIER_BACKEND_HOST_PORT:-8080}:8080"
+    networks:
+      - rainier-net
+    # healthcheck inherited from Dockerfile (curl /api/health)
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: rainier-frontend
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      # Override host port if 80 is already in use locally:
+      #   RAINIER_FRONTEND_HOST_PORT=8000 docker compose up
+      - "${RAINIER_FRONTEND_HOST_PORT:-80}:80"
+    networks:
+      - rainier-net
+    # healthcheck inherited from Dockerfile (curl /)
+
+volumes:
+  rainier-mysql-data:
+    name: rainier-mysql-data
+
+networks:
+  rainier-net:
+    name: rainier-net
+    driver: bridge

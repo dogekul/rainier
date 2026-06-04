@@ -1,0 +1,30 @@
+# Root .dockerignore: applied to ANY `docker build` invoked from repo root.
+# Per-service Dockerfiles (backend/, frontend/) also have their own .dockerignore.
+
+.git/
+.gitignore
+.editorconfig
+.idea/
+.vscode/
+.DS_Store
+*.iml
+*.log
+
+# STDD artifacts (not part of any container)
+.stdd/
+.claude/
+changes/
+specs/
+archive/
+stdd-master/
+stdd-master_副本.zip
+STDD.md
+AGENTS.md
+A-角色意图卡片.md
+README.md
+
+# Build outputs
+backend/target/
+frontend/node_modules/
+frontend/dist/
+frontend/coverage/

@@ -1,0 +1,37 @@
+.rainier-login-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background-color: var(--rainier-bg-page);
+}
+
+.rainier-login-card {
+  width: 360px;
+}
+
+.rainier-login-title {
+  margin: 0 0 24px;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--rainier-color-text-1);
+}
+
+.rainier-login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.rainier-login-label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--rainier-color-text-2);
+}
+
+.rainier-login-error {
+  font-size: 13px;
+  color: #F54A45;
+}

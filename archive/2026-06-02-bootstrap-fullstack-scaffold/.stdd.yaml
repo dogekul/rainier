@@ -1,0 +1,175 @@
+change:
+  name: bootstrap-fullstack-scaffold
+  date: '2026-06-02'
+  title: 初始化 Rainier 前后端系统骨架 (v0)
+  source_doc: A-角色意图卡片.md
+
+phase:
+  current: delivered
+status: archived
+archived_at: '2026-06-04'
+  understand:
+    status: completed
+    confirmed_at: '2026-06-02'
+    artifact: proposal.md
+  spec:
+    status: completed
+    confirmed_at: '2026-06-02'
+    artifacts:
+      - design.md
+      - specs/health-check/spec.md
+      - specs/auth-placeholder/spec.md
+      - specs/backend-scaffold/spec.md
+      - specs/frontend-scaffold/spec.md
+      - specs/dev-runtime/spec.md
+      - specs/test-runtime/spec.md
+      - test-plan.md
+    metrics:
+      capabilities: 6
+      requirements: 12
+      scenarios: 16
+      tc_cases: 20
+      p0: 12
+      p1: 7
+      p2: 1
+  slice:
+    status: completed
+    confirmed_at: '2026-06-02'
+    artifacts:
+      - slices.md
+      - tasks.md
+    metrics:
+      slices: 14
+      p0_slices: 10
+      p1_slices: 4
+      p2_slices: 0
+  build:
+    status: completed
+    completed_at: '2026-06-03'
+    slices_total: 14
+    slices_completed: 14
+    artifacts:
+      - backend/  # 17 source + 7 test files + pom + checkstyle.xml + Dockerfile + .dockerignore
+      - frontend/  # 23 source + 5 test files + configs + Dockerfile + nginx.conf
+      - docker-compose.yml
+      - scripts/test-compose-up.sh
+      - README.md
+      - .editorconfig / .gitignore / .dockerignore
+      - pending-adjustments.md  # 4 small deviations recorded
+  verify:
+    status: completed
+    completed_at: '2026-06-03'
+    artifacts:
+      - test-report.md
+      - design-adjustments.md
+      - pending-adjustments.md
+    metrics:
+      backend_tests:
+        total: 13
+        passed: 13
+        failed: 0
+      frontend_tests:
+        total: 7
+        passed: 7
+        failed: 0
+      e2e_tests:
+        total: 2
+        passed: 2
+        failed: 0
+      pass_rate: 1.0
+      backend_lint: pass
+      frontend_lint: pass
+      frontend_build: pass
+      review_summary:
+        critical: 0
+        high: 0
+        medium: 4
+        low: 3
+        fixed: 1
+        dismissed_with_rationale: 2
+      design_adjustments: 5  # all Minor, zero Major
+      failure_modes_hits: 0
+  deliver:
+    status: completed
+    completed_at: '2026-06-04'
+    specs_merged_to: specs/
+    git_tag: v0.0.1-bootstrap  # set after user confirmation
+
+tech_stack:
+  backend:
+    language: java
+    language_version: '1.8'
+    framework: spring-boot
+    framework_version: 2.7.18
+    build_tool: maven
+    db: mysql
+    db_version: '8.0'
+    auth_library: jjwt-0.11.x
+    test_libs:
+      - junit-jupiter
+      - assertj
+      - mockito
+      - spring-boot-test
+      - h2
+  frontend:
+    language: typescript
+    language_version: '5'
+    framework: react
+    framework_version: '18'
+    bundler: vite
+    bundler_version: '5'
+    router: react-router-6
+    state: zustand
+    http: axios
+    ui_theme: feishu-style
+    primary_color: '#3370FF'
+    test_libs:
+      - vitest
+      - react-testing-library
+      - jsdom
+      - msw
+
+long_range:
+  enabled: true
+  mode: full_auto
+  pre_auth_completed: true
+  pre_auth_timestamp: '2026-06-02'
+  pre_auth:
+    design_deviation:
+      minor: auto_record
+      major: auto_record_continue
+    technical_blocker:
+      strategy: workaround
+    iteration:
+      max_rounds: 10
+      on_cap: report_in_summary
+    operations:
+      directory: allow
+      file_write: allow
+      command_exec: allow
+      script_exec: allow
+      network: allow
+      file_read: allow
+      git_readonly: allow
+    gate3: mandatory
+  degradation:
+    max_consecutive_failures: 3
+    pass_rate_threshold: 0.95
+    safety_check: true
+  settings_file: .claude/settings.local.json
+
+scope:
+  depth: minimal-scaffold
+  includes:
+    - backend-scaffold
+    - frontend-scaffold
+    - health-check
+    - auth-placeholder
+    - dev-runtime
+    - test-runtime
+  excludes:
+    - business-domain-entities
+    - real-idp-integration
+    - llm-integration
+    - external-tool-integrations
+    - ui-component-library

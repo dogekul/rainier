@@ -1,0 +1,24 @@
+.rainier-button {
+  display: inline-block;
+  padding: 8px 16px;
+  background-color: var(--rainier-color-primary);
+  color: #ffffff;
+  border: none;
+  border-radius: var(--rainier-radius-button);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.4;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+  min-width: 96px;
+}
+
+.rainier-button:hover:not(:disabled) {
+  opacity: 0.88;
+}
+
+.rainier-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

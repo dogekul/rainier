@@ -1,0 +1,6 @@
+# Dev profile placeholder.
+# MySQL container exists in docker-compose.yml but v0 backend does not query it.
+# See design.md §8 (No JPA / MyBatis / Flyway in v0).
+logging:
+  level:
+    org.springframework.web: INFO

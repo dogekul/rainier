@@ -1,0 +1,31 @@
+.rainier-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.rainier-shell-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 56px;
+  padding: 0 24px;
+  background-color: var(--rainier-bg-card);
+  box-shadow: var(--rainier-shadow-card);
+}
+
+.rainier-shell-brand {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--rainier-color-primary);
+}
+
+.rainier-shell-user {
+  font-size: 14px;
+  color: var(--rainier-color-text-2);
+}
+
+.rainier-shell-main {
+  flex: 1;
+  padding: 24px;
+}

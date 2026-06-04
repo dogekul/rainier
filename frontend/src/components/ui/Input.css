@@ -1,0 +1,22 @@
+.rainier-input {
+  display: block;
+  width: 100%;
+  padding: 8px 12px;
+  background-color: var(--rainier-bg-card);
+  color: var(--rainier-color-text-1);
+  border: 1px solid #DEE0E3;
+  border-radius: var(--rainier-radius-button);
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.4;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.rainier-input:focus {
+  border-color: var(--rainier-color-primary);
+}
+
+.rainier-input::placeholder {
+  color: var(--rainier-color-text-3);
+}

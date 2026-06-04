@@ -1,0 +1,31 @@
+:root {
+  --rainier-color-primary: #3370FF;
+  --rainier-color-text-1: #1F2329;
+  --rainier-color-text-2: #646A73;
+  --rainier-color-text-3: #8F959E;
+  --rainier-bg-page: #F5F6F7;
+  --rainier-bg-card: #FFFFFF;
+  --rainier-radius-button: 6px;
+  --rainier-radius-card: 8px;
+  --rainier-shadow-card: 0 4px 16px 0 rgba(0, 0, 0, 0.08);
+  --rainier-font: PingFang SC, -apple-system, "Helvetica Neue", Arial, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--rainier-font);
+  background-color: var(--rainier-bg-page);
+  color: var(--rainier-color-text-1);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
