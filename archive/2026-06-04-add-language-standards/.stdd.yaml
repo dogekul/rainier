@@ -1,0 +1,54 @@
+change:
+  name: add-language-standards
+  date: '2026-06-04'
+  title: 补齐 .stdd/standards/{java,typescript}.md 开发规范
+  type: meta-process  # not product code; STDD system improvement
+  follows_up: 2026-06-02-bootstrap-fullstack-scaffold (Adjustment #2)
+
+phase:
+  current: delivered
+  execution_mode: lightweight  # skipped Phase 2 (spec) and Phase 3 (slice) — no testable product behavior
+  understand:
+    status: completed
+    confirmed_at: '2026-06-04'
+    artifact: proposal.md
+  spec:
+    status: skipped
+    reason: "Meta-process change; no product behavior to specify in GIVEN/WHEN/THEN."
+  slice:
+    status: skipped
+    reason: "Two doc writes; no implementation slicing needed."
+  build:
+    status: completed
+    completed_at: '2026-06-04'
+    artifacts:
+      - .stdd/standards/java.md
+      - .stdd/standards/typescript.md
+  verify:
+    status: completed
+    completed_at: '2026-06-04'
+    artifact: test-report.md
+    mode: manual-review-against-sc
+    sc_passed: 9
+    sc_total: 9
+  deliver:
+    status: completed
+    completed_at: '2026-06-04'
+    git_tag: v0.0.2-language-standards  # to be created during git commit
+    resolved_adjustments:
+      - source: archive/2026-06-02-bootstrap-fullstack-scaffold
+        id: "Adjustment #2"
+        note: "Standards now exist; archive pending-adjustments.md updated with resolution annotation."
+
+status: archived
+archived_at: '2026-06-04'
+
+scope:
+  type: meta-process
+  includes:
+    - dev-standard-java
+    - dev-standard-typescript
+  excludes:
+    - product-code-changes
+    - tooling-config-changes
+    - python-md-rewrite

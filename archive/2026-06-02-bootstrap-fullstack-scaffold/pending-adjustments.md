@@ -87,6 +87,8 @@
 
 ## Adjustment #2 — 标准缺失：`.stdd/standards/{java,typescript}.md` 不存在
 
+> **✅ 已解决（2026-06-04）** — 由独立变更 [`archive/2026-06-04-add-language-standards`](../2026-06-04-add-language-standards/) 补齐。两份规范基于 v0 bootstrap 实际落地的工具链（GOOGLE style 而非 AOSP、最小 Checkstyle 而非 google_checks），并修正了原始 design §10 文本与实际实现的偏差。
+
 **原始要求**（STDD.md / stdd-build skill Step 0）：Phase 4 BUILD 之前必须读取语言开发规范。
 
 **实际情况**：`.stdd/standards/` 只含 `python.md`，本变更涉及 Java 与 TypeScript 均无对应规范文件。
