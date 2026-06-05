@@ -3,15 +3,15 @@ import { describe, expect, it } from 'vitest';
 import { Table } from './Table';
 
 interface Row {
-  id: string;
+  id: number;
   name: string;
 }
 
 describe('Table', () => {
   it('renders columns header and data rows (TC-FES-202)', () => {
     const rows: Row[] = [
-      { id: '1', name: 'A' },
-      { id: '2', name: 'B' },
+      { id: 1, name: 'A' },
+      { id: 2, name: 'B' },
     ];
     render(
       <Table<Row>

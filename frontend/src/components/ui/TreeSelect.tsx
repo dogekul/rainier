@@ -2,15 +2,15 @@ import { useMemo, useState } from 'react';
 import './TreeSelect.css';
 
 export interface TreeNode {
-  id: string;
+  id: number;
   name: string;
-  parentId: string | null;
+  parentId: number | null;
 }
 
 export interface TreeSelectProps {
-  value: string | null;
+  value: number | null;
   nodes: TreeNode[];
-  onChange: (id: string | null) => void;
+  onChange: (id: number | null) => void;
   placeholder?: string;
   allowClear?: boolean;
 }
@@ -21,11 +21,11 @@ interface BuiltNode extends TreeNode {
 }
 
 function buildTree(flat: TreeNode[]): BuiltNode[] {
-  const map = new Map<string, BuiltNode>();
+  const map = new Map<number, BuiltNode>();
   flat.forEach((n) => map.set(n.id, { ...n, children: [], depth: 0 }));
   const roots: BuiltNode[] = [];
   map.forEach((n) => {
-    if (n.parentId && map.has(n.parentId)) {
+    if (n.parentId != null && map.has(n.parentId)) {
       const p = map.get(n.parentId)!;
       n.depth = p.depth + 1;
       p.children.push(n);
@@ -64,10 +64,18 @@ export function TreeSelect({
         className="rainier-treeselect-trigger"
         onClick={() => setOpen((o) => !o)}
       >
-        {selected ? selected.name : <span className="rainier-treeselect-placeholder">{placeholder}</span>}
+        {selected ? (
+          selected.name
+        ) : (
+          <span className="rainier-treeselect-placeholder">{placeholder}</span>
+        )}
       </button>
       {open && (
-        <div className="rainier-treeselect-panel" role="listbox" data-testid="rainier-treeselect-panel">
+        <div
+          className="rainier-treeselect-panel"
+          role="listbox"
+          data-testid="rainier-treeselect-panel"
+        >
           {allowClear && (
             <div
               className="rainier-treeselect-item"

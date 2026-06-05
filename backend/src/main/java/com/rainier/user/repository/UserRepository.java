@@ -8,8 +8,7 @@ import org.springframework.stereotype.Repository;
 
 /** Repository for {@link User}. Derived queries inherit {@code @Where("del_flag = 0")}. */
 @Repository
-public interface UserRepository
-    extends JpaRepository<User, String>, JpaSpecificationExecutor<User> {
+public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificationExecutor<User> {
 
   boolean existsByLoginName(String loginName);
 

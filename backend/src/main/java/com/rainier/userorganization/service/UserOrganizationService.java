@@ -77,7 +77,7 @@ public class UserOrganizationService {
     return UserOrgDetail.from(uo, user, org);
   }
 
-  public UserOrgDetail findById(String id) {
+  public UserOrgDetail findById(Long id) {
     UserOrganization uo = getOrThrow(id);
     User u = userRepo.findById(uo.getUserId()).orElse(null);
     Organization o = orgRepo.findById(uo.getOrganizationId()).orElse(null);
@@ -85,14 +85,14 @@ public class UserOrganizationService {
   }
 
   public PageResponse<UserOrgDetail> list(
-      String userId, String organizationId, UserOrgRole role, Boolean activeOnly, PageParams page) {
+      Long userId, Long organizationId, UserOrgRole role, Boolean activeOnly, PageParams page) {
     Specification<UserOrganization> spec =
         (root, query, cb) -> {
           javax.persistence.criteria.Predicate p = cb.conjunction();
-          if (userId != null && !userId.isEmpty()) {
+          if (userId != null) {
             p = cb.and(p, cb.equal(root.get("userId"), userId));
           }
-          if (organizationId != null && !organizationId.isEmpty()) {
+          if (organizationId != null) {
             p = cb.and(p, cb.equal(root.get("organizationId"), organizationId));
           }
           if (role != null) {
@@ -108,14 +108,14 @@ public class UserOrganizationService {
     Page<UserOrganization> result = repo.findAll(spec, req);
 
     // Enrichment: batch-fetch users + organizations
-    Set<String> userIds = new HashSet<>();
-    Set<String> orgIds = new HashSet<>();
+    Set<Long> userIds = new HashSet<>();
+    Set<Long> orgIds = new HashSet<>();
     for (UserOrganization uo : result) {
       userIds.add(uo.getUserId());
       orgIds.add(uo.getOrganizationId());
     }
-    Map<String, User> users = byId(userRepo.findAllById(userIds));
-    Map<String, Organization> orgs = byOrgId(orgRepo.findAllById(orgIds));
+    Map<Long, User> users = byUserId(userRepo.findAllById(userIds));
+    Map<Long, Organization> orgs = byOrgId(orgRepo.findAllById(orgIds));
 
     List<UserOrgDetail> content =
         result.stream()
@@ -128,7 +128,7 @@ public class UserOrganizationService {
   }
 
   @Transactional
-  public UserOrgDetail update(String id, UserOrgUpdateRequest req) {
+  public UserOrgDetail update(Long id, UserOrgUpdateRequest req) {
     UserOrganization uo = getOrThrow(id);
     // organization change: validate FK + (user_id, new_org_id) uniqueness
     if (req.getOrganizationId() != null
@@ -166,27 +166,27 @@ public class UserOrganizationService {
   }
 
   @Transactional
-  public void delete(String id) {
+  public void delete(Long id) {
     UserOrganization uo = getOrThrow(id);
     repo.delete(uo);
     repo.flush();
   }
 
-  private UserOrganization getOrThrow(String id) {
+  private UserOrganization getOrThrow(Long id) {
     return repo.findById(id)
         .orElseThrow(() -> new NotFoundException("user-organization not found: id=" + id));
   }
 
-  private static Map<String, User> byId(Collection<User> users) {
-    Map<String, User> m = new HashMap<>();
+  private static Map<Long, User> byUserId(Collection<User> users) {
+    Map<Long, User> m = new HashMap<>();
     for (User u : users) {
       m.put(u.getId(), u);
     }
     return m;
   }
 
-  private static Map<String, Organization> byOrgId(Collection<Organization> orgs) {
-    Map<String, Organization> m = new HashMap<>();
+  private static Map<Long, Organization> byOrgId(Collection<Organization> orgs) {
+    Map<Long, Organization> m = new HashMap<>();
     for (Organization o : orgs) {
       m.put(o.getId(), o);
     }

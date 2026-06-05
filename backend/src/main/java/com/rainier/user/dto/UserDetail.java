@@ -7,7 +7,7 @@ import java.time.Instant;
 /** Response DTO for user read endpoints. */
 public class UserDetail {
 
-  private String id;
+  private Long id;
   private String loginName;
   private String name;
   private String code;
@@ -37,7 +37,7 @@ public class UserDetail {
     return d;
   }
 
-  public String getId() {
+  public Long getId() {
     return id;
   }
 

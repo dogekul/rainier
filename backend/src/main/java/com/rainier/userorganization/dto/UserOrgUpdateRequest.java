@@ -4,19 +4,21 @@ package com.rainier.userorganization.dto;
 import com.rainier.userorganization.domain.UserOrgRole;
 import java.time.Instant;
 
-/** Payload for {@code PUT /api/user-organizations/{id}}. user_id/organization_id are immutable. */
+/**
+ * Payload for {@code PUT /api/user-organizations/{id}}. user_id immutable; organizationId mutable.
+ */
 public class UserOrgUpdateRequest {
 
-  private String organizationId;
+  private Long organizationId;
   private UserOrgRole role;
   private Boolean isPrimary;
   private Instant leftAt;
 
-  public String getOrganizationId() {
+  public Long getOrganizationId() {
     return organizationId;
   }
 
-  public void setOrganizationId(String organizationId) {
+  public void setOrganizationId(Long organizationId) {
     this.organizationId = organizationId;
   }
 

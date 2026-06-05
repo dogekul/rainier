@@ -45,8 +45,8 @@ class UserOrganizationControllerTest {
 
   @Test
   void post_validPayload_returns201WithLeftAtNull() throws Exception {
-    String userId = createUser("alice", "Alice");
-    String orgId = createOrg("HQ", "总公司");
+    Long userId = createUser("alice", "Alice");
+    Long orgId = createOrg("HQ", "总公司");
     ObjectNode body = json.createObjectNode();
     body.put("userId", userId);
     body.put("organizationId", orgId);
@@ -66,8 +66,8 @@ class UserOrganizationControllerTest {
 
   @Test
   void post_duplicatePair_returns409() throws Exception {
-    String userId = createUser("alice", "Alice");
-    String orgId = createOrg("HQ", "总公司");
+    Long userId = createUser("alice", "Alice");
+    Long orgId = createOrg("HQ", "总公司");
     createUserOrg(userId, orgId, "MEMBER", false);
     ObjectNode body = json.createObjectNode();
     body.put("userId", userId);
@@ -82,9 +82,9 @@ class UserOrganizationControllerTest {
 
   @Test
   void post_userNotFound_returns400() throws Exception {
-    String orgId = createOrg("HQ", "总公司");
+    Long orgId = createOrg("HQ", "总公司");
     ObjectNode body = json.createObjectNode();
-    body.put("userId", "ghost00000000000000000000000000");
+    body.put("userId", 999_999L);
     body.put("organizationId", orgId);
     mockMvc
         .perform(
@@ -92,17 +92,16 @@ class UserOrganizationControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(body.toString()))
         .andExpect(status().isBadRequest())
-        .andExpect(
-            jsonPath("$.message").value("user not found: id=ghost00000000000000000000000000"));
+        .andExpect(jsonPath("$.message").value("user not found: id=999999"));
   }
 
   @Test
   void post_isPrimaryTrue_demotesPreviousPrimary() throws Exception {
-    String userId = createUser("alice", "Alice");
-    String orgA = createOrg("A", "公司A");
-    String orgB = createOrg("B", "公司B");
-    String firstUoId = createUserOrg(userId, orgA, "MEMBER", true);
-    String secondUoId = createUserOrg(userId, orgB, "MEMBER", true);
+    Long userId = createUser("alice", "Alice");
+    Long orgA = createOrg("A", "公司A");
+    Long orgB = createOrg("B", "公司B");
+    Long firstUoId = createUserOrg(userId, orgA, "MEMBER", true);
+    Long secondUoId = createUserOrg(userId, orgB, "MEMBER", true);
 
     mockMvc
         .perform(get("/api/user-organizations/" + secondUoId))
@@ -114,10 +113,10 @@ class UserOrganizationControllerTest {
 
   @Test
   void getList_filterByUserId() throws Exception {
-    String alice = createUser("alice", "Alice");
-    String bob = createUser("bob", "Bob");
-    String orgA = createOrg("A", "公司A");
-    String orgB = createOrg("B", "公司B");
+    Long alice = createUser("alice", "Alice");
+    Long bob = createUser("bob", "Bob");
+    Long orgA = createOrg("A", "公司A");
+    Long orgB = createOrg("B", "公司B");
     createUserOrg(alice, orgA, "MEMBER", true);
     createUserOrg(alice, orgB, "MEMBER", false);
     createUserOrg(bob, orgA, "MEMBER", true);
@@ -130,10 +129,10 @@ class UserOrganizationControllerTest {
 
   @Test
   void getList_filterByOrganizationId() throws Exception {
-    String alice = createUser("alice", "Alice");
-    String bob = createUser("bob", "Bob");
-    String orgA = createOrg("A", "公司A");
-    String orgB = createOrg("B", "公司B");
+    Long alice = createUser("alice", "Alice");
+    Long bob = createUser("bob", "Bob");
+    Long orgA = createOrg("A", "公司A");
+    Long orgB = createOrg("B", "公司B");
     createUserOrg(alice, orgA, "MEMBER", true);
     createUserOrg(bob, orgA, "HEAD", true);
     createUserOrg(alice, orgB, "MEMBER", false);
@@ -146,8 +145,8 @@ class UserOrganizationControllerTest {
 
   @Test
   void getList_includesEnrichment() throws Exception {
-    String alice = createUser("alice", "Alice");
-    String hq = createOrg("HQ", "总公司");
+    Long alice = createUser("alice", "Alice");
+    Long hq = createOrg("HQ", "总公司");
     createUserOrg(alice, hq, "HEAD", true);
     mockMvc
         .perform(get("/api/user-organizations?userId=" + alice))
@@ -159,9 +158,9 @@ class UserOrganizationControllerTest {
 
   @Test
   void put_setLeftAt_marksHistorical() throws Exception {
-    String userId = createUser("alice", "Alice");
-    String orgId = createOrg("HQ", "总公司");
-    String uoId = createUserOrg(userId, orgId, "MEMBER", false);
+    Long userId = createUser("alice", "Alice");
+    Long orgId = createOrg("HQ", "总公司");
+    Long uoId = createUserOrg(userId, orgId, "MEMBER", false);
 
     ObjectNode body = json.createObjectNode();
     body.put("leftAt", "2026-12-31T23:59:59Z");
@@ -176,9 +175,9 @@ class UserOrganizationControllerTest {
 
   @Test
   void put_promoteRoleToHead() throws Exception {
-    String userId = createUser("alice", "Alice");
-    String orgId = createOrg("HQ", "总公司");
-    String uoId = createUserOrg(userId, orgId, "MEMBER", false);
+    Long userId = createUser("alice", "Alice");
+    Long orgId = createOrg("HQ", "总公司");
+    Long uoId = createUserOrg(userId, orgId, "MEMBER", false);
 
     ObjectNode body = json.createObjectNode();
     body.put("role", "HEAD");
@@ -193,9 +192,9 @@ class UserOrganizationControllerTest {
 
   @Test
   void delete_hardDeletes_subsequentGetIs404() throws Exception {
-    String userId = createUser("alice", "Alice");
-    String orgId = createOrg("HQ", "总公司");
-    String uoId = createUserOrg(userId, orgId, "MEMBER", false);
+    Long userId = createUser("alice", "Alice");
+    Long orgId = createOrg("HQ", "总公司");
+    Long uoId = createUserOrg(userId, orgId, "MEMBER", false);
 
     mockMvc.perform(delete("/api/user-organizations/" + uoId)).andExpect(status().isNoContent());
     mockMvc.perform(get("/api/user-organizations/" + uoId)).andExpect(status().isNotFound());
@@ -203,7 +202,7 @@ class UserOrganizationControllerTest {
 
   // ---------------------------- helpers ----------------------------------
 
-  private String createUser(String loginName, String name) throws Exception {
+  private Long createUser(String loginName, String name) throws Exception {
     ObjectNode body = json.createObjectNode();
     body.put("loginName", loginName);
     body.put("name", name);
@@ -216,7 +215,7 @@ class UserOrganizationControllerTest {
     return readId(r);
   }
 
-  private String createOrg(String code, String name) throws Exception {
+  private Long createOrg(String code, String name) throws Exception {
     ObjectNode body = json.createObjectNode();
     body.put("type", "COMPANY");
     body.put("code", code);
@@ -232,7 +231,7 @@ class UserOrganizationControllerTest {
     return readId(r);
   }
 
-  private String createUserOrg(String userId, String orgId, String role, boolean isPrimary)
+  private Long createUserOrg(Long userId, Long orgId, String role, boolean isPrimary)
       throws Exception {
     ObjectNode body = json.createObjectNode();
     body.put("userId", userId);
@@ -250,8 +249,8 @@ class UserOrganizationControllerTest {
     return readId(r);
   }
 
-  private String readId(MvcResult r) throws Exception {
+  private Long readId(MvcResult r) throws Exception {
     JsonNode node = json.readTree(r.getResponse().getContentAsString());
-    return node.get("id").asText();
+    return node.get("id").asLong();
   }
 }

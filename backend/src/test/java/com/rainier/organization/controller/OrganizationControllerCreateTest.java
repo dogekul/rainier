@@ -56,13 +56,13 @@ class OrganizationControllerCreateTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(body.toString()))
         .andExpect(status().isCreated())
-        .andExpect(header().string("Location", matchesPattern("/api/organizations/[0-9a-f]{32}")))
-        .andExpect(jsonPath("$.id", matchesPattern("[0-9a-f]{32}")))
+        .andExpect(header().string("Location", matchesPattern("/api/organizations/\\d+")))
+        .andExpect(jsonPath("$.id").isNumber())
         .andExpect(jsonPath("$.parentId").isEmpty())
         .andExpect(jsonPath("$.type").value("COMPANY"))
         .andExpect(jsonPath("$.code").value("HQ"))
         .andExpect(jsonPath("$.name").value("总公司"))
-        .andExpect(jsonPath("$.path", matchesPattern("/[0-9a-f]{32}")))
+        .andExpect(jsonPath("$.path", matchesPattern("/\\d+")))
         .andExpect(jsonPath("$.wholeName").value("总公司"))
         .andExpect(jsonPath("$.isPmo").value(false))
         .andExpect(jsonPath("$.enabled").value(true))
@@ -72,7 +72,7 @@ class OrganizationControllerCreateTest {
 
   @Test
   void post_validChildPayload_derivesPathAndWholeNameFromParent() throws Exception {
-    String parentId = createRoot();
+    Long parentId = createRoot();
 
     ObjectNode body = json.createObjectNode();
     body.put("parentId", parentId);
@@ -87,7 +87,7 @@ class OrganizationControllerCreateTest {
                 .content(body.toString()))
         .andExpect(status().isCreated())
         .andExpect(jsonPath("$.parentId").value(parentId))
-        .andExpect(jsonPath("$.path", startsWith("/" + parentId + "/")))
+        .andExpect(jsonPath("$.path", matchesPattern("/" + parentId + "/\\d+")))
         .andExpect(jsonPath("$.wholeName").value("总公司/研发部"));
   }
 
@@ -109,7 +109,7 @@ class OrganizationControllerCreateTest {
 
   @Test
   void post_duplicateCodeUnderSameParent_returns409() throws Exception {
-    String parentId = createRoot();
+    Long parentId = createRoot();
     ObjectNode body = json.createObjectNode();
     body.put("parentId", parentId);
     body.put("type", "DEPARTMENT");
@@ -134,7 +134,7 @@ class OrganizationControllerCreateTest {
   @Test
   void post_parentNotFound_returns400() throws Exception {
     ObjectNode body = json.createObjectNode();
-    body.put("parentId", "ghost00000000000000000000000000");
+    body.put("parentId", 999_999L);
     body.put("type", "DEPARTMENT");
     body.put("code", "X");
     body.put("name", "X");
@@ -147,7 +147,7 @@ class OrganizationControllerCreateTest {
         .andExpect(jsonPath("$.message", startsWith("parent organization not found")));
   }
 
-  private String createRoot() throws Exception {
+  private Long createRoot() throws Exception {
     ObjectNode body = json.createObjectNode();
     body.put("type", "COMPANY");
     body.put("code", "HQ");
@@ -160,6 +160,6 @@ class OrganizationControllerCreateTest {
                     .content(body.toString()))
             .andExpect(status().isCreated())
             .andReturn();
-    return json.readTree(result.getResponse().getContentAsString()).get("id").asText();
+    return json.readTree(result.getResponse().getContentAsString()).get("id").asLong();
   }
 }

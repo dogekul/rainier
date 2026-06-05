@@ -3,9 +3,9 @@ import { describe, expect, it, vi } from 'vitest';
 import { TreeSelect, type TreeNode } from './TreeSelect';
 
 const nodes: TreeNode[] = [
-  { id: 'a', name: '总公司', parentId: null },
-  { id: 'b', name: '研发部', parentId: 'a' },
-  { id: 'c', name: '后端组', parentId: 'b' },
+  { id: 1, name: '总公司', parentId: null },
+  { id: 2, name: '研发部', parentId: 1 },
+  { id: 3, name: '后端组', parentId: 2 },
 ];
 
 describe('TreeSelect', () => {
@@ -19,6 +19,6 @@ describe('TreeSelect', () => {
     // 1 clear option + 3 nodes
     expect(items).toHaveLength(4);
     fireEvent.click(items[2]); // 研发部
-    expect(onChange).toHaveBeenCalledWith('b');
+    expect(onChange).toHaveBeenCalledWith(2);
   });
 });

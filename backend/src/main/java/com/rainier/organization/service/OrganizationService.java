@@ -45,7 +45,7 @@ public class OrganizationService {
 
   @Transactional
   public OrganizationDetail create(OrganizationCreateRequest req) {
-    String parentId = nullIfBlank(req.getParentId());
+    Long parentId = req.getParentId();
     String parentPath = null;
     String parentWholeName = null;
     if (parentId != null) {
@@ -83,7 +83,7 @@ public class OrganizationService {
 
   // ---------------------------- read ------------------------------
 
-  public OrganizationDetail findById(String id) {
+  public OrganizationDetail findById(Long id) {
     return OrganizationDetail.from(getOrThrow(id));
   }
 
@@ -94,14 +94,14 @@ public class OrganizationService {
   }
 
   public PageResponse<OrganizationDetail> list(
-      OrganizationType type, String parentId, PageParams page) {
+      OrganizationType type, Long parentId, PageParams page) {
     Specification<Organization> spec =
         (root, query, cb) -> {
           javax.persistence.criteria.Predicate p = cb.conjunction();
           if (type != null) {
             p = cb.and(p, cb.equal(root.get("type"), type));
           }
-          if (parentId != null && !parentId.isEmpty()) {
+          if (parentId != null) {
             p = cb.and(p, cb.equal(root.get("parentId"), parentId));
           }
           String search = page.getSearch();
@@ -130,7 +130,7 @@ public class OrganizationService {
   // ---------------------------- update ----------------------------
 
   @Transactional
-  public OrganizationDetail update(String id, OrganizationUpdateRequest req) {
+  public OrganizationDetail update(Long id, OrganizationUpdateRequest req) {
     Organization o = getOrThrow(id);
     boolean nameChanged = !o.getName().equals(req.getName());
     String oldWholeName = o.getWholeName();
@@ -171,9 +171,9 @@ public class OrganizationService {
   }
 
   @Transactional
-  public OrganizationDetail move(String id, OrganizationMoveRequest req) {
+  public OrganizationDetail move(Long id, OrganizationMoveRequest req) {
     Organization o = getOrThrow(id);
-    String newParentId = nullIfBlank(req.getParentId());
+    Long newParentId = req.getParentId();
 
     String newParentPath = null;
     String newParentWholeName = null;
@@ -215,7 +215,7 @@ public class OrganizationService {
   // ---------------------------- delete ----------------------------
 
   @Transactional
-  public void delete(String id) {
+  public void delete(Long id) {
     Organization o = getOrThrow(id);
     long childCount = repo.countByParentId(id);
     if (childCount > 0) {
@@ -230,7 +230,7 @@ public class OrganizationService {
 
   // ---------------------------- helpers ----------------------------
 
-  Organization getOrThrow(String id) {
+  Organization getOrThrow(Long id) {
     return repo.findById(id)
         .orElseThrow(() -> new NotFoundException("organization not found: id=" + id));
   }
@@ -283,9 +283,5 @@ public class OrganizationService {
     }
     repo.saveAll(descendants);
     repo.flush();
-  }
-
-  private static String nullIfBlank(String s) {
-    return s == null || s.isEmpty() ? null : s;
   }
 }

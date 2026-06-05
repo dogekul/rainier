@@ -50,8 +50,8 @@ class UserControllerTest {
         .perform(
             post("/api/users").contentType(MediaType.APPLICATION_JSON).content(body.toString()))
         .andExpect(status().isCreated())
-        .andExpect(header().string("Location", matchesPattern("/api/users/[0-9a-f]{32}")))
-        .andExpect(jsonPath("$.id", matchesPattern("[0-9a-f]{32}")))
+        .andExpect(header().string("Location", matchesPattern("/api/users/\\d+")))
+        .andExpect(jsonPath("$.id").isNumber())
         .andExpect(jsonPath("$.loginName").value("alice"))
         .andExpect(jsonPath("$.name").value("Alice"))
         .andExpect(jsonPath("$.code").isEmpty())
@@ -103,7 +103,7 @@ class UserControllerTest {
 
   @Test
   void get_existingId_returns200() throws Exception {
-    String id = create("alice", "Alice", null, null);
+    Long id = create("alice", "Alice", null, null);
     mockMvc
         .perform(get("/api/users/" + id))
         .andExpect(status().isOk())
@@ -112,7 +112,7 @@ class UserControllerTest {
 
   @Test
   void get_softDeletedId_returns404() throws Exception {
-    String id = create("alice", "Alice", null, null);
+    Long id = create("alice", "Alice", null, null);
     mockMvc.perform(delete("/api/users/" + id)).andExpect(status().isNoContent());
     mockMvc.perform(get("/api/users/" + id)).andExpect(status().isNotFound());
   }
@@ -141,7 +141,7 @@ class UserControllerTest {
 
   @Test
   void put_modifyNameAndEnabled_loginNameUnchanged() throws Exception {
-    String id = create("alice", "Alice", null, null);
+    Long id = create("alice", "Alice", null, null);
     ObjectNode body = json.createObjectNode();
     body.put("name", "Alice Wang");
     body.put("enabled", false);
@@ -158,14 +158,14 @@ class UserControllerTest {
 
   @Test
   void delete_noOrgAssignments_returns204() throws Exception {
-    String id = create("alice", "Alice", null, null);
+    Long id = create("alice", "Alice", null, null);
     mockMvc.perform(delete("/api/users/" + id)).andExpect(status().isNoContent());
     mockMvc.perform(get("/api/users/" + id)).andExpect(status().isNotFound());
   }
 
   // ---------------------------- helpers ----------------------------------
 
-  private String create(String loginName, String name, String code, String email) throws Exception {
+  private Long create(String loginName, String name, String code, String email) throws Exception {
     ObjectNode body = json.createObjectNode();
     body.put("loginName", loginName);
     body.put("name", name);
@@ -181,11 +181,10 @@ class UserControllerTest {
                 post("/api/users").contentType(MediaType.APPLICATION_JSON).content(body.toString()))
             .andExpect(status().isCreated())
             .andReturn();
-    return json.readTree(r.getResponse().getContentAsString()).get("id").asText();
+    return json.readTree(r.getResponse().getContentAsString()).get("id").asLong();
   }
 
-  private String createWithFlags(String loginName, String name, boolean isInternal)
-      throws Exception {
+  private Long createWithFlags(String loginName, String name, boolean isInternal) throws Exception {
     ObjectNode body = json.createObjectNode();
     body.put("loginName", loginName);
     body.put("name", name);
@@ -196,6 +195,6 @@ class UserControllerTest {
                 post("/api/users").contentType(MediaType.APPLICATION_JSON).content(body.toString()))
             .andExpect(status().isCreated())
             .andReturn();
-    return json.readTree(r.getResponse().getContentAsString()).get("id").asText();
+    return json.readTree(r.getResponse().getContentAsString()).get("id").asLong();
   }
 }

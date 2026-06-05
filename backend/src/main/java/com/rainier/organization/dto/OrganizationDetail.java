@@ -8,8 +8,8 @@ import java.time.Instant;
 /** Response DTO for organization read endpoints. */
 public class OrganizationDetail {
 
-  private String id;
-  private String parentId;
+  private Long id;
+  private Long parentId;
   private OrganizationType type;
   private String code;
   private String name;
@@ -42,11 +42,11 @@ public class OrganizationDetail {
     return dto;
   }
 
-  public String getId() {
+  public Long getId() {
     return id;
   }
 
-  public String getParentId() {
+  public Long getParentId() {
     return parentId;
   }
 

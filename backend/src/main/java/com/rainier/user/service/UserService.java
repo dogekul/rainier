@@ -53,7 +53,7 @@ public class UserService {
     return UserDetail.from(repo.saveAndFlush(u));
   }
 
-  public UserDetail findById(String id) {
+  public UserDetail findById(Long id) {
     return UserDetail.from(getOrThrow(id));
   }
 
@@ -92,7 +92,7 @@ public class UserService {
   }
 
   @Transactional
-  public UserDetail update(String id, UserUpdateRequest req) {
+  public UserDetail update(Long id, UserUpdateRequest req) {
     User u = getOrThrow(id);
     if (nonBlank(req.getCode()) && !req.getCode().equals(u.getCode())) {
       if (repo.existsByCode(req.getCode())) {
@@ -117,7 +117,7 @@ public class UserService {
   }
 
   @Transactional
-  public void delete(String id) {
+  public void delete(Long id) {
     User u = getOrThrow(id);
     long activeAssignments = userOrgRepo.countByUserIdAndLeftAtIsNull(id);
     if (activeAssignments > 0) {
@@ -126,7 +126,7 @@ public class UserService {
     repo.delete(u);
   }
 
-  User getOrThrow(String id) {
+  User getOrThrow(Long id) {
     return repo.findById(id).orElseThrow(() -> new NotFoundException("user not found: id=" + id));
   }
 

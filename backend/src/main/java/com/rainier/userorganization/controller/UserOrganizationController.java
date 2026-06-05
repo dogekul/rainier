@@ -40,14 +40,14 @@ public class UserOrganizationController {
   }
 
   @GetMapping("/{id}")
-  public UserOrgDetail get(@PathVariable String id) {
+  public UserOrgDetail get(@PathVariable Long id) {
     return service.findById(id);
   }
 
   @GetMapping
   public PageResponse<UserOrgDetail> list(
-      @RequestParam(required = false) String userId,
-      @RequestParam(required = false) String organizationId,
+      @RequestParam(required = false) Long userId,
+      @RequestParam(required = false) Long organizationId,
       @RequestParam(required = false) UserOrgRole role,
       @RequestParam(required = false) Boolean activeOnly,
       @Valid PageParams page) {
@@ -55,13 +55,12 @@ public class UserOrganizationController {
   }
 
   @PutMapping("/{id}")
-  public UserOrgDetail update(
-      @PathVariable String id, @Valid @RequestBody UserOrgUpdateRequest req) {
+  public UserOrgDetail update(@PathVariable Long id, @Valid @RequestBody UserOrgUpdateRequest req) {
     return service.update(id, req);
   }
 
   @DeleteMapping("/{id}")
-  public ResponseEntity<Void> delete(@PathVariable String id) {
+  public ResponseEntity<Void> delete(@PathVariable Long id) {
     service.delete(id);
     return ResponseEntity.noContent().build();
   }

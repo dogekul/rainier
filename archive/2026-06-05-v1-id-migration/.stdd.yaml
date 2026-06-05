@@ -1,0 +1,177 @@
+change:
+  name: v1-id-migration
+  date: '2026-06-05'
+  title: v1 表 id 全栈迁移 (VARCHAR(32) UUID → BIGINT AUTO_INCREMENT)
+  type: pure-refactor          # 无新业务能力
+  triggered_by: '2026-06-05-demand-requirement Phase 1 user decision reversal'
+  unblocks:
+    - 2026-06-05-demand-requirement  # paused; will resume after this lands
+
+phase:
+  current: build
+  understand:
+    status: completed
+    confirmed_at: '2026-06-05'
+    artifact: proposal.md
+  spec:
+    status: completed
+    confirmed_at: '2026-06-05'
+    artifacts:
+      - design.md
+      - specs/backend-scaffold/spec.md
+      - specs/entity-organization/spec.md
+      - specs/entity-user/spec.md
+      - specs/entity-user-organization/spec.md
+      - specs/frontend-scaffold/spec.md
+      - test-plan.md
+    metrics:
+      capabilities: 5  # all MODIFIED
+      requirements: 8
+      scenarios: 8
+      tc_cases: 75  # 70 V1-Preserved + 5 MIG
+      p0: 75
+      p1: 0
+      p2: 0
+  slice:
+    status: completed
+    confirmed_at: '2026-06-05'
+    artifacts:
+      - slices.md
+      - tasks.md
+    metrics:
+      slices: 7
+      p0_slices: 7
+      backend_slices: 5  # M01-M05
+      frontend_slices: 1  # M06
+      e2e_slices: 1      # M07
+  build:
+    status: pending
+  verify:
+    status: completed
+    completed_at: '2026-06-05'
+    artifacts:
+      - test-report.md
+      - design-adjustments.md
+    metrics:
+      backend_tests:
+        total: 62
+        passed: 62
+        failed: 0
+      frontend_tests:
+        total: 11
+        passed: 11
+        failed: 0
+      e2e_tests:
+        total: 4
+        passed: 4
+        failed: 0
+      pass_rate: 1.0
+      backend_lint: pass
+      frontend_lint: pass
+      frontend_build: pass
+      review_summary:
+        critical: 1   # JavaDoc fixed
+        high: 0
+        medium: 3
+        low: 3
+        fixed: 3   # +1: gate3 hand-test bug (org parent save)
+        dismissed_with_rationale: 4
+      design_adjustments: 3  # all Minor (3rd is gate3 hand-test fix)
+      failure_modes_hits: 0
+      gate3:
+        confirmed_at: '2026-06-05'
+        confirmation_method: user_manual_test
+        hand_test_findings:
+          - description: 'edit org parent save did nothing (parentId silently dropped)'
+            root_cause: 'v1-preserved bug: frontend onSubmit only called PUT /{id}, not PUT /{id}/parent'
+            severity: M
+            fixed: true
+            fix_file: frontend/src/pages/Organization/OrganizationsPage.tsx
+            in_scope: true   # OrganizationsPage.tsx was in migration Impact list
+  deliver:
+    status: completed
+    completed_at: '2026-06-05'
+    tag: v0.0.4-id-migration
+    unblocks_change: 2026-06-05-demand-requirement
+    specs_merged:
+      - backend-scaffold
+      - entity-organization
+      - entity-user
+      - entity-user-organization
+      - frontend-scaffold
+
+scope:
+  type: schema-and-type-migration
+  affected_v1_entities:
+    - rainier_organization
+    - rainier_user
+    - rainier_user_organization
+  capabilities_modified:
+    - backend-scaffold       # BaseEntity id type swap
+    - entity-organization    # id/parentId/path content
+    - entity-user
+    - entity-user-organization
+    - frontend-scaffold      # global id: string → number convention
+  capabilities_new: []
+  explicitly_excluded:
+    - new-business-entities
+    - data-migration-script   # wipe instead
+    - archive-doc-modifications
+    - repo-specs-text-updates
+    - downstream-entities-project-demand-requirement
+    - resume-demand-requirement-change  # follow-up does that itself
+
+id_strategy:
+  before:
+    java: 'private String id'
+    generator: 'org.hibernate.id.UUIDHexGenerator (32-char hex, no dashes)'
+    sql: 'VARCHAR(32) NOT NULL'
+    ts: 'id: string'
+  after:
+    java: 'private Long id'
+    generator: '@GeneratedValue(strategy = GenerationType.IDENTITY)'
+    sql: 'BIGINT NOT NULL AUTO_INCREMENT'
+    ts: 'id: number'
+
+long_range:
+  enabled: true
+  mode: full_auto
+  pre_auth_completed: true
+  pre_auth_timestamp: '2026-06-05'
+  pre_auth:
+    design_deviation:
+      minor: auto_record
+      major: auto_record_continue
+    technical_blocker:
+      strategy: workaround
+    iteration:
+      max_rounds: 10
+      on_cap: report_in_summary
+    operations:
+      directory: allow
+      file_write: allow
+      command_exec: allow
+      script_exec: allow
+      network: allow
+      file_read: allow
+      git_readonly: allow
+    gate3: mandatory
+  degradation:
+    max_consecutive_failures: 3
+    pass_rate_threshold: 0.95
+    safety_check: true
+  settings_file: .claude/settings.local.json  # already configured in v0/v1
+
+data_strategy:
+  approach: wipe-and-rebuild
+  command: 'docker compose down -v && docker compose up -d --build'
+  reason: 'v0 phase, no production data; one E2E row + manual UI test rows acceptable to lose'
+  preserves_data: false
+
+unchanged:
+  - createBy / updateBy fields remain String (mock JWT username, not numeric id)
+  - frontend api/client.ts / store/auth.ts
+  - v0 entities (auth/health/Login/Home)
+  - backend pom.xml / application*.yml
+  - docker-compose.yml
+  - archive/2026-06-04-org-tree-and-employee/**

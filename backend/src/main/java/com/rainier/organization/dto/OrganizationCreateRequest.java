@@ -9,8 +9,7 @@ import javax.validation.constraints.Size;
 /** Payload for {@code POST /api/organizations}. */
 public class OrganizationCreateRequest {
 
-  @Size(max = 32)
-  private String parentId;
+  private Long parentId;
 
   @NotNull private OrganizationType type;
 
@@ -29,11 +28,11 @@ public class OrganizationCreateRequest {
 
   private Boolean enabled;
 
-  public String getParentId() {
+  public Long getParentId() {
     return parentId;
   }
 
-  public void setParentId(String parentId) {
+  public void setParentId(Long parentId) {
     this.parentId = parentId;
   }
 

@@ -4,8 +4,8 @@ import type { PaginatedResult } from '../hooks/usePaginated';
 export type OrganizationType = 'COMPANY' | 'DEPARTMENT' | 'DOMAIN' | 'TEAM' | 'SUBGROUP';
 
 export interface Organization {
-  id: string;
-  parentId: string | null;
+  id: number;
+  parentId: number | null;
   type: OrganizationType;
   code: string;
   name: string;
@@ -19,7 +19,7 @@ export interface Organization {
 }
 
 export interface OrganizationCreate {
-  parentId?: string | null;
+  parentId?: number | null;
   type: OrganizationType;
   code: string;
   name: string;
@@ -38,7 +38,7 @@ export interface OrganizationUpdate {
 
 export interface OrganizationListParams {
   type?: OrganizationType;
-  parentId?: string;
+  parentId?: number;
   search?: string;
   page?: number;
   size?: number;
@@ -51,7 +51,7 @@ export async function listOrganizations(
   return res.data;
 }
 
-export async function getOrganization(id: string): Promise<Organization> {
+export async function getOrganization(id: number): Promise<Organization> {
   const res = await client.get<Organization>(`/organizations/${id}`);
   return res.data;
 }
@@ -66,16 +66,19 @@ export async function createOrganization(body: OrganizationCreate): Promise<Orga
   return res.data;
 }
 
-export async function updateOrganization(id: string, body: OrganizationUpdate): Promise<Organization> {
+export async function updateOrganization(
+  id: number,
+  body: OrganizationUpdate,
+): Promise<Organization> {
   const res = await client.put<Organization>(`/organizations/${id}`, body);
   return res.data;
 }
 
-export async function moveOrganization(id: string, parentId: string | null): Promise<Organization> {
+export async function moveOrganization(id: number, parentId: number | null): Promise<Organization> {
   const res = await client.put<Organization>(`/organizations/${id}/parent`, { parentId });
   return res.data;
 }
 
-export async function deleteOrganization(id: string): Promise<void> {
+export async function deleteOrganization(id: number): Promise<void> {
   await client.delete(`/organizations/${id}`);
 }

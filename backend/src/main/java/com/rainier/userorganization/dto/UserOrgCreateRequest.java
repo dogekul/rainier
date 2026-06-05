@@ -3,37 +3,32 @@ package com.rainier.userorganization.dto;
 
 import com.rainier.userorganization.domain.UserOrgRole;
 import java.time.Instant;
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.Size;
+import javax.validation.constraints.NotNull;
 
 /** Payload for {@code POST /api/user-organizations}. */
 public class UserOrgCreateRequest {
 
-  @NotBlank
-  @Size(max = 32)
-  private String userId;
+  @NotNull private Long userId;
 
-  @NotBlank
-  @Size(max = 32)
-  private String organizationId;
+  @NotNull private Long organizationId;
 
   private UserOrgRole role;
   private Boolean isPrimary;
   private Instant joinedAt;
 
-  public String getUserId() {
+  public Long getUserId() {
     return userId;
   }
 
-  public void setUserId(String userId) {
+  public void setUserId(Long userId) {
     this.userId = userId;
   }
 
-  public String getOrganizationId() {
+  public Long getOrganizationId() {
     return organizationId;
   }
 
-  public void setOrganizationId(String organizationId) {
+  public void setOrganizationId(Long organizationId) {
     this.organizationId = organizationId;
   }
 

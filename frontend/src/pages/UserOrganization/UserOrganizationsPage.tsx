@@ -35,8 +35,8 @@ export function UserOrganizationsPage() {
 
   const [userOptions, setUserOptions] = useState<User[]>([]);
   const [orgTree, setOrgTree] = useState<TreeNode[]>([]);
-  const [userId, setUserId] = useState('');
-  const [organizationId, setOrganizationId] = useState<string | null>(null);
+  const [userId, setUserId] = useState<number | ''>('');
+  const [organizationId, setOrganizationId] = useState<number | null>(null);
   const [role, setRole] = useState<UserOrgRole>('MEMBER');
   const [isPrimary, setIsPrimary] = useState(false);
   const [leftAt, setLeftAt] = useState('');
@@ -134,7 +134,7 @@ export function UserOrganizationsPage() {
           <select
             className="rainier-treeselect-trigger"
             value={userId}
-            onChange={(e) => setUserId(e.target.value)}
+            onChange={(e) => setUserId(e.target.value === '' ? '' : Number(e.target.value))}
             disabled={editing !== null}
             data-testid="uo-user-select"
           >

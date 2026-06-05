@@ -24,11 +24,11 @@ class OrganizationRepositoryTest {
   @Autowired private OrganizationRepository repo;
 
   @Test
-  void save_assignsUuidIdAndAuditFields() {
+  void save_assignsAutoIncrementIdAndAuditFields() {
     Organization o = newOrg("ROOT-1", "总公司一");
     Organization saved = repo.saveAndFlush(o);
 
-    assertThat(saved.getId()).isNotNull().hasSize(32);
+    assertThat(saved.getId()).isNotNull().isPositive();
     assertThat(saved.getCreateTime()).isNotNull();
     assertThat(saved.getUpdateTime()).isNotNull();
     assertThat(saved.getDelFlag()).isFalse();
@@ -38,7 +38,7 @@ class OrganizationRepositoryTest {
   @Test
   void delete_softDeletesViaSqlDelete_andFindByIdReturnsEmpty() {
     Organization o = repo.saveAndFlush(newOrg("ROOT-2", "总公司二"));
-    String id = o.getId();
+    Long id = o.getId();
 
     repo.delete(o);
     repo.flush();

@@ -3,6 +3,7 @@ package com.rainier.organization.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.matchesPattern;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -24,11 +25,8 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
 /**
- * Integration tests for Organization read / update / move / delete endpoints.
- *
- * <p>Covers TC-ORG-006..016 (excluding 010 — search test stays in this file). The user_organization
- * FK protection scenario (TC-ORG-016) is currently a TODO in service code; the cleanup slice (Z01)
- * will re-enable that check once the M2M slice (B17/B18) lands.
+ * Integration tests for Organization read / update / move / delete endpoints. Covers
+ * TC-ORG-006..016 + TC-MIG-003 (path /1/2/3 format).
  */
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -48,7 +46,7 @@ class OrganizationControllerQueryTest {
 
   @Test
   void get_existingId_returns200WithFullDetail() throws Exception {
-    String id = createRoot("HQ", "总公司");
+    Long id = createRoot("HQ", "总公司");
     mockMvc
         .perform(get("/api/organizations/" + id))
         .andExpect(status().isOk())
@@ -62,7 +60,7 @@ class OrganizationControllerQueryTest {
 
   @Test
   void get_softDeletedId_returns404() throws Exception {
-    String id = createRoot("X", "X");
+    Long id = createRoot("X", "X");
     mockMvc.perform(delete("/api/organizations/" + id)).andExpect(status().isNoContent());
     mockMvc.perform(get("/api/organizations/" + id)).andExpect(status().isNotFound());
   }
@@ -71,10 +69,10 @@ class OrganizationControllerQueryTest {
 
   @Test
   void getTree_excludesSoftDeletedAndSortsByPath() throws Exception {
-    String hq = createRoot("HQ", "总公司");
-    String rd = createChild(hq, "RD", "研发部", "DEPARTMENT");
-    String ops = createChild(hq, "OPS", "运维部", "DEPARTMENT");
-    String backend = createChild(rd, "BE", "后端组", "TEAM");
+    Long hq = createRoot("HQ", "总公司");
+    Long rd = createChild(hq, "RD", "研发部", "DEPARTMENT");
+    Long ops = createChild(hq, "OPS", "运维部", "DEPARTMENT");
+    Long backend = createChild(rd, "BE", "后端组", "TEAM");
     // Soft-delete one
     mockMvc.perform(delete("/api/organizations/" + ops)).andExpect(status().isNoContent());
 
@@ -85,16 +83,20 @@ class OrganizationControllerQueryTest {
             .andExpect(jsonPath("$.length()").value(3))
             .andReturn();
     String body = result.getResponse().getContentAsString();
-    // Verify path ordering
-    assertThat(body.indexOf(hq)).as("hq before rd").isLessThan(body.indexOf(rd));
-    assertThat(body.indexOf(rd)).as("rd before backend").isLessThan(body.indexOf(backend));
+    // Verify path ordering by checking ids appear in expected order
+    assertThat(body.indexOf("\"id\":" + hq))
+        .as("hq before rd")
+        .isLessThan(body.indexOf("\"id\":" + rd));
+    assertThat(body.indexOf("\"id\":" + rd))
+        .as("rd before backend")
+        .isLessThan(body.indexOf("\"id\":" + backend));
   }
 
   // ---------------------------- GET / (list) -----------------------------
 
   @Test
   void getList_filterByType_returnsOnlyMatchingType() throws Exception {
-    String hq = createRoot("HQ", "总公司");
+    Long hq = createRoot("HQ", "总公司");
     createChild(hq, "RD", "研发部", "DEPARTMENT");
     createChild(hq, "OPS", "运维部", "DEPARTMENT");
     createChild(hq, "PMO", "PMO 团队", "TEAM");
@@ -107,7 +109,7 @@ class OrganizationControllerQueryTest {
 
   @Test
   void getList_searchMatchesWholeName() throws Exception {
-    String hq = createRoot("HQ", "总公司");
+    Long hq = createRoot("HQ", "总公司");
     createChild(hq, "RD", "研发部", "DEPARTMENT");
     createChild(hq, "OPS", "运维部", "DEPARTMENT");
     mockMvc
@@ -121,9 +123,9 @@ class OrganizationControllerQueryTest {
 
   @Test
   void put_updateName_cascadesWholeNameToDescendants() throws Exception {
-    String hq = createRoot("HQ", "总公司");
-    String rd = createChild(hq, "RD", "研发部", "DEPARTMENT");
-    String be = createChild(rd, "BE", "后端组", "TEAM");
+    Long hq = createRoot("HQ", "总公司");
+    Long rd = createChild(hq, "RD", "研发部", "DEPARTMENT");
+    Long be = createChild(rd, "BE", "后端组", "TEAM");
 
     ObjectNode body = json.createObjectNode();
     body.put("name", "研发中心");
@@ -148,10 +150,10 @@ class OrganizationControllerQueryTest {
 
   @Test
   void putParent_moveSubtree_cascadesPathAndWholeName() throws Exception {
-    String hq1 = createRoot("HQ1", "公司一");
-    String hq2 = createRoot("HQ2", "公司二");
-    String rd = createChild(hq1, "RD", "研发部", "DEPARTMENT");
-    String be = createChild(rd, "BE", "后端组", "TEAM");
+    Long hq1 = createRoot("HQ1", "公司一");
+    Long hq2 = createRoot("HQ2", "公司二");
+    Long rd = createChild(hq1, "RD", "研发部", "DEPARTMENT");
+    Long be = createChild(rd, "BE", "后端组", "TEAM");
 
     ObjectNode body = json.createObjectNode();
     body.put("parentId", hq2);
@@ -171,9 +173,9 @@ class OrganizationControllerQueryTest {
 
   @Test
   void putParent_moveToDescendant_returns409() throws Exception {
-    String hq = createRoot("HQ", "总公司");
-    String rd = createChild(hq, "RD", "研发部", "DEPARTMENT");
-    String be = createChild(rd, "BE", "后端组", "TEAM");
+    Long hq = createRoot("HQ", "总公司");
+    Long rd = createChild(hq, "RD", "研发部", "DEPARTMENT");
+    Long be = createChild(rd, "BE", "后端组", "TEAM");
 
     ObjectNode body = json.createObjectNode();
     body.put("parentId", be);
@@ -190,14 +192,14 @@ class OrganizationControllerQueryTest {
 
   @Test
   void delete_leafNode_returns204AndSubsequentGetReturns404() throws Exception {
-    String hq = createRoot("HQ", "总公司");
+    Long hq = createRoot("HQ", "总公司");
     mockMvc.perform(delete("/api/organizations/" + hq)).andExpect(status().isNoContent());
     mockMvc.perform(get("/api/organizations/" + hq)).andExpect(status().isNotFound());
   }
 
   @Test
   void delete_nodeWithChildren_returns409() throws Exception {
-    String hq = createRoot("HQ", "总公司");
+    Long hq = createRoot("HQ", "总公司");
     createChild(hq, "RD", "研发部", "DEPARTMENT");
     mockMvc
         .perform(delete("/api/organizations/" + hq))
@@ -205,9 +207,22 @@ class OrganizationControllerQueryTest {
         .andExpect(jsonPath("$.message").value("has child organizations"));
   }
 
+  // ---------------------------- TC-MIG-003: path /digits/digits/digits ---
+
+  @Test
+  void get_threeLevelTree_pathSegmentsAreAllNumeric() throws Exception {
+    Long a = createRoot("A", "A");
+    Long b = createChild(a, "B", "B", "DEPARTMENT");
+    Long c = createChild(b, "C", "C", "TEAM");
+    mockMvc
+        .perform(get("/api/organizations/" + c))
+        .andExpect(jsonPath("$.path").value("/" + a + "/" + b + "/" + c))
+        .andExpect(jsonPath("$.path", matchesPattern("^/\\d+/\\d+/\\d+$")));
+  }
+
   // ---------------------------- helpers ----------------------------------
 
-  private String createRoot(String code, String name) throws Exception {
+  private Long createRoot(String code, String name) throws Exception {
     ObjectNode body = json.createObjectNode();
     body.put("type", "COMPANY");
     body.put("code", code);
@@ -220,11 +235,10 @@ class OrganizationControllerQueryTest {
                     .content(body.toString()))
             .andExpect(status().isCreated())
             .andReturn();
-    return json.readTree(r.getResponse().getContentAsString()).get("id").asText();
+    return json.readTree(r.getResponse().getContentAsString()).get("id").asLong();
   }
 
-  private String createChild(String parentId, String code, String name, String type)
-      throws Exception {
+  private Long createChild(Long parentId, String code, String name, String type) throws Exception {
     ObjectNode body = json.createObjectNode();
     body.put("parentId", parentId);
     body.put("type", type);
@@ -238,6 +252,6 @@ class OrganizationControllerQueryTest {
                     .content(body.toString()))
             .andExpect(status().isCreated())
             .andReturn();
-    return json.readTree(r.getResponse().getContentAsString()).get("id").asText();
+    return json.readTree(r.getResponse().getContentAsString()).get("id").asLong();
   }
 }

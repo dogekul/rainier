@@ -14,11 +14,11 @@ import java.time.Instant;
  */
 public class UserOrgDetail {
 
-  private String id;
-  private String userId;
+  private Long id;
+  private Long userId;
   private String userLoginName;
   private String userName;
-  private String organizationId;
+  private Long organizationId;
   private String organizationName;
   private OrganizationType organizationType;
   private UserOrgRole role;
@@ -46,11 +46,11 @@ public class UserOrgDetail {
     return d;
   }
 
-  public String getId() {
+  public Long getId() {
     return id;
   }
 
-  public String getUserId() {
+  public Long getUserId() {
     return userId;
   }
 
@@ -62,7 +62,7 @@ public class UserOrgDetail {
     return userName;
   }
 
-  public String getOrganizationId() {
+  public Long getOrganizationId() {
     return organizationId;
   }
 

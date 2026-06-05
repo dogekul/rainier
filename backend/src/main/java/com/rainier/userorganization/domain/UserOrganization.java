@@ -20,11 +20,11 @@ import javax.persistence.Table;
 @Table(name = "rainier_user_organization")
 public class UserOrganization extends BaseEntity {
 
-  @Column(name = "user_id", nullable = false, length = 32)
-  private String userId;
+  @Column(name = "user_id", nullable = false)
+  private Long userId;
 
-  @Column(name = "organization_id", nullable = false, length = 32)
-  private String organizationId;
+  @Column(name = "organization_id", nullable = false)
+  private Long organizationId;
 
   @Enumerated(EnumType.STRING)
   @Column(nullable = false, length = 16)
@@ -39,19 +39,19 @@ public class UserOrganization extends BaseEntity {
   @Column(name = "left_at")
   private Instant leftAt;
 
-  public String getUserId() {
+  public Long getUserId() {
     return userId;
   }
 
-  public void setUserId(String userId) {
+  public void setUserId(Long userId) {
     this.userId = userId;
   }
 
-  public String getOrganizationId() {
+  public Long getOrganizationId() {
     return organizationId;
   }
 
-  public void setOrganizationId(String organizationId) {
+  public void setOrganizationId(Long organizationId) {
     this.organizationId = organizationId;
   }
 

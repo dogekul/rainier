@@ -14,6 +14,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.NoHandlerFoundException;
 
 /**
@@ -67,6 +68,18 @@ public class GlobalExceptionHandler {
   @ExceptionHandler(NoHandlerFoundException.class)
   public ResponseEntity<Map<String, Object>> handleNotFoundRoute(NoHandlerFoundException ex) {
     return body(HttpStatus.NOT_FOUND, "Not Found: " + ex.getRequestURL(), null);
+  }
+
+  /**
+   * Translates {@link MethodArgumentTypeMismatchException} (raised when a {@code @PathVariable Long
+   * id} receives a non-numeric value like {@code /api/organizations/abc}) into a 400 JSON instead
+   * of the default 500 from the catch-all handler. Added in change 2026-06-05-v1-id-migration
+   * (TC-MIG-002).
+   */
+  @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+  public ResponseEntity<Map<String, Object>> handlePathTypeMismatch(
+      MethodArgumentTypeMismatchException ex) {
+    return body(HttpStatus.BAD_REQUEST, "Invalid path parameter: " + ex.getName(), null);
   }
 
   @ExceptionHandler(Throwable.class)

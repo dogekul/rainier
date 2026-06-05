@@ -2,7 +2,7 @@ import client from './client';
 import type { PaginatedResult } from '../hooks/usePaginated';
 
 export interface User {
-  id: string;
+  id: number;
   loginName: string;
   name: string;
   code?: string | null;
@@ -46,7 +46,7 @@ export async function listUsers(params: UserListParams = {}): Promise<PaginatedR
   return res.data;
 }
 
-export async function getUser(id: string): Promise<User> {
+export async function getUser(id: number): Promise<User> {
   const res = await client.get<User>(`/users/${id}`);
   return res.data;
 }
@@ -56,11 +56,11 @@ export async function createUser(body: UserCreate): Promise<User> {
   return res.data;
 }
 
-export async function updateUser(id: string, body: UserUpdate): Promise<User> {
+export async function updateUser(id: number, body: UserUpdate): Promise<User> {
   const res = await client.put<User>(`/users/${id}`, body);
   return res.data;
 }
 
-export async function deleteUser(id: string): Promise<void> {
+export async function deleteUser(id: number): Promise<void> {
   await client.delete(`/users/${id}`);
 }

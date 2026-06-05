@@ -15,20 +15,20 @@ import org.springframework.stereotype.Repository;
  * Repository for {@link Organization}.
  *
  * <p>All derived queries inherit the entity's {@code @Where("del_flag = 0")} clause and therefore
- * skip soft-deleted rows. Use {@link #countRawById(String)} (native) when you need to confirm
+ * skip soft-deleted rows. Use {@link #countRawById(Long)} (native) when you need to confirm
  * physical presence including soft-deletes — currently used only by tests.
  */
 @Repository
 public interface OrganizationRepository
-    extends JpaRepository<Organization, String>, JpaSpecificationExecutor<Organization> {
+    extends JpaRepository<Organization, Long>, JpaSpecificationExecutor<Organization> {
 
-  boolean existsByParentIdAndCode(String parentId, String code);
+  boolean existsByParentIdAndCode(Long parentId, String code);
 
   boolean existsByParentIdIsNullAndCode(String code);
 
-  long countByParentId(String parentId);
+  long countByParentId(Long parentId);
 
-  List<Organization> findByParentId(String parentId);
+  List<Organization> findByParentId(Long parentId);
 
   Optional<Organization> findByPathAndName(String path, String name);
 
@@ -41,14 +41,14 @@ public interface OrganizationRepository
    * place.
    */
   @Query(value = "SELECT COUNT(*) FROM rainier_organization WHERE id = :id", nativeQuery = true)
-  long countRawById(@Param("id") String id);
+  long countRawById(@Param("id") Long id);
 
   /**
-   * Native fetch of {@code del_flag} bypassing {@code @Where}. Returns {@code Boolean} because the
+   * Native fetch of {@code del_flag} bypassing {@code @Where}. Returns {@code Object} because the
    * driver maps {@code TINYINT(1)} to {@code Boolean} under H2 (MySQL mode); on real MySQL the
    * driver maps it to either {@code Boolean} or {@code Integer} depending on {@code tinyInt1isBit},
    * but {@code Boolean.TRUE.equals(...)} works for both.
    */
   @Query(value = "SELECT del_flag FROM rainier_organization WHERE id = :id", nativeQuery = true)
-  Object rawDelFlag(@Param("id") String id);
+  Object rawDelFlag(@Param("id") Long id);
 }

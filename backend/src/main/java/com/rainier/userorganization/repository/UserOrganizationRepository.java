@@ -13,20 +13,20 @@ import org.springframework.stereotype.Repository;
 /** Repository for {@link UserOrganization}. */
 @Repository
 public interface UserOrganizationRepository
-    extends JpaRepository<UserOrganization, String>, JpaSpecificationExecutor<UserOrganization> {
+    extends JpaRepository<UserOrganization, Long>, JpaSpecificationExecutor<UserOrganization> {
 
-  boolean existsByUserIdAndOrganizationId(String userId, String organizationId);
+  boolean existsByUserIdAndOrganizationId(Long userId, Long organizationId);
 
-  List<UserOrganization> findByUserIdAndIsPrimaryTrue(String userId);
+  List<UserOrganization> findByUserIdAndIsPrimaryTrue(Long userId);
 
-  long countByOrganizationIdAndLeftAtIsNull(String organizationId);
+  long countByOrganizationIdAndLeftAtIsNull(Long organizationId);
 
-  long countByUserIdAndLeftAtIsNull(String userId);
+  long countByUserIdAndLeftAtIsNull(Long userId);
 
   /** Demote all primary assignments for a user except a given keepId. */
   @Modifying
   @Query(
       "UPDATE UserOrganization uo SET uo.isPrimary = false "
           + "WHERE uo.userId = :userId AND uo.isPrimary = true AND uo.id <> :keepId")
-  int demoteOthersForUser(@Param("userId") String userId, @Param("keepId") String keepId);
+  int demoteOthersForUser(@Param("userId") Long userId, @Param("keepId") Long keepId);
 }

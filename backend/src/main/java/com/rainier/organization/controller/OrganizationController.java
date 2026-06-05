@@ -43,7 +43,7 @@ public class OrganizationController {
   }
 
   @GetMapping("/{id}")
-  public OrganizationDetail get(@PathVariable String id) {
+  public OrganizationDetail get(@PathVariable Long id) {
     return service.findById(id);
   }
 
@@ -55,25 +55,25 @@ public class OrganizationController {
   @GetMapping
   public PageResponse<OrganizationDetail> list(
       @RequestParam(required = false) OrganizationType type,
-      @RequestParam(name = "parentId", required = false) String parentId,
+      @RequestParam(name = "parentId", required = false) Long parentId,
       @Valid PageParams page) {
     return service.list(type, parentId, page);
   }
 
   @PutMapping("/{id}")
   public OrganizationDetail update(
-      @PathVariable String id, @Valid @RequestBody OrganizationUpdateRequest req) {
+      @PathVariable Long id, @Valid @RequestBody OrganizationUpdateRequest req) {
     return service.update(id, req);
   }
 
   @PutMapping("/{id}/parent")
   public OrganizationDetail move(
-      @PathVariable String id, @Valid @RequestBody OrganizationMoveRequest req) {
+      @PathVariable Long id, @Valid @RequestBody OrganizationMoveRequest req) {
     return service.move(id, req);
   }
 
   @DeleteMapping("/{id}")
-  public ResponseEntity<Void> delete(@PathVariable String id) {
+  public ResponseEntity<Void> delete(@PathVariable Long id) {
     service.delete(id);
     return ResponseEntity.noContent().build();
   }

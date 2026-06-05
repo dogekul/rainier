@@ -9,6 +9,7 @@ import {
   createOrganization,
   deleteOrganization,
   listOrganizations,
+  moveOrganization,
   type Organization,
   type OrganizationCreate,
   type OrganizationType,
@@ -112,6 +113,12 @@ export function OrganizationsPage() {
               isPmo: req.isPmo,
               enabled: req.enabled,
             });
+            // Move is a separate backend endpoint (PUT /organizations/{id}/parent);
+            // only call it when the parent actually changes.
+            const nextParentId = req.parentId ?? null;
+            if (nextParentId !== editing.parentId) {
+              await moveOrganization(editing.id, nextParentId);
+            }
           } else {
             await createOrganization(req as OrganizationCreate);
           }

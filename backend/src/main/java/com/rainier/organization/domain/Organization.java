@@ -26,8 +26,8 @@ import org.hibernate.annotations.Where;
 @Where(clause = "del_flag = 0")
 public class Organization extends BaseEntity {
 
-  @Column(name = "parent_id", length = 32)
-  private String parentId;
+  @Column(name = "parent_id")
+  private Long parentId;
 
   @Enumerated(EnumType.STRING)
   @Column(nullable = false, length = 16)
@@ -54,11 +54,11 @@ public class Organization extends BaseEntity {
   @Column(nullable = false)
   private Boolean enabled = Boolean.TRUE;
 
-  public String getParentId() {
+  public Long getParentId() {
     return parentId;
   }
 
-  public void setParentId(String parentId) {
+  public void setParentId(Long parentId) {
     this.parentId = parentId;
   }
 

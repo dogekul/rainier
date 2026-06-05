@@ -22,14 +22,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
-/**
- * Covers TC-ORG-016: DELETE on an organization that has active {@code user_organization} rows
- * (left_at IS NULL) must be rejected with 409.
- *
- * <p>The general delete tests in {@link OrganizationControllerQueryTest} could not exercise this
- * scenario because the M2M repository did not exist when those tests were written; this dedicated
- * test class owns the verification once B17/B18 wired the FK guard.
- */
+/** Covers TC-ORG-016. */
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
@@ -50,8 +43,8 @@ class OrganizationDeleteFkTest {
 
   @Test
   void delete_organizationWithActiveUserAssignment_returns409() throws Exception {
-    String orgId = createOrg("TEAM-X", "X 团队");
-    String userId = createUser("alice", "Alice");
+    Long orgId = createOrg("TEAM-X", "X 团队");
+    Long userId = createUser("alice", "Alice");
     createUserOrg(userId, orgId);
 
     mockMvc
@@ -60,7 +53,7 @@ class OrganizationDeleteFkTest {
         .andExpect(jsonPath("$.message").value("has assigned users"));
   }
 
-  private String createOrg(String code, String name) throws Exception {
+  private Long createOrg(String code, String name) throws Exception {
     ObjectNode body = json.createObjectNode();
     body.put("type", "TEAM");
     body.put("code", code);
@@ -76,7 +69,7 @@ class OrganizationDeleteFkTest {
     return readId(r);
   }
 
-  private String createUser(String loginName, String name) throws Exception {
+  private Long createUser(String loginName, String name) throws Exception {
     ObjectNode body = json.createObjectNode();
     body.put("loginName", loginName);
     body.put("name", name);
@@ -89,7 +82,7 @@ class OrganizationDeleteFkTest {
     return readId(r);
   }
 
-  private void createUserOrg(String userId, String orgId) throws Exception {
+  private void createUserOrg(Long userId, Long orgId) throws Exception {
     ObjectNode body = json.createObjectNode();
     body.put("userId", userId);
     body.put("organizationId", orgId);
@@ -102,8 +95,8 @@ class OrganizationDeleteFkTest {
         .andExpect(status().isCreated());
   }
 
-  private String readId(MvcResult r) throws Exception {
+  private Long readId(MvcResult r) throws Exception {
     JsonNode node = json.readTree(r.getResponse().getContentAsString());
-    return node.get("id").asText();
+    return node.get("id").asLong();
   }
 }

@@ -25,7 +25,7 @@ export function OrganizationEditDrawer({
   onClose,
   onSubmit,
 }: OrganizationEditDrawerProps) {
-  const [parentId, setParentId] = useState<string | null>(null);
+  const [parentId, setParentId] = useState<number | null>(null);
   const [type, setType] = useState<OrganizationType>('DEPARTMENT');
   const [code, setCode] = useState('');
   const [name, setName] = useState('');
@@ -60,7 +60,7 @@ export function OrganizationEditDrawer({
 
   const submit = () => {
     void onSubmit({
-      parentId: parentId ?? undefined,
+      parentId: parentId ?? null,
       type,
       code,
       name,
