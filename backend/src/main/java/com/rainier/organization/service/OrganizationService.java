@@ -135,6 +135,21 @@ public class OrganizationService {
     boolean nameChanged = !o.getName().equals(req.getName());
     String oldWholeName = o.getWholeName();
 
+    // code change: re-check (parent_id, code) uniqueness excluding self
+    if (req.getCode() != null && !req.getCode().equals(o.getCode())) {
+      if (o.getParentId() == null) {
+        if (repo.existsByParentIdIsNullAndCode(req.getCode())) {
+          throw new ConflictException("code already exists at root: code=" + req.getCode());
+        }
+      } else {
+        if (repo.existsByParentIdAndCode(o.getParentId(), req.getCode())) {
+          throw new ConflictException(
+              "code already exists under the same parent: code=" + req.getCode());
+        }
+      }
+      o.setCode(req.getCode());
+    }
+
     o.setName(req.getName());
     if (req.getDescription() != null) {
       o.setDescription(req.getDescription());

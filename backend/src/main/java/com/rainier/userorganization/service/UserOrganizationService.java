@@ -130,6 +130,21 @@ public class UserOrganizationService {
   @Transactional
   public UserOrgDetail update(String id, UserOrgUpdateRequest req) {
     UserOrganization uo = getOrThrow(id);
+    // organization change: validate FK + (user_id, new_org_id) uniqueness
+    if (req.getOrganizationId() != null
+        && !req.getOrganizationId().equals(uo.getOrganizationId())) {
+      Organization newOrg =
+          orgRepo
+              .findById(req.getOrganizationId())
+              .orElseThrow(
+                  () ->
+                      new BadRequestException(
+                          "organization not found: id=" + req.getOrganizationId()));
+      if (repo.existsByUserIdAndOrganizationId(uo.getUserId(), newOrg.getId())) {
+        throw new ConflictException("user already assigned to this organization");
+      }
+      uo.setOrganizationId(newOrg.getId());
+    }
     if (req.getRole() != null) {
       uo.setRole(req.getRole());
     }

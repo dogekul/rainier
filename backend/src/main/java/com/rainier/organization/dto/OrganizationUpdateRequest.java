@@ -7,6 +7,13 @@ import javax.validation.constraints.Size;
 /** Payload for {@code PUT /api/organizations/{id}}. Updates mutable fields only. */
 public class OrganizationUpdateRequest {
 
+  /**
+   * Optional. When omitted or unchanged the existing code is kept; when supplied with a new value
+   * the service revalidates {@code (parent_id, code)} uniqueness.
+   */
+  @Size(max = 64)
+  private String code;
+
   @NotBlank
   @Size(max = 100)
   private String name;
@@ -17,6 +24,14 @@ public class OrganizationUpdateRequest {
   private Boolean isPmo;
 
   private Boolean enabled;
+
+  public String getCode() {
+    return code;
+  }
+
+  public void setCode(String code) {
+    this.code = code;
+  }
 
   public String getName() {
     return name;

@@ -29,6 +29,7 @@ export interface UserOrgCreate {
 }
 
 export interface UserOrgUpdate {
+  organizationId?: string;
   role?: UserOrgRole;
   isPrimary?: boolean;
   leftAt?: string | null;

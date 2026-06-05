@@ -29,6 +29,7 @@ export interface OrganizationCreate {
 }
 
 export interface OrganizationUpdate {
+  code: string;
   name: string;
   description?: string;
   isPmo?: boolean;

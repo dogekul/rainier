@@ -7,9 +7,18 @@ import java.time.Instant;
 /** Payload for {@code PUT /api/user-organizations/{id}}. user_id/organization_id are immutable. */
 public class UserOrgUpdateRequest {
 
+  private String organizationId;
   private UserOrgRole role;
   private Boolean isPrimary;
   private Instant leftAt;
+
+  public String getOrganizationId() {
+    return organizationId;
+  }
+
+  public void setOrganizationId(String organizationId) {
+    this.organizationId = organizationId;
+  }
 
   public UserOrgRole getRole() {
     return role;

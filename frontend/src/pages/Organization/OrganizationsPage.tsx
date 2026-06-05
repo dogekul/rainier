@@ -106,6 +106,7 @@ export function OrganizationsPage() {
         onSubmit={async (req) => {
           if (editing) {
             await updateOrganization(editing.id, {
+              code: req.code,
               name: req.name,
               description: req.description,
               isPmo: req.isPmo,

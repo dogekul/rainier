@@ -148,11 +148,12 @@ export function UserOrganizationsPage() {
         </div>
         <div style={{ marginBottom: 12 }}>
           <label style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }}>组织</label>
-          {editing ? (
-            <Input value={editing.organizationName ?? ''} disabled />
-          ) : (
-            <TreeSelect value={organizationId} nodes={orgTree} onChange={setOrganizationId} allowClear={false} />
-          )}
+          <TreeSelect
+            value={organizationId}
+            nodes={orgTree}
+            onChange={setOrganizationId}
+            allowClear={false}
+          />
         </div>
         <div style={{ marginBottom: 12 }}>
           <label style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }}>角色</label>
@@ -206,6 +207,7 @@ export function UserOrganizationsPage() {
             onClick={async () => {
               if (editing) {
                 await updateUserOrganization(editing.id, {
+                  organizationId: organizationId ?? undefined,
                   role,
                   isPrimary,
                   leftAt: leftAt || null,

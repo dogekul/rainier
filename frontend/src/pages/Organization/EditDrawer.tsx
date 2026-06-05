@@ -91,7 +91,7 @@ export function OrganizationEditDrawer({
           ))}
         </select>
       </div>
-      <Input label="编码" value={code} onChange={(e) => setCode(e.target.value)} disabled={editing !== null} />
+      <Input label="编码" value={code} onChange={(e) => setCode(e.target.value)} />
       <Input label="名称" value={name} onChange={(e) => setName(e.target.value)} />
       <Input label="描述" value={description} onChange={(e) => setDescription(e.target.value)} />
       <div style={{ marginBottom: 12 }}>
