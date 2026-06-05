@@ -71,7 +71,6 @@ public class OrganizationService {
     o.setCode(req.getCode());
     o.setName(req.getName());
     o.setDescription(req.getDescription());
-    o.setIsPmo(Boolean.TRUE.equals(req.getIsPmo()));
     o.setEnabled(req.getEnabled() == null ? Boolean.TRUE : req.getEnabled());
 
     o = repo.saveAndFlush(o);
@@ -153,9 +152,6 @@ public class OrganizationService {
     o.setName(req.getName());
     if (req.getDescription() != null) {
       o.setDescription(req.getDescription());
-    }
-    if (req.getIsPmo() != null) {
-      o.setIsPmo(req.getIsPmo());
     }
     if (req.getEnabled() != null) {
       o.setEnabled(req.getEnabled());

@@ -64,7 +64,8 @@ class OrganizationControllerCreateTest {
         .andExpect(jsonPath("$.name").value("总公司"))
         .andExpect(jsonPath("$.path", matchesPattern("/\\d+")))
         .andExpect(jsonPath("$.wholeName").value("总公司"))
-        .andExpect(jsonPath("$.isPmo").value(false))
+        // TC-RMP-001: response body 不再含 isPmo 字段（PMO 已归属人 × 岗位维度）
+        .andExpect(jsonPath("$.isPmo").doesNotExist())
         .andExpect(jsonPath("$.enabled").value(true))
         .andExpect(jsonPath("$.createTime").exists())
         .andExpect(jsonPath("$.updateTime").exists());

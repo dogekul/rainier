@@ -21,8 +21,6 @@ public class OrganizationUpdateRequest {
   @Size(max = 500)
   private String description;
 
-  private Boolean isPmo;
-
   private Boolean enabled;
 
   public String getCode() {
@@ -47,14 +45,6 @@ public class OrganizationUpdateRequest {
 
   public void setDescription(String description) {
     this.description = description;
-  }
-
-  public Boolean getIsPmo() {
-    return isPmo;
-  }
-
-  public void setIsPmo(Boolean isPmo) {
-    this.isPmo = isPmo;
   }
 
   public Boolean getEnabled() {

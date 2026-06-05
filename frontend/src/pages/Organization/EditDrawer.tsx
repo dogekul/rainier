@@ -30,7 +30,6 @@ export function OrganizationEditDrawer({
   const [code, setCode] = useState('');
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [isPmo, setIsPmo] = useState(false);
   const [enabled, setEnabled] = useState(true);
   const [tree, setTree] = useState<TreeNode[]>([]);
 
@@ -45,7 +44,6 @@ export function OrganizationEditDrawer({
       setCode(editing.code);
       setName(editing.name);
       setDescription(editing.description ?? '');
-      setIsPmo(editing.isPmo);
       setEnabled(editing.enabled);
     } else {
       setParentId(null);
@@ -53,7 +51,6 @@ export function OrganizationEditDrawer({
       setCode('');
       setName('');
       setDescription('');
-      setIsPmo(false);
       setEnabled(true);
     }
   }, [open, editing]);
@@ -65,7 +62,6 @@ export function OrganizationEditDrawer({
       code,
       name,
       description: description || undefined,
-      isPmo,
       enabled,
     });
   };
@@ -96,10 +92,6 @@ export function OrganizationEditDrawer({
       <Input label="描述" value={description} onChange={(e) => setDescription(e.target.value)} />
       <div style={{ marginBottom: 12 }}>
         <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-          <input type="checkbox" checked={isPmo} onChange={(e) => setIsPmo(e.target.checked)} />
-          PMO 团队
-        </label>{' '}
-        <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginLeft: 16 }}>
           <input type="checkbox" checked={enabled} onChange={(e) => setEnabled(e.target.checked)} />
           启用
         </label>

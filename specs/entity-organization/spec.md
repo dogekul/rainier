@@ -52,7 +52,7 @@
 - **GIVEN** 数据库存在节点 id=`abc`
 - **WHEN** `GET /api/organizations/abc`
 - **THEN** SHALL 返回 200
-- **AND** body SHALL 含 id / parentId / type / code / name / description / path / wholeName / isPmo / enabled / createTime / updateTime
+- **AND** body SHALL 含 id / parentId / type / code / name / description / path / wholeName / enabled / createTime / updateTime
 
 #### Scenario: id 已被软删
 
@@ -70,7 +70,7 @@
 - **WHEN** `GET /api/organizations/tree`
 - **THEN** SHALL 返回 200
 - **AND** body SHALL 为数组，长度 = 4
-- **AND** 每项 SHALL 含 `id`、`parentId`、`type`、`code`、`name`、`isPmo`、`path`、`wholeName`
+- **AND** 每项 SHALL 含 `id`、`parentId`、`type`、`code`、`name`、`path`、`wholeName`
 - **AND** 数组 SHALL 按 path 字典序排列
 
 ### Requirement: 组织列表带筛选分页
@@ -93,7 +93,7 @@
 
 ### Requirement: 更新组织名
 
-后端 SHALL 通过 `PUT /api/organizations/{id}` 修改 name / description / is_pmo / enabled；改 name 时级联更新子孙 whole_name。
+后端 SHALL 通过 `PUT /api/organizations/{id}` 修改 name / description / enabled；改 name 时级联更新子孙 whole_name。
 
 #### Scenario: 修改 name 后子孙 whole_name 级联
 

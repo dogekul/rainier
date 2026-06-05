@@ -40,11 +40,6 @@ export function OrganizationsPage() {
     { key: 'type', title: '类型', render: (r) => r.type },
     { key: 'wholeName', title: '全路径', render: (r) => r.wholeName ?? '' },
     {
-      key: 'isPmo',
-      title: 'PMO',
-      render: (r) => (r.isPmo ? '是' : '—'),
-    },
-    {
       key: 'actions',
       title: '操作',
       render: (r) => (
@@ -110,7 +105,6 @@ export function OrganizationsPage() {
               code: req.code,
               name: req.name,
               description: req.description,
-              isPmo: req.isPmo,
               enabled: req.enabled,
             });
             // Move is a separate backend endpoint (PUT /organizations/{id}/parent);

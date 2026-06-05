@@ -1,0 +1,153 @@
+change:
+  name: remove-org-pmo
+  date: '2026-06-05'
+  title: 删除 Organization 的 isPmo 字段（PMO 应归属人+岗位而非组织本体）
+  type: domain-realignment-cleanup
+  triggered_by: 'v0.0.4 Gate 3 hand-test surfaced domain mis-modeling'
+  prepares_for:
+    - 2026-06-05-demand-requirement  # PMO will be modeled via people × position there
+
+phase:
+  current: archived
+  understand:
+    status: completed
+    confirmed_at: '2026-06-05'
+    artifact: proposal.md
+  spec:
+    status: completed
+    confirmed_at: '2026-06-05'
+    artifacts:
+      - design.md
+      - specs/entity-organization/spec.md
+      - specs/frontend-scaffold/spec.md
+      - test-plan.md
+    metrics:
+      capabilities: 2          # both MODIFIED
+      requirements: 3
+      scenarios: 7
+      tc_cases: 7
+      p0: 7
+      p1: 0
+      p2: 0
+  slice:
+    status: completed
+    confirmed_at: '2026-06-05'
+    artifacts:
+      - slices.md
+      - tasks.md
+    metrics:
+      slices: 7
+      p0_slices: 7
+      backend_slices: 2     # M01-M02
+      frontend_slices: 3    # M03-M05
+      docs_slices: 1        # M06
+      e2e_slices: 1         # M07
+  build:
+    status: completed
+    completed_at: '2026-06-05'
+    slices_done: 7
+    metrics:
+      backend_tests: 64
+      frontend_tests: 13
+      lint_clean: true
+      compile_clean: true
+  verify:
+    status: completed
+    completed_at: '2026-06-05'
+    artifacts:
+      - test-report.md
+      - design-adjustments.md
+    metrics:
+      backend_tests:
+        total: 64
+        passed: 64
+        failed: 0
+      frontend_tests:
+        total: 13
+        passed: 13
+        failed: 0
+      e2e_tests:
+        total: 4
+        passed: 4
+        failed: 0
+      pass_rate: 1.0
+      backend_lint: pass
+      frontend_lint: pass
+      frontend_build: pass
+      review_summary:
+        critical: 0
+        high: 1   # downgraded to known-limitation per design decision 1
+        medium: 3
+        low: 8
+        fixed: 2  # M-2 + M-3 (test-plan + tasks doc fixes)
+        accepted_with_rationale: 9   # 1 H downgrade + 8 L
+        resolved_by_this_step: 1   # M-1 (test-report missing → this file)
+      design_adjustments: 2  # both Minor (M-2 + M-3 review-driven)
+      failure_modes_hits: 0
+      known_limitations:
+        - file: backend/src/main/resources/db/migration/V1__init_org.sql
+          line: 25
+          desc: 'is_pmo column definition remains in v1 historical archive (Flyway disabled, no runtime impact); per design decision 1 + proposal explicitly_excluded'
+          mitigation: 'Hibernate ddl-auto regenerates schema from entity (no is_pmo); DESCRIBE confirms; future Flyway re-enable should be separate change'
+  deliver:
+    status: completed
+    completed_at: '2026-06-05'
+    tag: v0.0.5-remove-org-pmo
+    specs_merged:
+      - entity-organization   # M06 in-place edit (3 lines deleted)
+      - frontend-scaffold     # appended MODIFIED block at delivery
+    unblocks_change: 2026-06-05-demand-requirement
+
+scope:
+  type: field-removal
+  affected_table:
+    - rainier_organization
+  affected_column:
+    - is_pmo
+  capabilities_modified:
+    - entity-organization
+    - frontend-scaffold
+  capabilities_new: []
+  explicitly_excluded:
+    - introduce-position-or-role-entity   # demand-requirement does that
+    - introduce-employee-role-junction
+    - v1-historical-sql-rewrite           # V1__init_org.sql is archive (Flyway disabled)
+    - touch-archive-spec                  # archive/2026-06-04-... stays read-only
+    - touch-user-or-uo-entities
+
+data_strategy:
+  decided_at: gate2
+  decided: A   # docker compose down -v + up --build
+  rationale: cleanest; matches id-migration practice; v0 phase no production data
+  rejected:
+    - B  # docker exec ALTER preserves data but adds out-of-flow manual step
+    - C  # data.sql ALTER pollutes startup flow + idempotency complexity
+
+long_range:
+  enabled: true
+  mode: full_auto
+  pre_auth_completed: true
+  pre_auth_timestamp: '2026-06-05'
+  pre_auth:
+    design_deviation:
+      minor: auto_record
+      major: auto_record_continue
+    technical_blocker:
+      strategy: workaround
+    iteration:
+      max_rounds: 10
+      on_cap: report_in_summary
+    operations:
+      directory: allow
+      file_write: allow
+      command_exec: allow
+      script_exec: allow
+      network: allow
+      file_read: allow
+      git_readonly: allow
+    gate3: mandatory
+  degradation:
+    max_consecutive_failures: 3
+    pass_rate_threshold: 0.95
+    safety_check: true
+  settings_file: .claude/settings.local.json  # already configured in v0.0.3/v0.0.4

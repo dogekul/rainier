@@ -12,7 +12,6 @@ export interface Organization {
   description?: string | null;
   path?: string | null;
   wholeName?: string | null;
-  isPmo: boolean;
   enabled: boolean;
   createTime?: string;
   updateTime?: string;
@@ -24,7 +23,6 @@ export interface OrganizationCreate {
   code: string;
   name: string;
   description?: string;
-  isPmo?: boolean;
   enabled?: boolean;
 }
 
@@ -32,7 +30,6 @@ export interface OrganizationUpdate {
   code: string;
   name: string;
   description?: string;
-  isPmo?: boolean;
   enabled?: boolean;
 }
 

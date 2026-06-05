@@ -48,9 +48,6 @@ public class Organization extends BaseEntity {
   @Column(name = "whole_name", length = 500)
   private String wholeName;
 
-  @Column(name = "is_pmo", nullable = false)
-  private Boolean isPmo = Boolean.FALSE;
-
   @Column(nullable = false)
   private Boolean enabled = Boolean.TRUE;
 
@@ -108,14 +105,6 @@ public class Organization extends BaseEntity {
 
   public void setWholeName(String wholeName) {
     this.wholeName = wholeName;
-  }
-
-  public Boolean getIsPmo() {
-    return isPmo;
-  }
-
-  public void setIsPmo(Boolean isPmo) {
-    this.isPmo = isPmo;
   }
 
   public Boolean getEnabled() {

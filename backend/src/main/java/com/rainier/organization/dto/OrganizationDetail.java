@@ -16,7 +16,6 @@ public class OrganizationDetail {
   private String description;
   private String path;
   private String wholeName;
-  private Boolean isPmo;
   private Boolean enabled;
   private Instant createTime;
   private Instant updateTime;
@@ -33,7 +32,6 @@ public class OrganizationDetail {
     dto.description = o.getDescription();
     dto.path = o.getPath();
     dto.wholeName = o.getWholeName();
-    dto.isPmo = o.getIsPmo();
     dto.enabled = o.getEnabled();
     dto.createTime = o.getCreateTime();
     dto.updateTime = o.getUpdateTime();
@@ -72,10 +70,6 @@ public class OrganizationDetail {
 
   public String getWholeName() {
     return wholeName;
-  }
-
-  public Boolean getIsPmo() {
-    return isPmo;
   }
 
   public Boolean getEnabled() {

@@ -58,6 +58,38 @@ class OrganizationControllerQueryTest {
         .andExpect(jsonPath("$.wholeName").value("总公司"));
   }
 
+  /** TC-RMP-002: GET /{id} response body 不含 isPmo 字段。 */
+  @Test
+  void get_byId_responseDoesNotContainIsPmo() throws Exception {
+    Long id = createRoot("HQ", "总公司");
+    mockMvc
+        .perform(get("/api/organizations/" + id))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.id").value(id))
+        .andExpect(jsonPath("$.isPmo").doesNotExist());
+  }
+
+  /**
+   * TC-RMP-003: PUT body 中即便客户端发送残留 isPmo 字段，后端 SHALL 静默忽略（Jackson 默认 ignore-unknown=true）， 返回 200
+   * + response 不含 isPmo。
+   */
+  @Test
+  void put_withIsPmoInBody_silentlyIgnored_returns200() throws Exception {
+    Long id = createRoot("HQ", "总公司");
+    ObjectNode body = json.createObjectNode();
+    body.put("code", "HQ");
+    body.put("name", "新名");
+    body.put("isPmo", true); // legacy field — must be silently ignored
+    mockMvc
+        .perform(
+            put("/api/organizations/" + id)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(body.toString()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.name").value("新名"))
+        .andExpect(jsonPath("$.isPmo").doesNotExist());
+  }
+
   @Test
   void get_softDeletedId_returns404() throws Exception {
     Long id = createRoot("X", "X");
