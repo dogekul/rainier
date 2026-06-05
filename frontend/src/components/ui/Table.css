@@ -1,0 +1,38 @@
+.rainier-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--rainier-bg-card);
+  border-radius: var(--rainier-radius-card);
+  box-shadow: var(--rainier-shadow-card);
+  overflow: hidden;
+  font-family: var(--rainier-font);
+}
+
+.rainier-table th,
+.rainier-table td {
+  padding: 12px 16px;
+  text-align: left;
+  border-bottom: 1px solid #f0f1f2;
+  font-size: 14px;
+  color: var(--rainier-color-text-1);
+}
+
+.rainier-table th {
+  background: #fafbfc;
+  font-weight: 600;
+  color: var(--rainier-color-text-2);
+}
+
+.rainier-table tr:last-child td {
+  border-bottom: none;
+}
+
+.rainier-table tr:hover td {
+  background: #fafbfc;
+}
+
+.rainier-table-empty {
+  color: var(--rainier-color-text-3);
+  text-align: center !important;
+  padding: 24px !important;
+}

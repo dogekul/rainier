@@ -12,6 +12,7 @@
   padding: 0 24px;
   background-color: var(--rainier-bg-card);
   box-shadow: var(--rainier-shadow-card);
+  z-index: 5;
 }
 
 .rainier-shell-brand {
@@ -25,7 +26,53 @@
   color: var(--rainier-color-text-2);
 }
 
+.rainier-shell-body {
+  display: flex;
+  flex: 1;
+}
+
+.rainier-shell-sider {
+  width: 240px;
+  background: var(--rainier-bg-card);
+  border-right: 1px solid #f0f1f2;
+  padding: 16px 8px;
+  font-family: var(--rainier-font);
+}
+
+.rainier-shell-sider-group {
+  margin-bottom: 12px;
+}
+
+.rainier-shell-sider-group-title {
+  padding: 6px 12px;
+  font-size: 12px;
+  color: var(--rainier-color-text-3);
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.rainier-shell-sider-item {
+  display: block;
+  padding: 8px 12px;
+  border-radius: var(--rainier-radius-button);
+  color: var(--rainier-color-text-1);
+  text-decoration: none;
+  font-size: 14px;
+  margin: 2px 0;
+}
+
+.rainier-shell-sider-item:hover {
+  background: #f5f6f7;
+}
+
+.rainier-shell-sider-item-active {
+  background: rgba(51, 112, 255, 0.1);
+  color: var(--rainier-color-primary);
+  font-weight: 600;
+}
+
 .rainier-shell-main {
   flex: 1;
   padding: 24px;
+  background: var(--rainier-bg-page);
 }

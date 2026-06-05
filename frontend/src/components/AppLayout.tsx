@@ -1,8 +1,36 @@
-import { Outlet } from 'react-router-dom';
+import { NavLink, Outlet } from 'react-router-dom';
 import { useAuthStore } from '../store/auth';
 import './AppLayout.css';
 
-/** Page shell with header (brand + username top-right) and main content slot. */
+interface NavItem {
+  to: string;
+  label: string;
+}
+
+interface NavGroup {
+  key: string;
+  title: string;
+  items: NavItem[];
+}
+
+const navGroups: NavGroup[] = [
+  {
+    key: 'org',
+    title: '组织',
+    items: [
+      { to: '/org/organizations', label: '组织节点' },
+      { to: '/org/users', label: '用户' },
+      { to: '/org/user-organizations', label: '用户-组织关系' },
+    ],
+  },
+];
+
+/**
+ * Page shell: header (brand + username) + left Sider nav + main content.
+ *
+ * <p>Sider menu groups are statically configured; a future change can swap to a permission-aware
+ * generator hook.
+ */
 export function AppLayout() {
   const user = useAuthStore((s) => s.user);
   return (
@@ -13,9 +41,30 @@ export function AppLayout() {
           {user?.username ?? ''}
         </span>
       </header>
-      <main className="rainier-shell-main">
-        <Outlet />
-      </main>
+      <div className="rainier-shell-body">
+        <aside className="rainier-shell-sider" data-testid="appshell-sider">
+          {navGroups.map((g) => (
+            <div key={g.key} className="rainier-shell-sider-group">
+              <div className="rainier-shell-sider-group-title">{g.title}</div>
+              {g.items.map((item) => (
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  className={({ isActive }) =>
+                    `rainier-shell-sider-item${isActive ? ' rainier-shell-sider-item-active' : ''}`
+                  }
+                  data-testid={`appshell-nav-${item.to}`}
+                >
+                  {item.label}
+                </NavLink>
+              ))}
+            </div>
+          ))}
+        </aside>
+        <main className="rainier-shell-main">
+          <Outlet />
+        </main>
+      </div>
     </div>
   );
 }

@@ -1,0 +1,37 @@
+.rainier-pagination {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  font-family: var(--rainier-font);
+}
+
+.rainier-pagination-btn {
+  padding: 6px 14px;
+  border-radius: var(--rainier-radius-button);
+  border: 1px solid #dee0e3;
+  background: var(--rainier-bg-card);
+  color: var(--rainier-color-text-1);
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.rainier-pagination-btn:hover:not(:disabled) {
+  border-color: var(--rainier-color-primary);
+  color: var(--rainier-color-primary);
+}
+
+.rainier-pagination-btn:disabled {
+  color: var(--rainier-color-text-3);
+  cursor: not-allowed;
+}
+
+.rainier-pagination-current {
+  font-weight: 600;
+  color: var(--rainier-color-text-1);
+}
+
+.rainier-pagination-total {
+  color: var(--rainier-color-text-2);
+  font-size: 13px;
+}

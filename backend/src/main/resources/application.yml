@@ -8,6 +8,26 @@ spring:
   web:
     resources:
       add-mappings: false
+  jpa:
+    hibernate:
+      # NOTE (Adjustment): Flyway 8.5.13 (Spring Boot 2.7-managed) rejects MySQL 8 with
+      # "Unsupported Database" under its community edition; upgrading to Flyway 9 requires
+      # Java 11. v0 of this change therefore disables Flyway and lets Hibernate generate
+      # the schema via ddl-auto=update. The V1__init_org.sql migration is kept on disk as
+      # documentation of the intended schema and as the starting point for the future
+      # JDK 17 + Flyway re-enable. See pending-adjustments.md.
+      ddl-auto: update
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: false
+        jdbc:
+          time_zone: UTC
+  flyway:
+    enabled: false
+    locations: classpath:db/migration
+    validate-on-migrate: true
+    baseline-on-migrate: false
 
 server:
   port: 8080

@@ -1,9 +1,7 @@
 .rainier-button {
   display: inline-block;
   padding: 8px 16px;
-  background-color: var(--rainier-color-primary);
-  color: #ffffff;
-  border: none;
+  border: 1px solid var(--rainier-color-primary);
   border-radius: var(--rainier-radius-button);
   font-family: inherit;
   font-size: 14px;
@@ -11,7 +9,17 @@
   line-height: 1.4;
   cursor: pointer;
   transition: opacity 0.15s ease;
-  min-width: 96px;
+  min-width: 64px;
+}
+
+.rainier-button-primary {
+  background-color: var(--rainier-color-primary);
+  color: #ffffff;
+}
+
+.rainier-button-secondary {
+  background-color: var(--rainier-bg-card);
+  color: var(--rainier-color-primary);
 }
 
 .rainier-button:hover:not(:disabled) {

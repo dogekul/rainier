@@ -1,0 +1,178 @@
+change:
+  name: org-tree-and-employee
+  date: '2026-06-04'
+  title: 组织维度骨架 (rainier_organization / rainier_user / rainier_user_organization)
+  source_doc: A-角色意图卡片.md  # §2 双维度模型
+  legacy_reference:
+    - sys_depart  # oap legacy schema (filtered)
+    - sys_user    # oap legacy schema (filtered)
+  follows_up:
+    - 2026-06-02-bootstrap-fullstack-scaffold (closes Adjustment #1)
+    - 2026-06-04-add-language-standards (uses .stdd/standards/{java,typescript}.md)
+
+phase:
+  current: delivered
+status: archived
+archived_at: '2026-06-05'
+  understand:
+    status: completed
+    confirmed_at: '2026-06-04'
+    artifact: proposal.md
+  spec:
+    status: completed
+    confirmed_at: '2026-06-04'
+    artifacts:
+      - design.md
+      - specs/entity-organization/spec.md
+      - specs/entity-user/spec.md
+      - specs/entity-user-organization/spec.md
+      - specs/pagination-envelope/spec.md
+      - specs/backend-scaffold/spec.md
+      - specs/frontend-scaffold/spec.md
+      - specs/dev-runtime/spec.md
+      - specs/test-runtime/spec.md
+      - test-plan.md
+    metrics:
+      capabilities: 8  # 4 new + 4 modified
+      requirements: 23
+      scenarios: 41
+      tc_cases: 57
+      p0: 50
+      p1: 7
+      p2: 0
+  slice:
+    status: completed
+    confirmed_at: '2026-06-04'
+    artifacts:
+      - slices.md
+      - tasks.md
+    metrics:
+      slices: 24
+      p0_slices: 24
+      p1_slices: 0
+      p2_slices: 0
+      backend_slices: 18
+      frontend_slices: 5
+      cleanup_slices: 1
+  build:
+    status: pending
+  verify:
+    status: completed
+    completed_at: '2026-06-05'
+    artifacts:
+      - test-report.md
+      - design-adjustments.md
+      - pending-adjustments.md
+    metrics:
+      backend_tests:
+        total: 59
+        passed: 59
+        failed: 0
+      frontend_tests:
+        total: 11
+        passed: 11
+        failed: 0
+      e2e_tests:
+        total: 3
+        passed: 3
+        failed: 0
+      pass_rate: 1.0
+      backend_lint: pass
+      frontend_lint: pass
+      frontend_build: pass
+      review_summary:
+        critical: 0  # 1 reported as critical was a misclassified false positive
+        high: 3
+        medium: 6
+        low: 2
+        fixed: 3
+        dismissed_with_rationale: 4
+      design_adjustments: 5  # 1 Major + 4 Minor
+      failure_modes_hits: 0  # 11/11 clean (j marked ⚠️ acceptable, not a hit)
+  deliver:
+    status: pending
+
+long_range:
+  enabled: true
+  mode: full_auto
+  pre_auth_completed: true
+  pre_auth_timestamp: '2026-06-04'
+  pre_auth:
+    design_deviation:
+      minor: auto_record
+      major: auto_record_continue
+    technical_blocker:
+      strategy: workaround
+    iteration:
+      max_rounds: 10
+      on_cap: report_in_summary
+    operations:
+      directory: allow
+      file_write: allow
+      command_exec: allow
+      script_exec: allow
+      network: allow
+      file_read: allow
+      git_readonly: allow
+    gate3: mandatory
+  degradation:
+    max_consecutive_failures: 3
+    pass_rate_threshold: 0.95
+    safety_check: true
+  settings_file: .claude/settings.local.json  # 已在 v0 bootstrap 时配置
+
+scope:
+  type: domain-entity-with-infrastructure
+  entities:
+    - rainier_organization
+    - rainier_user
+    - rainier_user_organization
+  capabilities_modified:
+    - backend-scaffold
+    - frontend-scaffold
+    - dev-runtime
+    - test-runtime
+  capabilities_new:
+    - entity-organization
+    - entity-user
+    - entity-user-organization
+    - pagination-envelope
+  explicitly_excluded:
+    - password / salt           # mock JWT 阶段不接 IdP
+    - manager_user_id           # 直属主管，靠 user_organization.role=HEAD 表达
+    - is_leader / leader_mode   # 高管标识，靠分配到 type=COMPANY 表达
+    - post_desc / position_tag  # 岗位字段表，留下一个变更
+    - skill_labels / skill_tag  # 技能标签表，留下一个变更
+    - image / hire_date / gender / birthday / phone  # 个人隐私 + 非必要
+    - org manager CSV           # 方案 A: 用 user_organization.role 代替
+    - 高管 office 专表          # 用 type=COMPANY + role=HEAD 间接表达
+    - 软删恢复接口              # 接口管理员后续切片
+
+infrastructure_impact:
+  persistence:
+    introduces: [jpa, flyway, mysql-connector-j]
+    id_strategy: hibernate-uuid-hex-generator
+    id_column_type: varchar(32)
+    test_db: h2-in-memory
+    dev_db: mysql-8-via-docker-compose
+    migration_strategy: flyway (dev) + ddl-auto=create-drop (test)
+    soft_delete_pattern: "@SQLDelete + @Where on all entities; logical delete via del_flag column"
+
+schema_design:
+  table_prefix: rainier_
+  tables:
+    - name: rainier_organization
+      fields_total: 15
+      tree: self-referential adjacency list
+      cache: path + whole_name (service-maintained)
+      type_values: [COMPANY, DEPARTMENT, DOMAIN, TEAM, SUBGROUP]
+      pmo_marker: is_pmo
+      type_enforcement: soft (service-layer warning)
+    - name: rainier_user
+      fields_total: 12
+      executive_marker: indirect (via assignment to type=COMPANY)
+    - name: rainier_user_organization
+      fields_total: 11
+      role_values: [MEMBER, HEAD]
+      primary_uniqueness: service-layer guard + optimistic lock
+      history_field: left_at  # null = active

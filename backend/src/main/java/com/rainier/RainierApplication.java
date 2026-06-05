@@ -3,9 +3,11 @@ package com.rainier;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 
-/** Entry point for the Rainier PM backend (v0 scaffold). */
+/** Entry point for the Rainier PM backend. */
 @SpringBootApplication
+@EnableJpaAuditing(auditorAwareRef = "auditorAware")
 public class RainierApplication {
 
   public static void main(String[] args) {

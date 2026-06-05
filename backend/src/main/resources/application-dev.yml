@@ -1,6 +1,11 @@
-# Dev profile placeholder.
-# MySQL container exists in docker-compose.yml but v0 backend does not query it.
-# See design.md §8 (No JPA / MyBatis / Flyway in v0).
+# Dev profile: real MySQL via Docker Compose service `mysql`.
+spring:
+  datasource:
+    url: jdbc:mysql://${RAINIER_MYSQL_HOST:localhost}:${RAINIER_MYSQL_PORT:3306}/${RAINIER_MYSQL_DATABASE:rainier}?useUnicode=true&characterEncoding=UTF-8&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+    username: ${RAINIER_MYSQL_USERNAME:root}
+    password: ${RAINIER_MYSQL_PASSWORD:root}
+    driver-class-name: com.mysql.cj.jdbc.Driver
 logging:
   level:
     org.springframework.web: INFO
+    org.flywaydb: INFO

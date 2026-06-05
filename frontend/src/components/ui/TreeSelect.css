@@ -1,0 +1,49 @@
+.rainier-treeselect {
+  position: relative;
+  display: inline-block;
+  width: 100%;
+  font-family: var(--rainier-font);
+}
+
+.rainier-treeselect-trigger {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 8px 12px;
+  border: 1px solid #dee0e3;
+  border-radius: var(--rainier-radius-button);
+  background: var(--rainier-bg-card);
+  cursor: pointer;
+  color: var(--rainier-color-text-1);
+  font-size: 14px;
+}
+
+.rainier-treeselect-placeholder {
+  color: var(--rainier-color-text-3);
+}
+
+.rainier-treeselect-panel {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 4px;
+  max-height: 280px;
+  overflow-y: auto;
+  background: var(--rainier-bg-card);
+  border: 1px solid #dee0e3;
+  border-radius: var(--rainier-radius-button);
+  box-shadow: var(--rainier-shadow-card);
+  z-index: 10;
+}
+
+.rainier-treeselect-item {
+  padding: 8px 12px;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--rainier-color-text-1);
+}
+
+.rainier-treeselect-item:hover {
+  background: #f5f6f7;
+}

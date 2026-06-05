@@ -1,9 +1,25 @@
-# Test profile. v0 does not query any DB, so no H2 datasource is configured.
-# (design.md §9 originally proposed H2; SLICE-B01 deviation: no JDBC dep needed
-#  because backend code does not reference DataSource at all. See pending-adjustments.md.)
+# Test profile.
+# - H2 in-memory database in MySQL compatibility mode.
+# - Hibernate generates schema from entities (ddl-auto=create-drop).
+# - Flyway is DISABLED in tests; the V1__init_org.sql migration is only exercised by the
+#   docker-compose E2E (real MySQL) to avoid H2↔MySQL DDL incompatibility.
+# - Auditor returns "system" (see AuditorAwareImpl) because tests run unauthenticated.
 spring:
   main:
     banner-mode: "off"
+  datasource:
+    url: jdbc:h2:mem:rainier;MODE=MySQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    username: sa
+    password: ""
+    driver-class-name: org.h2.Driver
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+  flyway:
+    enabled: false
 
 logging:
   level:

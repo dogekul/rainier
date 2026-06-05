@@ -1,0 +1,59 @@
+.rainier-confirm-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--rainier-font);
+}
+
+.rainier-confirm-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.32);
+}
+
+.rainier-confirm {
+  position: relative;
+  width: 360px;
+  background: var(--rainier-bg-card);
+  border-radius: var(--rainier-radius-card);
+  box-shadow: var(--rainier-shadow-card);
+  padding: 24px;
+}
+
+.rainier-confirm-title {
+  font-weight: 600;
+  font-size: 16px;
+  color: var(--rainier-color-text-1);
+  margin-bottom: 8px;
+}
+
+.rainier-confirm-message {
+  color: var(--rainier-color-text-2);
+  font-size: 14px;
+  margin-bottom: 20px;
+}
+
+.rainier-confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.rainier-confirm-btn {
+  padding: 6px 16px;
+  border: 1px solid #dee0e3;
+  border-radius: var(--rainier-radius-button);
+  background: var(--rainier-bg-card);
+  cursor: pointer;
+  color: var(--rainier-color-text-1);
+  font-size: 14px;
+}
+
+.rainier-confirm-btn-primary {
+  background: var(--rainier-color-primary);
+  border-color: var(--rainier-color-primary);
+  color: #ffffff;
+}

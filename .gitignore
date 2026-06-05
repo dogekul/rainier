@@ -47,3 +47,4 @@ yarn-error.log*
 stdd-master/
 stdd-master_副本.zip
 *副本*.zip
+frontend/tsconfig.tsbuildinfo

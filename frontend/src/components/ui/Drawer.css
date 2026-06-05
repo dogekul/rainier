@@ -1,0 +1,52 @@
+.rainier-drawer-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  font-family: var(--rainier-font);
+}
+
+.rainier-drawer-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.32);
+}
+
+.rainier-drawer {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--rainier-bg-card);
+  box-shadow: -8px 0 24px rgba(0, 0, 0, 0.12);
+  display: flex;
+  flex-direction: column;
+}
+
+.rainier-drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid #f0f1f2;
+}
+
+.rainier-drawer-title {
+  font-weight: 600;
+  font-size: 16px;
+  color: var(--rainier-color-text-1);
+}
+
+.rainier-drawer-close {
+  border: none;
+  background: transparent;
+  font-size: 24px;
+  cursor: pointer;
+  color: var(--rainier-color-text-2);
+  line-height: 1;
+}
+
+.rainier-drawer-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+}

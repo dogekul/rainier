@@ -6,6 +6,8 @@
 
 ## Adjustment #1 — 后端不依赖任何 JDBC / DataSource（涉及 design.md §8、§9，spec backend-scaffold）
 
+> **✅ 已解决（2026-06-05）** — 由独立变更 [`changes/2026-06-04-org-tree-and-employee`](../../changes/2026-06-04-org-tree-and-employee/) 引入 spring-boot-starter-data-jpa + mysql-connector-j + Hibernate-managed schema。Flyway 出于 community edition 不支持 MySQL 8 的限制暂时禁用；详见该变更的 pending-adjustments.md。
+
 **原始设计**：
 - design.md §8：`spring.datasource` 仅留配置占位；`spring.sql.init.mode=never`
 - design.md §9：test profile 用 H2 内存库替代 MySQL

@@ -25,6 +25,11 @@ services:
     container_name: rainier-backend
     environment:
       SPRING_PROFILES_ACTIVE: dev
+      RAINIER_MYSQL_HOST: mysql
+      RAINIER_MYSQL_PORT: "3306"
+      RAINIER_MYSQL_DATABASE: rainier
+      RAINIER_MYSQL_USERNAME: root
+      RAINIER_MYSQL_PASSWORD: rainier_root
     depends_on:
       mysql:
         condition: service_healthy
