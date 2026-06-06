@@ -48,9 +48,14 @@ export function ProjectsPage() {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [enabled, setEnabled] = useState(true);
+  // v0.0.8.1 Code-M7: surface validation errors so the save button isn't a silent no-op.
+  const [formError, setFormError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!drawerOpen) return;
+    if (!drawerOpen) {
+      setFormError(null);
+      return;
+    }
     // PageParams 校验 size <= 100；v0 池大小足够。
     void listUsers({ size: 100 }).then((r) => {
       setUsers(r.content);
@@ -178,9 +183,10 @@ export function ProjectsPage() {
           <select
             className="rainier-treeselect-trigger"
             value={ownerUserId}
-            onChange={(e) =>
-              setOwnerUserId(e.target.value === '' ? '' : Number(e.target.value))
-            }
+            onChange={(e) => {
+              setOwnerUserId(e.target.value === '' ? '' : Number(e.target.value));
+              setFormError(null);
+            }}
             data-testid="projects-owner-select"
           >
             <option value="">请选择</option>
@@ -191,6 +197,21 @@ export function ProjectsPage() {
             ))}
           </select>
         </div>
+        {formError && (
+          <div
+            style={{
+              padding: '6px 10px',
+              marginBottom: 12,
+              color: 'var(--rainier-color-danger, #d4380d)',
+              fontSize: 12,
+              background: 'rgba(212, 56, 13, 0.08)',
+              borderRadius: 4,
+            }}
+            data-testid="projects-form-error"
+          >
+            {formError}
+          </div>
+        )}
         <Input
           label="开始日期 (YYYY-MM-DD)"
           value={startDate}
@@ -218,11 +239,18 @@ export function ProjectsPage() {
           <Button
             type="button"
             onClick={async () => {
-              if (!ownerUserId) return;
+              // v0.0.8.1 Code-M7: explicit validation instead of silent no-op.
+              if (ownerUserId === '' || ownerUserId === null) {
+                setFormError('请选择负责人');
+                return;
+              }
+              setFormError(null);
               if (editing) {
                 await updateProject(editing.id, {
                   name,
-                  description: description || undefined,
+                  // v0.0.8.1: always send description as a string (incl. "") so an emptied field
+                  // round-trips to the backend as a clear instead of being preserved.
+                  description,
                   status,
                   ownerUserId,
                   startDate: startDate || undefined,

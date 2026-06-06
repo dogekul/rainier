@@ -126,12 +126,15 @@ public class ProjectService {
       p.setOwnerUserId(req.getOwnerUserId());
     }
     p.setName(req.getName());
-    if (req.getDescription() != null) {
-      p.setDescription(req.getDescription());
-    }
+    // v0.0.8.1: description is now full-replace (null clears) for parity with name/status/dates.
+    // Frontend ProjectsPage always sends description as a string so an empty-string clears the
+    // field; omitted-as-null also clears. Resolves Code-M3 / Code-M6 (clear-description path).
+    p.setDescription(req.getDescription());
     p.setStatus(req.getStatus());
     p.setStartDate(req.getStartDate());
     p.setEndDate(req.getEndDate());
+    // enabled stays null-guarded — DB column is NOT NULL bit(1); silently swallowing a malformed
+    // payload missing this field is safer than throwing.
     if (req.getEnabled() != null) {
       p.setEnabled(req.getEnabled());
     }

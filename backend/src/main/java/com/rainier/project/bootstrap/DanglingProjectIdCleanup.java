@@ -6,6 +6,8 @@ import javax.persistence.PersistenceContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,7 +24,14 @@ import org.springframework.transaction.annotation.Transactional;
  * column to NULL) — this is the single intentional escape hatch from the soft-delete lifecycle in
  * the codebase.
  */
+/*
+ * v0.0.8.1 — @Order(HIGHEST_PRECEDENCE) defense-in-depth so this runner fires before any other
+ * CommandLineRunner that might insert / read project_id-referencing rows. Spring Boot 2.7 already
+ * invokes runners before the embedded Tomcat connector unlatches, so this only matters if a future
+ * change adds a higher-precedence runner that mutates rainier_requirement / rainier_user_role.
+ */
 @Component
+@Order(Ordered.HIGHEST_PRECEDENCE)
 public class DanglingProjectIdCleanup implements CommandLineRunner {
 
   private static final Logger log = LoggerFactory.getLogger(DanglingProjectIdCleanup.class);
@@ -39,6 +48,11 @@ public class DanglingProjectIdCleanup implements CommandLineRunner {
   /**
    * For one table+column, NULL out values that don't resolve to a live Project row. Logs a WARN per
    * row affected so an admin reading docker logs can see what was cleaned.
+   *
+   * <p>v0.0.8.1: The SELECT acquires {@code FOR UPDATE} so we hold row locks while the UPDATE runs
+   * in the same {@code @Transactional} boundary — closes the v0.0.8 race window where a concurrent
+   * INSERT of a fresh Project between the two statements could make the UPDATE skip a row the
+   * SELECT had already named for cleanup (and we would log a phantom "cleaned" line for it).
    */
   private void cleanDanglingForTable(String table, String column) {
     String selectSql =
@@ -51,25 +65,22 @@ public class DanglingProjectIdCleanup implements CommandLineRunner {
             + " IS NOT NULL"
             + " AND "
             + column
-            + " NOT IN (SELECT id FROM rainier_project WHERE del_flag = 0)";
+            + " NOT IN (SELECT id FROM rainier_project WHERE del_flag = 0)"
+            + " FOR UPDATE";
     @SuppressWarnings("unchecked")
     java.util.List<Object[]> dangling = em.createNativeQuery(selectSql).getResultList();
     if (dangling.isEmpty()) {
       return;
     }
-    String updateSql =
-        "UPDATE "
-            + table
-            + " SET "
-            + column
-            + " = NULL"
-            + " WHERE "
-            + column
-            + " IS NOT NULL"
-            + " AND "
-            + column
-            + " NOT IN (SELECT id FROM rainier_project WHERE del_flag = 0)";
-    int updated = em.createNativeQuery(updateSql).executeUpdate();
+    // Build an explicit id list from the SELECT result so the UPDATE targets EXACTLY the rows we
+    // logged, not whatever a re-evaluated subquery might find. Same @Transactional scope keeps the
+    // row locks held until commit.
+    java.util.List<Long> ids = new java.util.ArrayList<>(dangling.size());
+    for (Object[] row : dangling) {
+      ids.add(((Number) row[0]).longValue());
+    }
+    String updateSql = "UPDATE " + table + " SET " + column + " = NULL WHERE id IN (:ids)";
+    int updated = em.createNativeQuery(updateSql).setParameter("ids", ids).executeUpdate();
     for (Object[] row : dangling) {
       log.warn("cleaned dangling project_id from {}.{} (was project_id={})", table, row[0], row[1]);
     }

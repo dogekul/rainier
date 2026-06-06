@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { ProjectsPage } from './ProjectsPage';
 import { useAuthStore } from '../../store/auth';
@@ -45,6 +45,33 @@ describe('ProjectsPage', () => {
       const sel = screen.getByTestId('projects-owner-select') as HTMLSelectElement;
       expect(sel.value).toBe('1');
     });
+  });
+
+  /** v0.0.8.1 Code-M7: 缺 owner 时点保存 SHALL 显示表单错误而不是静默 no-op. */
+  it('shows a form error instead of silently no-op when owner is missing (Code-M7)', async () => {
+    // Start with no logged-in user so listUsers' default-selection doesn't pick anyone.
+    act(() => {
+      useAuthStore.setState({ token: 'tk', user: { username: 'nobody' } });
+    });
+    const { createProject } = await import('../../api/project');
+    (createProject as ReturnType<typeof vi.fn>).mockClear();
+
+    render(<ProjectsPage />);
+    fireEvent.click(screen.getByTestId('projects-new-btn'));
+    await waitFor(() => {
+      expect(screen.getByTestId('projects-owner-select')).toBeInTheDocument();
+    });
+    // Owner select remains '' because no user matches "nobody" loginName.
+    const sel = screen.getByTestId('projects-owner-select') as HTMLSelectElement;
+    expect(sel.value).toBe('');
+    // Fill required text fields so only owner is missing.
+    fireEvent.change(screen.getByLabelText(/编码/), { target: { value: 'PROJ-X' } });
+    fireEvent.change(screen.getByLabelText(/^名称/), { target: { value: 'X' } });
+    fireEvent.click(screen.getByRole('button', { name: '保存' }));
+    await waitFor(() => {
+      expect(screen.getByTestId('projects-form-error')).toHaveTextContent('请选择负责人');
+    });
+    expect(createProject).not.toHaveBeenCalled();
   });
 
   /** TC-FES-P04: 编辑抽屉 owner 不 disabled 且可改，updateProject 收到新 ownerUserId. */

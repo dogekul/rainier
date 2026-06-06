@@ -63,6 +63,8 @@ export function RequirementEditDrawer({
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [userOptions, setUserOptions] = useState<User[]>([]);
   const [projectOptions, setProjectOptions] = useState<Project[]>([]);
+  // v0.0.8.1 Code-M7: surface validation errors so the save button isn't a silent no-op.
+  const [formError, setFormError] = useState<string | null>(null);
 
   const demandFetcher = useCallback(
     async ({ page, size, search }: { page: number; size: number; search: string }) =>
@@ -72,7 +74,10 @@ export function RequirementEditDrawer({
   const demandList = usePaginated<Demand>(demandFetcher, { initialSize: 10 });
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      setFormError(null);
+      return;
+    }
     // PageParams 校验 size <= 100；v0 池大小足够。
     void listUsers({ size: 100 }).then((r) => setUserOptions(r.content));
     void listProjects({ size: 100 }).then((r) => setProjectOptions(r.content));
@@ -253,6 +258,21 @@ export function RequirementEditDrawer({
           />
         </div>
       )}
+      {formError && (
+        <div
+          style={{
+            padding: '6px 10px',
+            marginTop: 12,
+            color: 'var(--rainier-color-danger, #d4380d)',
+            fontSize: 12,
+            background: 'rgba(212, 56, 13, 0.08)',
+            borderRadius: 4,
+          }}
+          data-testid="req-form-error"
+        >
+          {formError}
+        </div>
+      )}
       <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 12 }}>
         <Button type="button" variant="secondary" onClick={onClose}>
           取消
@@ -260,8 +280,13 @@ export function RequirementEditDrawer({
         <Button
           type="button"
           onClick={async () => {
+            // v0.0.8.1 Code-M7: explicit validation instead of silent no-op.
+            if (ownerUserId === '' || ownerUserId === null) {
+              setFormError('请选择负责 PO');
+              return;
+            }
+            setFormError(null);
             if (editing) {
-              if (!ownerUserId) return;
               await onUpdate(editing.id, {
                 code,
                 title,
@@ -275,7 +300,6 @@ export function RequirementEditDrawer({
                 closeReason: closeReason || undefined,
               });
             } else {
-              if (!ownerUserId) return;
               await onCreate({
                 code,
                 title,

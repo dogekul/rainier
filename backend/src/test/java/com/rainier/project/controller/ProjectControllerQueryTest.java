@@ -3,6 +3,7 @@ package com.rainier.project.controller;
 
 import static org.hamcrest.Matchers.everyItem;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.startsWith;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -144,6 +145,43 @@ class ProjectControllerQueryTest {
         .andExpect(jsonPath("$.ownerName").value("黎立"))
         .andExpect(jsonPath("$.ownerLoginName").value("lili"))
         .andExpect(jsonPath("$.status").value("ACTIVE"));
+  }
+
+  /**
+   * v0.0.8.1 (Code-M3 / Code-M6): PUT with description omitted-as-null clears the field
+   * (full-replace semantics, parity with name/status/dates).
+   */
+  @Test
+  void put_descriptionOmitted_clearsField() throws Exception {
+    Long userId = createUser("alice", "Alice");
+    // Seed a project with a non-empty description.
+    ObjectNode createBody = json.createObjectNode();
+    createBody.put("code", "PROJ-CLEAR");
+    createBody.put("name", "x");
+    createBody.put("description", "initial description");
+    createBody.put("ownerUserId", userId);
+    MvcResult createRes =
+        mockMvc
+            .perform(
+                post("/api/projects")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(createBody.toString()))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.description").value("initial description"))
+            .andReturn();
+    Long id = json.readTree(createRes.getResponse().getContentAsString()).get("id").asLong();
+    // PUT without description field → backend should clear it.
+    ObjectNode putBody = json.createObjectNode();
+    putBody.put("name", "x");
+    putBody.put("status", "PLANNING");
+    putBody.put("ownerUserId", userId);
+    mockMvc
+        .perform(
+            put("/api/projects/" + id)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(putBody.toString()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.description").value(nullValue()));
   }
 
   /** TC-PRJ-010: PUT 新 ownerUserId 不存在 → 400. */
