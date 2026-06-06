@@ -18,10 +18,15 @@ export interface Requirement {
   title: string;
   description?: string | null;
   ownerUserId: number;
+  ownerName?: string | null;
+  ownerLoginName?: string | null;
   status: RequirementStatus;
   priority: Priority;
   complexity?: Complexity | null;
   projectId?: number | null;
+  /** v0.0.8: enrichment from join with Project. */
+  projectName?: string | null;
+  projectCode?: string | null;
   closeReason?: string | null;
   createBy?: string;
   createTime?: string;
@@ -47,10 +52,13 @@ export interface RequirementUpdate {
   code: string;
   title: string;
   description?: string;
+  /** v0.0.8: owner IS mutable (semantic reversal of v0.0.6). Required by backend @NotNull. */
+  ownerUserId: number;
   status?: RequirementStatus;
   priority?: Priority;
   complexity?: Complexity;
-  projectId?: number;
+  /** v0.0.8: null explicitly clears projectId (backend accepts unset for null). */
+  projectId?: number | null;
   closeReason?: string;
 }
 

@@ -118,4 +118,80 @@ class RequirementControllerCreateTest {
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.message", startsWith("owner user not found")));
   }
+
+  // ===================== v0.0.8 projectId 激活 + 富化 (TC-REQP-001/002/003) =====================
+
+  @Autowired private com.rainier.project.repository.ProjectRepository projectRepo;
+
+  private Long createProject(Long ownerId) {
+    com.rainier.project.domain.Project p = new com.rainier.project.domain.Project();
+    p.setCode("PROJ-RP");
+    p.setName("采购系统改造");
+    p.setStatus(com.rainier.project.domain.ProjectStatus.PLANNING);
+    p.setOwnerUserId(ownerId);
+    p.setEnabled(true);
+    return projectRepo.saveAndFlush(p).getId();
+  }
+
+  /** TC-REQP-001: POST 含 projectId 存在 → 201 + 富化. */
+  @Test
+  void post_withExistingProjectId_returnsEnriched() throws Exception {
+    Long userId = createUser();
+    Long projectId = createProject(userId);
+    ObjectNode body = json.createObjectNode();
+    body.put("code", "REQ-RP-1");
+    body.put("title", "x");
+    body.put("description", "x");
+    body.put("ownerUserId", userId);
+    body.put("projectId", projectId);
+    mockMvc
+        .perform(
+            post("/api/requirements")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(body.toString()))
+        .andExpect(status().isCreated())
+        .andExpect(jsonPath("$.projectId").value(projectId))
+        .andExpect(jsonPath("$.projectName").value("采购系统改造"))
+        .andExpect(jsonPath("$.projectCode").value("PROJ-RP"));
+  }
+
+  /** TC-REQP-002: POST 含 projectId 不存在 → 400. */
+  @Test
+  void post_unknownProjectId_returns400() throws Exception {
+    Long userId = createUser();
+    ObjectNode body = json.createObjectNode();
+    body.put("code", "REQ-RP-2");
+    body.put("title", "x");
+    body.put("description", "x");
+    body.put("ownerUserId", userId);
+    body.put("projectId", 999_999L);
+    mockMvc
+        .perform(
+            post("/api/requirements")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(body.toString()))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.message", startsWith("project not found")));
+  }
+
+  /** TC-REQP-003: POST 含 projectId=null 兼容. */
+  @Test
+  void post_nullProjectId_returns201Compatible() throws Exception {
+    Long userId = createUser();
+    ObjectNode body = json.createObjectNode();
+    body.put("code", "REQ-RP-3");
+    body.put("title", "x");
+    body.put("description", "x");
+    body.put("ownerUserId", userId);
+    body.putNull("projectId");
+    mockMvc
+        .perform(
+            post("/api/requirements")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(body.toString()))
+        .andExpect(status().isCreated())
+        .andExpect(jsonPath("$.projectId").isEmpty())
+        .andExpect(jsonPath("$.projectName").isEmpty())
+        .andExpect(jsonPath("$.projectCode").isEmpty());
+  }
 }

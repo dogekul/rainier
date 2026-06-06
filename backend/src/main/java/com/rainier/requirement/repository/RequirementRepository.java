@@ -13,6 +13,9 @@ public interface RequirementRepository
 
   boolean existsByCode(String code);
 
+  /** v0.0.8: used by ProjectService.delete to enforce FK protection. */
+  long countByProjectId(Long projectId);
+
   /** Hard delete for test cleanup — see DemandRepository.hardDeleteAll() rationale. */
   @org.springframework.data.jpa.repository.Modifying
   @org.springframework.data.jpa.repository.Query(

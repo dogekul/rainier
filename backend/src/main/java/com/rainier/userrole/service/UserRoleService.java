@@ -6,6 +6,8 @@ import com.rainier.common.exception.ConflictException;
 import com.rainier.common.exception.NotFoundException;
 import com.rainier.common.web.PageParams;
 import com.rainier.common.web.PageResponse;
+import com.rainier.project.domain.Project;
+import com.rainier.project.repository.ProjectRepository;
 import com.rainier.role.domain.Role;
 import com.rainier.role.repository.RoleRepository;
 import com.rainier.user.domain.User;
@@ -43,12 +45,17 @@ public class UserRoleService {
   private final UserRoleRepository repo;
   private final UserRepository userRepo;
   private final RoleRepository roleRepo;
+  private final ProjectRepository projectRepo;
 
   public UserRoleService(
-      UserRoleRepository repo, UserRepository userRepo, RoleRepository roleRepo) {
+      UserRoleRepository repo,
+      UserRepository userRepo,
+      RoleRepository roleRepo,
+      ProjectRepository projectRepo) {
     this.repo = repo;
     this.userRepo = userRepo;
     this.roleRepo = roleRepo;
+    this.projectRepo = projectRepo;
   }
 
   @Transactional
@@ -58,6 +65,11 @@ public class UserRoleService {
     }
     if (!roleRepo.existsById(req.getRoleId())) {
       throw new BadRequestException("role not found: id=" + req.getRoleId());
+    }
+    // v0.0.8: activate projectId placeholder — validate existence when non-null. NULL is preserved
+    // as "company-wide hat" semantics (see entity-user-role MODIFIED spec).
+    if (req.getProjectId() != null && !projectRepo.existsById(req.getProjectId())) {
+      throw new BadRequestException("project not found: id=" + req.getProjectId());
     }
     // NULL projectId branch — DB UNIQUE doesn't help here; service must enforce
     if (req.getProjectId() == null) {
@@ -132,6 +144,16 @@ public class UserRoleService {
     if (r != null) {
       dto.setRoleName(r.getName());
       dto.setRoleCode(r.getCode());
+    }
+    // v0.0.8: enrich project. Reads are strict (DanglingProjectIdCleanup runs at startup) but a
+    // defensive null-on-miss keeps the response shape consistent if a Project deletion races a
+    // concurrent read.
+    if (ur.getProjectId() != null) {
+      Project p = projectRepo.findById(ur.getProjectId()).orElse(null);
+      if (p != null) {
+        dto.setProjectName(p.getName());
+        dto.setProjectCode(p.getCode());
+      }
     }
     return dto;
   }

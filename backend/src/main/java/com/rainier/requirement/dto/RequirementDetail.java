@@ -12,10 +12,18 @@ public class RequirementDetail {
   private String title;
   private String description;
   private Long ownerUserId;
+  /** v0.0.8 enrichment — service join with User (frontend RequirementsPage 显示 owner 列). */
+  private String ownerName;
+
+  private String ownerLoginName;
   private String status;
   private String priority;
   private String complexity;
   private Long projectId;
+  /** v0.0.8 enrichment — service join with Project. */
+  private String projectName;
+
+  private String projectCode;
   private String closeReason;
   private Instant createTime;
   private Instant updateTime;
@@ -61,6 +69,22 @@ public class RequirementDetail {
     return ownerUserId;
   }
 
+  public String getOwnerName() {
+    return ownerName;
+  }
+
+  public void setOwnerName(String ownerName) {
+    this.ownerName = ownerName;
+  }
+
+  public String getOwnerLoginName() {
+    return ownerLoginName;
+  }
+
+  public void setOwnerLoginName(String ownerLoginName) {
+    this.ownerLoginName = ownerLoginName;
+  }
+
   public String getStatus() {
     return status;
   }
@@ -75,6 +99,22 @@ public class RequirementDetail {
 
   public Long getProjectId() {
     return projectId;
+  }
+
+  public String getProjectName() {
+    return projectName;
+  }
+
+  public void setProjectName(String projectName) {
+    this.projectName = projectName;
+  }
+
+  public String getProjectCode() {
+    return projectCode;
+  }
+
+  public void setProjectCode(String projectCode) {
+    this.projectCode = projectCode;
   }
 
   public String getCloseReason() {

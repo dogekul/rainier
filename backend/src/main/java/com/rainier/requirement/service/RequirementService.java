@@ -11,6 +11,8 @@ import com.rainier.demand.repository.DemandRepository;
 import com.rainier.demandrequirement.domain.DemandRequirementLink;
 import com.rainier.demandrequirement.domain.LinkType;
 import com.rainier.demandrequirement.repository.DemandRequirementLinkRepository;
+import com.rainier.project.domain.Project;
+import com.rainier.project.repository.ProjectRepository;
 import com.rainier.requirement.domain.Complexity;
 import com.rainier.requirement.domain.Requirement;
 import com.rainier.requirement.domain.RequirementStatus;
@@ -44,16 +46,19 @@ public class RequirementService {
   private final UserRepository userRepo;
   private final DemandRepository demandRepo;
   private final DemandRequirementLinkRepository linkRepo;
+  private final ProjectRepository projectRepo;
 
   public RequirementService(
       RequirementRepository repo,
       UserRepository userRepo,
       DemandRepository demandRepo,
-      DemandRequirementLinkRepository linkRepo) {
+      DemandRequirementLinkRepository linkRepo,
+      ProjectRepository projectRepo) {
     this.repo = repo;
     this.userRepo = userRepo;
     this.demandRepo = demandRepo;
     this.linkRepo = linkRepo;
+    this.projectRepo = projectRepo;
   }
 
   @Transactional(rollbackFor = Exception.class)
@@ -74,6 +79,10 @@ public class RequirementService {
     }
     if (req.getComplexity() != null && !Complexity.ALL.contains(req.getComplexity())) {
       throw new BadRequestException("invalid complexity: " + req.getComplexity());
+    }
+    // v0.0.8: activate projectId placeholder — validate existence when non-null.
+    if (req.getProjectId() != null && !projectRepo.existsById(req.getProjectId())) {
+      throw new BadRequestException("project not found: id=" + req.getProjectId());
     }
 
     Requirement r = new Requirement();
@@ -114,11 +123,11 @@ public class RequirementService {
       linkRepo.flush();
     }
 
-    return RequirementDetail.from(saved);
+    return enrich(saved);
   }
 
   public RequirementDetail findById(Long id) {
-    return RequirementDetail.from(getOrThrow(id));
+    return enrich(getOrThrow(id));
   }
 
   public PageResponse<RequirementDetail> list(
@@ -152,7 +161,7 @@ public class RequirementService {
         PageRequest.of(page.getPage(), page.getSize(), Sort.by(Sort.Direction.DESC, "createTime"));
     Page<Requirement> result = repo.findAll(spec, req);
     return PageResponse.of(
-        result.stream().map(RequirementDetail::from).collect(Collectors.toList()),
+        result.stream().map(this::enrich).collect(Collectors.toList()),
         page.getPage(),
         page.getSize(),
         result.getTotalElements());
@@ -176,6 +185,17 @@ public class RequirementService {
     if (req.getComplexity() != null && !Complexity.ALL.contains(req.getComplexity())) {
       throw new BadRequestException("invalid complexity: " + req.getComplexity());
     }
+    // v0.0.8: activate projectId placeholder — validate existence when non-null.
+    if (req.getProjectId() != null && !projectRepo.existsById(req.getProjectId())) {
+      throw new BadRequestException("project not found: id=" + req.getProjectId());
+    }
+    // v0.0.8: owner IS now mutable (semantic reversal of v0.0.6).
+    if (!req.getOwnerUserId().equals(r.getOwnerUserId())) {
+      if (!userRepo.existsById(req.getOwnerUserId())) {
+        throw new BadRequestException("owner user not found: id=" + req.getOwnerUserId());
+      }
+      r.setOwnerUserId(req.getOwnerUserId());
+    }
     r.setTitle(req.getTitle());
     r.setDescription(req.getDescription());
     if (req.getStatus() != null) {
@@ -187,13 +207,13 @@ public class RequirementService {
     if (req.getComplexity() != null) {
       r.setComplexity(req.getComplexity());
     }
-    if (req.getProjectId() != null) {
-      r.setProjectId(req.getProjectId());
-    }
+    // v0.0.8: projectId may be explicitly cleared by passing null (assume PUT body is
+    // fully-formed).
+    r.setProjectId(req.getProjectId());
     if (req.getCloseReason() != null) {
       r.setCloseReason(req.getCloseReason());
     }
-    return RequirementDetail.from(repo.saveAndFlush(r));
+    return enrich(repo.saveAndFlush(r));
   }
 
   @Transactional
@@ -209,5 +229,31 @@ public class RequirementService {
   Requirement getOrThrow(Long id) {
     return repo.findById(id)
         .orElseThrow(() -> new NotFoundException("requirement not found: id=" + id));
+  }
+
+  /**
+   * v0.0.8: enrich Detail with ownerName/ownerLoginName (User join) and projectName/projectCode
+   * (Project join). Reads are strict (assume no dangling refs after {@code
+   * DanglingProjectIdCleanup} runs at startup) but defensively returns null on miss instead of
+   * throwing — keeps the response shape consistent if a referenced row is hard-deleted between the
+   * cleanup pass and a concurrent read.
+   */
+  private RequirementDetail enrich(Requirement r) {
+    RequirementDetail dto = RequirementDetail.from(r);
+    userRepo
+        .findById(r.getOwnerUserId())
+        .ifPresent(
+            u -> {
+              dto.setOwnerName(u.getName());
+              dto.setOwnerLoginName(u.getLoginName());
+            });
+    if (r.getProjectId() != null) {
+      Project p = projectRepo.findById(r.getProjectId()).orElse(null);
+      if (p != null) {
+        dto.setProjectName(p.getName());
+        dto.setProjectCode(p.getCode());
+      }
+    }
+    return dto;
   }
 }

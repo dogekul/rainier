@@ -123,7 +123,7 @@ class RequirementControllerQueryTest {
         .andExpect(jsonPath("$.content[0].projectId").value(42));
   }
 
-  /** TC-REQ-006: PUT 状态更新。 */
+  /** TC-REQ-006: PUT 状态更新。 v0.0.8: ownerUserId is now @NotNull on the DTO. */
   @Test
   void put_updateStatus_persists() throws Exception {
     Long userId = createUser();
@@ -134,6 +134,7 @@ class RequirementControllerQueryTest {
     body.put("description", "x");
     body.put("status", "APPROVED");
     body.put("priority", "HIGH");
+    body.put("ownerUserId", userId); // v0.0.8: now required
     mockMvc
         .perform(
             put("/api/requirements/" + id)
@@ -144,22 +145,51 @@ class RequirementControllerQueryTest {
         .andExpect(jsonPath("$.priority").value("HIGH"));
   }
 
-  /** TC-REQ-007: PUT body ownerUserId 静默忽略。 */
+  /** TC-REQP-005: v0.0.8 — PUT 改 ownerUserId 转移负责人（v0.0.6 不可改语义反转）. */
   @Test
-  void put_withOwnerUserIdInBody_silentlyIgnored() throws Exception {
-    Long userId = createUser();
-    Long id = createReq(userId, "REQ-OWN");
+  void put_changeOwnerUserId_persists() throws Exception {
+    Long userA = createUser();
+    User userB = new User();
+    userB.setLoginName("lili");
+    userB.setName("黎立");
+    userB.setIsInternal(true);
+    userB.setEnabled(true);
+    Long userBId = userRepo.saveAndFlush(userB).getId();
+
+    Long id = createReq(userA, "REQ-OWN-V2");
     ObjectNode body = json.createObjectNode();
-    body.put("code", "REQ-OWN");
+    body.put("code", "REQ-OWN-V2");
     body.put("title", "x");
     body.put("description", "x");
-    body.put("ownerUserId", 999_999L); // legacy/unknown field — must be ignored
+    body.put("ownerUserId", userBId);
     mockMvc
         .perform(
             put("/api/requirements/" + id)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(body.toString()))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.ownerUserId").value(userId));
+        .andExpect(jsonPath("$.ownerUserId").value(userBId))
+        // v0.0.8: owner enrichment SHALL follow the new owner (parallels TC-PRJ-009).
+        .andExpect(jsonPath("$.ownerName").value("黎立"))
+        .andExpect(jsonPath("$.ownerLoginName").value("lili"));
+  }
+
+  /** TC-REQP-006: PUT 新 ownerUserId 不存在 → 400. */
+  @Test
+  void put_unknownNewOwner_returns400() throws Exception {
+    Long userId = createUser();
+    Long id = createReq(userId, "REQ-OWN-404");
+    ObjectNode body = json.createObjectNode();
+    body.put("code", "REQ-OWN-404");
+    body.put("title", "x");
+    body.put("description", "x");
+    body.put("ownerUserId", 999_999L);
+    mockMvc
+        .perform(
+            put("/api/requirements/" + id)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(body.toString()))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.message", org.hamcrest.Matchers.startsWith("owner user not found")));
   }
 }

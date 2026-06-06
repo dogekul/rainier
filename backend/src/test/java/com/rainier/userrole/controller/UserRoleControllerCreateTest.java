@@ -38,9 +38,15 @@ class UserRoleControllerCreateTest {
   @BeforeEach
   void cleanDb() {
     userRoleRepo.deleteAll();
+    if (projectRepo != null) {
+      projectRepo.deleteAll();
+    }
     userRepo.deleteAll();
     roleRepo.deleteAll();
   }
+
+  @Autowired(required = false)
+  private com.rainier.project.repository.ProjectRepository projectRepo;
 
   private Long createUser() {
     User u = new User();
@@ -59,15 +65,16 @@ class UserRoleControllerCreateTest {
     return roleRepo.saveAndFlush(r).getId();
   }
 
-  /** TC-UROL-001: 含 projectId 合法关联创建。 */
+  /** TC-UROL-001: 含 projectId 合法关联创建。 v0.0.8: projectId 现在校验存在 — seed real Project first. */
   @Test
   void post_withProjectId_returns201() throws Exception {
     Long userId = createUser();
     Long roleId = createRole();
+    Long projectId = seedProject(userId, "PROJ-UR-V07-001");
     ObjectNode body = json.createObjectNode();
     body.put("userId", userId);
     body.put("roleId", roleId);
-    body.put("projectId", 42L);
+    body.put("projectId", projectId);
     mockMvc
         .perform(
             post("/api/user-roles")
@@ -77,7 +84,17 @@ class UserRoleControllerCreateTest {
         .andExpect(jsonPath("$.id").isNumber())
         .andExpect(jsonPath("$.userId").value(userId))
         .andExpect(jsonPath("$.roleId").value(roleId))
-        .andExpect(jsonPath("$.projectId").value(42));
+        .andExpect(jsonPath("$.projectId").value(projectId));
+  }
+
+  private Long seedProject(Long ownerId, String code) {
+    com.rainier.project.domain.Project p = new com.rainier.project.domain.Project();
+    p.setCode(code);
+    p.setName("seed");
+    p.setStatus(com.rainier.project.domain.ProjectStatus.PLANNING);
+    p.setOwnerUserId(ownerId);
+    p.setEnabled(true);
+    return projectRepo.saveAndFlush(p).getId();
   }
 
   /** TC-UROL-002: projectId=null 公司级 hat 创建。 */
@@ -98,15 +115,18 @@ class UserRoleControllerCreateTest {
         .andExpect(jsonPath("$.projectId").isEmpty());
   }
 
-  /** TC-UROL-003: (userId, roleId, projectId=42) 重复 → 409 (DB UNIQUE 路径). */
+  /**
+   * TC-UROL-003: (userId, roleId, projectId=X) 重复 → 409 (DB UNIQUE 路径). v0.0.8: seed real Project.
+   */
   @Test
   void post_duplicateNonNullProjectId_returns409() throws Exception {
     Long userId = createUser();
     Long roleId = createRole();
+    Long projectId = seedProject(userId, "PROJ-UR-V07-003");
     ObjectNode body = json.createObjectNode();
     body.put("userId", userId);
     body.put("roleId", roleId);
-    body.put("projectId", 42L);
+    body.put("projectId", projectId);
     mockMvc
         .perform(
             post("/api/user-roles")
@@ -165,7 +185,8 @@ class UserRoleControllerCreateTest {
     ObjectNode body2 = json.createObjectNode();
     body2.put("userId", userId);
     body2.put("roleId", roleId);
-    body2.put("projectId", 42L);
+    // v0.0.8: projectId now validated — seed Project before reference.
+    body2.put("projectId", seedProject(userId, "PROJ-UR-V07-005"));
     mockMvc
         .perform(
             post("/api/user-roles")
@@ -194,21 +215,105 @@ class UserRoleControllerCreateTest {
         .andExpect(jsonPath("$.message", startsWith("user not found")));
   }
 
-  /** TC-UROL-007: projectId 任意 BIGINT 不校验（占位语义）。 */
+  /**
+   * TC-UROL-007 (v0.0.7): projectId 任意 BIGINT 不校验（占位语义）。
+   *
+   * <p>v0.0.8 retrofit: the placeholder is now validated. Test seeds a real Project first so the
+   * "arbitrary BIGINT" scenario is realized via an existing id.
+   */
   @Test
   void post_arbitraryProjectId_accepted() throws Exception {
     Long userId = createUser();
     Long roleId = createRole();
+    // v0.0.8: project must now exist; seed one and use its id.
+    com.rainier.project.domain.Project p = new com.rainier.project.domain.Project();
+    p.setCode("PROJ-UR-V07");
+    p.setName("seed");
+    p.setStatus(com.rainier.project.domain.ProjectStatus.PLANNING);
+    p.setOwnerUserId(userId);
+    p.setEnabled(true);
+    Long projectId = projectRepo.saveAndFlush(p).getId();
+
     ObjectNode body = json.createObjectNode();
     body.put("userId", userId);
     body.put("roleId", roleId);
-    body.put("projectId", 987_654_321L);
+    body.put("projectId", projectId);
     mockMvc
         .perform(
             post("/api/user-roles")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(body.toString()))
         .andExpect(status().isCreated())
-        .andExpect(jsonPath("$.projectId").value(987_654_321L));
+        .andExpect(jsonPath("$.projectId").value(projectId));
+  }
+
+  // ===================== v0.0.8 projectId 激活 + 富化 (TC-URLP-001/002/003) ===================
+
+  private Long createProject(Long ownerId, String code, String name) {
+    com.rainier.project.domain.Project p = new com.rainier.project.domain.Project();
+    p.setCode(code);
+    p.setName(name);
+    p.setStatus(com.rainier.project.domain.ProjectStatus.PLANNING);
+    p.setOwnerUserId(ownerId);
+    p.setEnabled(true);
+    return projectRepo.saveAndFlush(p).getId();
+  }
+
+  /** TC-URLP-001: POST 含 projectId 存在 → 富化. */
+  @Test
+  void post_withExistingProjectId_returnsEnriched() throws Exception {
+    Long userId = createUser();
+    Long roleId = createRole();
+    Long projectId = createProject(userId, "PROJ-UR-1", "采购系统改造");
+    ObjectNode body = json.createObjectNode();
+    body.put("userId", userId);
+    body.put("roleId", roleId);
+    body.put("projectId", projectId);
+    mockMvc
+        .perform(
+            post("/api/user-roles")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(body.toString()))
+        .andExpect(status().isCreated())
+        .andExpect(jsonPath("$.projectId").value(projectId))
+        .andExpect(jsonPath("$.projectName").value("采购系统改造"))
+        .andExpect(jsonPath("$.projectCode").value("PROJ-UR-1"));
+  }
+
+  /** TC-URLP-002: POST 含 projectId 不存在 → 400. */
+  @Test
+  void post_unknownProjectId_returns400() throws Exception {
+    Long userId = createUser();
+    Long roleId = createRole();
+    ObjectNode body = json.createObjectNode();
+    body.put("userId", userId);
+    body.put("roleId", roleId);
+    body.put("projectId", 999_999L);
+    mockMvc
+        .perform(
+            post("/api/user-roles")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(body.toString()))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.message", startsWith("project not found")));
+  }
+
+  /** TC-URLP-003: POST 含 projectId=null → 公司级 hat 保留. */
+  @Test
+  void post_nullProjectId_keepsCompanyWideHat() throws Exception {
+    Long userId = createUser();
+    Long roleId = createRole();
+    ObjectNode body = json.createObjectNode();
+    body.put("userId", userId);
+    body.put("roleId", roleId);
+    body.putNull("projectId");
+    mockMvc
+        .perform(
+            post("/api/user-roles")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(body.toString()))
+        .andExpect(status().isCreated())
+        .andExpect(jsonPath("$.projectId").isEmpty())
+        .andExpect(jsonPath("$.projectName").isEmpty());
   }
 }

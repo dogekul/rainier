@@ -20,6 +20,9 @@ public interface UserRoleRepository
 
   long countByUserId(Long userId);
 
+  /** v0.0.8: used by ProjectService.delete to enforce FK protection. */
+  long countByProjectId(Long projectId);
+
   boolean existsByUserIdAndRoleIdAndProjectId(Long userId, Long roleId, Long projectId);
 
   boolean existsByUserIdAndRoleIdAndProjectIdIsNull(Long userId, Long roleId);

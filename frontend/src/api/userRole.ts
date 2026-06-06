@@ -11,6 +11,9 @@ export interface UserRoleLink {
   userLoginName?: string;
   roleName?: string;
   roleCode?: string;
+  /** v0.0.8 enrichment — populated when projectId is non-null. */
+  projectName?: string | null;
+  projectCode?: string | null;
   createBy?: string;
   createTime?: string;
 }

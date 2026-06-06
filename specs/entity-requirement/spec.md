@@ -1,6 +1,10 @@
 # Capability: entity-requirement
 
-## ADDED Requirements
+> Change log:
+> - 2026-06-05 (v0.0.6-demand-requirement) — capability introduced; `project_id` BIGINT NULL placeholder column added without validation.
+> - 2026-06-07 (v0.0.8-project) — `projectId` activated (strict create/update validation + projectName/projectCode enrichment + startup self-heal). `ownerUserId` mutability reversed: now mutable, service validates new owner exists.
+
+## Requirements
 
 ### Requirement: 创建需求
 
@@ -33,37 +37,68 @@
 
 后端 SHALL 通过 `GET /api/requirements/{id}` 返回单需求详情；通过 `GET /api/requirements?status=&priority=&projectId=&search=&page=&size=` 返回 PageResponse。
 
-#### Scenario: 按 id 查询返回完整详情
+#### Scenario: 按 id 查询返回完整详情（v0.0.8 加入 owner + project 富化）
 
-- **GIVEN** 数据库存在需求 id=1
+- **GIVEN** 数据库存在需求 id=1，ownerUserId=1（loginName="alice"），projectId=5（"Apollo"）
 - **WHEN** `GET /api/requirements/1`
 - **THEN** SHALL 返回 200
-- **AND** body 字段集 SHALL 等于 [id, code, title, description, ownerUserId, status, priority, complexity, projectId, closeReason, createTime, updateTime, createBy, updateBy]
+- **AND** body 字段集 SHALL 等于 [id, code, title, description, ownerUserId, ownerName, ownerLoginName, status, priority, complexity, projectId, projectName, projectCode, closeReason, createTime, updateTime, createBy, updateBy]
+- **AND** body.ownerName / ownerLoginName SHALL 由 service join User 注入
+- **AND** body.projectName / projectCode SHALL 由 service join Project 注入（projectId=null 时该两字段为 null）
 
-#### Scenario: 按 projectId 筛选（占位字段查询）
+#### Scenario: 按 projectId 筛选（v0.0.8 起 projectId 强校验存在）
 
-- **GIVEN** 数据库 1 个需求 projectId=null，1 个 projectId=42（手动 update 测试数据）
-- **WHEN** `GET /api/requirements?projectId=42`
-- **THEN** body.total SHALL 为 1
-- **AND** body.content[0].projectId SHALL 为 42
+- **GIVEN** 数据库存在项目 id=5；2 个需求 projectId=5，1 个 projectId=null
+- **WHEN** `GET /api/requirements?projectId=5`
+- **THEN** body.total SHALL 为 2
+- **AND** body.content[*].projectId SHALL 全为 5
 
-### Requirement: 更新需求
+### Requirement: projectId 强校验 + 启动自愈（v0.0.8 激活）
 
-后端 SHALL 通过 `PUT /api/requirements/{id}` 修改 code / title / description / status / priority / complexity / projectId / closeReason；code 变更须重检唯一性；ownerUserId 不可修改。
+后端 SHALL 在 `POST /api/requirements` 与 `PUT /api/requirements/{id}` 验证 `projectId` 存在（null 允许；非 null 必须命中 live Project）；后端 SHALL 在每次启动时由 `DanglingProjectIdCleanup` CommandLineRunner 把 dangling project_id（指向已软删 / 已硬删 Project 的引用）原地 SET NULL，并 log WARN `cleaned dangling project_id from rainier_requirement.<id> (was project_id=<old>)`。
+
+#### Scenario: POST projectId 不存在被拒
+
+- **GIVEN** 数据库无 Project id=999
+- **WHEN** `POST /api/requirements` body 含 `projectId=999`
+- **THEN** SHALL 返回 400
+- **AND** body.message SHALL 含 "project not found"
+
+#### Scenario: 启动自愈 dangling project_id
+
+- **GIVEN** rainier_requirement 表存在一行 projectId=999；数据库无 Project id=999
+- **WHEN** 后端重启
+- **THEN** 启动后该行 projectId SHALL 为 null
+- **AND** 应用日志 SHALL 含 WARN 行 `"cleaned dangling project_id from rainier_requirement.<id>"`
+
+### Requirement: 更新需求（含 owner 可改 — v0.0.8 反转）
+
+后端 SHALL 通过 `PUT /api/requirements/{id}` 修改 code / title / description / status / priority / complexity / projectId / `ownerUserId`（v0.0.8 起可改） / closeReason；code 变更须重检唯一性；新 `ownerUserId` 不存在 → 400。
+
+> 历史注：v0.0.6 规定 "ownerUserId 不可修改 / silent ignore"；v0.0.8 (archive/2026-06-05-project Decision 6b) 反转为可改 — admin 可转移负责人，service 校验新 owner 存在。createBy/updateBy 审计字段记录变更人。
 
 #### Scenario: 更新状态
 
 - **GIVEN** 需求 id=1，status="DRAFT"
-- **WHEN** `PUT /api/requirements/1` body `{"code":"REQ-001","title":"X","description":"X","status":"APPROVED","priority":"HIGH"}`
+- **WHEN** `PUT /api/requirements/1` body `{"code":"REQ-001","title":"X","description":"X","ownerUserId":1,"status":"APPROVED","priority":"HIGH"}`
 - **THEN** SHALL 返回 200
 - **AND** body.status SHALL 为 "APPROVED"
 
-#### Scenario: 更新 body 含 ownerUserId 静默忽略
+#### Scenario: PUT 改 ownerUserId 转移负责人（v0.0.8）
 
-- **GIVEN** 需求 id=1，ownerUserId=1
+- **GIVEN** 需求 id=1，ownerUserId=1；用户 id=2 loginName="lili" / name="黎立" 存在
 - **WHEN** `PUT /api/requirements/1` body 含 `ownerUserId=2`
 - **THEN** SHALL 返回 200
-- **AND** body.ownerUserId SHALL 仍为 1（service 不接受该字段变更）
+- **AND** body.ownerUserId SHALL 为 2
+- **AND** body.ownerName SHALL 为 "黎立"（富化跟随）
+- **AND** body.ownerLoginName SHALL 为 "lili"
+
+#### Scenario: PUT 新 ownerUserId 不存在被拒（v0.0.8）
+
+- **GIVEN** 需求 id=1 存在；用户 id=999_999 不存在
+- **WHEN** `PUT /api/requirements/1` body 含 `ownerUserId=999999`
+- **THEN** SHALL 返回 400
+- **AND** body.message SHALL 含 "owner user not found"
 
 ### Requirement: 软删需求（FK 保护）
 

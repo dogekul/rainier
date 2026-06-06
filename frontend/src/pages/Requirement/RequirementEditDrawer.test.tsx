@@ -39,8 +39,39 @@ vi.mock('../../api/user', async () => {
     listUsers: vi.fn().mockResolvedValue({
       content: [
         { id: 1, loginName: 'alice', name: 'Alice', isInternal: true, enabled: true },
+        { id: 2, loginName: 'lili', name: '黎立', isInternal: true, enabled: true },
       ],
-      total: 1,
+      total: 2,
+      page: 0,
+      size: 100,
+    }),
+  };
+});
+
+vi.mock('../../api/project', async () => {
+  const actual = await vi.importActual<typeof import('../../api/project')>('../../api/project');
+  return {
+    ...actual,
+    listProjects: vi.fn().mockResolvedValue({
+      content: [
+        {
+          id: 5,
+          code: 'PROJ-5',
+          name: 'Apollo',
+          status: 'ACTIVE',
+          ownerUserId: 1,
+          enabled: true,
+        },
+        {
+          id: 7,
+          code: 'PROJ-7',
+          name: 'Borealis',
+          status: 'PLANNING',
+          ownerUserId: 1,
+          enabled: true,
+        },
+      ],
+      total: 2,
       page: 0,
       size: 100,
     }),
@@ -49,7 +80,8 @@ vi.mock('../../api/user', async () => {
 
 describe('RequirementEditDrawer', () => {
   /** TC-FES-D03: 用户勾选 2 个 demand 后保存 → onCreate 收到 body.sourceDemandIds = [10, 20]. */
-  it('passes selected demand ids as sourceDemandIds on create (TC-FES-D03)', async () => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  it('passes selected demand ids and selected projectId on create (TC-FES-D03 + v0.0.8 project)', async () => {
     const onCreate = vi.fn();
     const onUpdate = vi.fn();
     render(
@@ -77,6 +109,12 @@ describe('RequirementEditDrawer', () => {
     // Pick owner.
     fireEvent.change(screen.getByTestId('req-owner-select'), { target: { value: '1' } });
 
+    // v0.0.8: pick a project from the dropdown (replaces old numeric input).
+    await waitFor(() => {
+      expect(screen.getByTestId('req-project-select')).toBeInTheDocument();
+    });
+    fireEvent.change(screen.getByTestId('req-project-select'), { target: { value: '5' } });
+
     // Tick both demands.
     fireEvent.click(screen.getByTestId('req-source-checkbox-10'));
     fireEvent.click(screen.getByTestId('req-source-checkbox-20'));
@@ -92,5 +130,38 @@ describe('RequirementEditDrawer', () => {
     expect(body.code).toBe('REQ-CONV-1');
     expect(body.title).toBe('X');
     expect(body.ownerUserId).toBe(1);
+    expect(body.projectId).toBe(5);
+  });
+
+  /** v0.0.8 TC-FES-P-REQ-EDIT: edit drawer allows changing owner; update body carries new ownerUserId. */
+  it('allows changing owner in edit mode and sends new ownerUserId on save', async () => {
+    const onUpdate = vi.fn();
+    render(
+      <RequirementEditDrawer
+        open={true}
+        editing={{
+          id: 99,
+          code: 'REQ-1',
+          title: 'T',
+          ownerUserId: 1,
+          status: 'DRAFT',
+          priority: 'MEDIUM',
+        }}
+        onClose={vi.fn()}
+        onCreate={vi.fn()}
+        onUpdate={onUpdate}
+      />,
+    );
+    await waitFor(() => {
+      expect(screen.getByTestId('req-owner-select')).not.toBeDisabled();
+    });
+    fireEvent.change(screen.getByTestId('req-owner-select'), { target: { value: '2' } });
+    fireEvent.click(screen.getByRole('button', { name: '保存' }));
+    await waitFor(() => {
+      expect(onUpdate).toHaveBeenCalledTimes(1);
+    });
+    const [id, body] = onUpdate.mock.calls[0];
+    expect(id).toBe(99);
+    expect(body.ownerUserId).toBe(2);
   });
 });

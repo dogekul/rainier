@@ -7,6 +7,7 @@ import Home from './pages/Home';
 import Login from './pages/Login';
 import OrganizationsPage from './pages/Organization';
 import PositionsPage from './pages/Position';
+import ProjectsPage from './pages/Project';
 import RequirementsPage from './pages/Requirement';
 import RolesPage from './pages/Role';
 import UsersPage from './pages/User';
@@ -25,7 +26,8 @@ export function AppRoutes() {
           <Route path="/org/organizations" element={<OrganizationsPage />} />
           <Route path="/org/users" element={<UsersPage />} />
           <Route path="/org/user-organizations" element={<UserOrganizationsPage />} />
-          <Route path="/pm" element={<Navigate to="/pm/demands" replace />} />
+          <Route path="/pm" element={<Navigate to="/pm/projects" replace />} />
+          <Route path="/pm/projects" element={<ProjectsPage />} />
           <Route path="/pm/demands" element={<DemandsPage />} />
           <Route path="/pm/requirements" element={<RequirementsPage />} />
           <Route path="/pm/demand-requirements" element={<DemandRequirementsPage />} />

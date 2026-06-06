@@ -1,6 +1,11 @@
 # Capability: frontend-scaffold
 
-## ADDED Requirements
+> Change log (recent):
+> - 2026-06-05 (v0.0.6-demand-requirement) — added 需求管理 menu group + `/pm/*` routes.
+> - 2026-06-05 (v0.0.7-position-role) — added 人事配置 menu group + `/hr/*` routes.
+> - 2026-06-07 (v0.0.8-project) — added 项目 menu item (first position in 需求管理) + `/pm/projects` route + ProjectsPage; converted projectId numeric input → Project dropdown in RequirementEditDrawer and UserRolesPage; added 项目 column to Requirement / UserRole lists; `/pm` redirect now points at `/pm/projects` (was `/pm/demands`).
+
+## Requirements
 
 ### Requirement: 路由守卫保护需登录页面
 
@@ -132,29 +137,65 @@
 
 ## MODIFIED Requirements (from change 2026-06-05-demand-requirement)
 
-### Requirement: Sider 含「需求管理」菜单组
+### Requirement: Sider 含「需求管理」菜单组（v0.0.8 起 4 项，项目排第一）
 
-前端 SHALL 在登录后页面（AppLayout 下）的左侧 Sider 中新增菜单组「需求管理」，位于「组织」之后；展开后含 3 项：诉求 / 需求 / 诉求-需求关联。
+前端 SHALL 在登录后页面（AppLayout 下）的左侧 Sider 中新增菜单组「需求管理」，位于「组织」之后；展开后含 4 项（v0.0.8 起）：项目 / 诉求 / 需求 / 诉求-需求关联，项目项排第一。
 
-#### Scenario: Sider 含「需求管理」3 路由
+#### Scenario: Sider 含「需求管理」4 路由（v0.0.8）
 
 - **GIVEN** 用户已登录访问 `/`
 - **WHEN** 页面渲染完成
 - **THEN** 左侧 Sider SHALL 渲染
 - **AND** Sider SHALL 含菜单组 `"需求管理"`
-- **AND** 该组展开后 SHALL 含 3 项：`"诉求"`、`"需求"`、`"诉求-需求关联"`
+- **AND** 该组展开后 SHALL 含 4 项：`"项目"`、`"诉求"`、`"需求"`、`"诉求-需求关联"`
+- **AND** 项目项 SHALL 位于诉求项之前
+- **AND** 点击 `"项目"` SHALL 跳转 `/pm/projects`
 - **AND** 点击 `"诉求"` SHALL 跳转 `/pm/demands`
 
-### Requirement: /pm/* 路由全部注册
+### Requirement: /pm/* 路由全部注册（v0.0.8 加 /pm/projects + 重定向变更）
 
-前端 SHALL 在 router 中注册 `/pm/demands`、`/pm/requirements`、`/pm/demand-requirements` 三条路由；访问 `/pm` SHALL 重定向至 `/pm/demands`。
+前端 SHALL 在 router 中注册 `/pm/projects`（v0.0.8）、`/pm/demands`、`/pm/requirements`、`/pm/demand-requirements` 四条路由；访问 `/pm` SHALL 重定向至 `/pm/projects`（v0.0.8 起；v0.0.6 重定向至 `/pm/demands`）。
 
-#### Scenario: 路由直接访问
+#### Scenario: /pm/projects 路由直接访问（v0.0.8）
+
+- **GIVEN** 用户已登录
+- **WHEN** 浏览器直接访问 `/pm/projects`
+- **THEN** SHALL 渲染 `ProjectsPage` 组件
+- **AND** `grep -c "/pm/projects" frontend/src/AppRoutes.tsx` SHALL ≥ 1（防止 linter 静默回退）
+
+#### Scenario: /pm/demands 路由直接访问
 
 - **GIVEN** 用户已登录
 - **WHEN** 浏览器直接访问 `/pm/demands`
 - **THEN** SHALL 渲染 DemandsPage 组件
 - **AND** `grep -c "/pm/demands" frontend/src/AppRoutes.tsx` SHALL ≥ 1（防止 linter 静默回退）
+
+### Requirement: ProjectsPage CRUD + 默认 owner（v0.0.8）
+
+前端 SHALL 提供 `/pm/projects` 路由对应的 ProjectsPage，含列表 + 新建 + 编辑 + 删除；编辑抽屉「负责人」下拉新建时 SHALL 默认选中当前登录用户（按 loginName 匹配 listUsers 返回池），编辑时回显 editing.ownerUserId 且**不 disabled**（可改）；删除受后端 FK 保护 409 兜底。
+
+#### Scenario: 新建抽屉默认 owner = 当前登录用户
+
+- **GIVEN** Auth store 中 `user.username="alice"`；mock `listUsers` 返回包含 `{id:1, loginName:"alice"}`
+- **WHEN** 用户点击「新建项目」打开抽屉，且 listUsers promise 已 resolve
+- **THEN** 「负责人」下拉的当前选中值 SHALL 等于 `1`（alice 的 id）
+
+#### Scenario: 编辑抽屉 owner 可改
+
+- **GIVEN** 抽屉打开为编辑模式 editing.ownerUserId=1；mock listUsers 返回 `[{id:1, loginName:"alice"}, {id:2, loginName:"lili"}]`
+- **WHEN** 用户切换下拉到 lili (id=2) 并点保存
+- **THEN** 「负责人」下拉 SHALL 不 disabled
+- **AND** mock `updateProject` SHALL 被调用且参数 body.ownerUserId SHALL 等于 2
+
+### Requirement: RequirementEditDrawer 与 UserRolesPage 的 projectId 控件改造（v0.0.8）
+
+前端 SHALL 把 `RequirementEditDrawer` 与 `UserRolesPage` 的 projectId 输入控件从「数字输入框」改为「Project 下拉」（异步 listProjects）。UserRolesPage 的下拉 SHALL 保留「留白」选项（=公司级 hat，传 `null`）。RequirementsPage 与 UserRolesPage 列表 SHALL 新增「项目」列，render `projectName (projectCode)` 或 "—"。
+
+#### Scenario: UserRolesPage 新建关联 项目留白 = 公司级 hat
+
+- **GIVEN** mock `listProjects` 返回 1 条 project；用户和角色都已选
+- **WHEN** 用户「项目」下拉**留白**并点保存
+- **THEN** mock `createUserRole` SHALL 被调用且参数 body.projectId SHALL 为 `null`（不是 undefined，不是 0）
 
 ### Requirement: requirement 编辑抽屉支持「源诉求」多选
 

@@ -2,11 +2,15 @@
 package com.rainier.requirement.dto;
 
 import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 
 /**
- * Payload for {@code PUT /api/requirements/{id}}. ownerUserId is immutable; sourceDemandIds is only
- * on the create path (manage links via /api/demand-requirements endpoints).
+ * Payload for {@code PUT /api/requirements/{id}}.
+ *
+ * <p>v0.0.8: {@code ownerUserId} IS now mutable — semantic reversal from v0.0.6 (was "owner
+ * immutable"). Service validates new owner exists. sourceDemandIds is still only on the create path
+ * (manage links via /api/demand-requirements endpoints).
  */
 public class RequirementUpdateRequest {
 
@@ -31,6 +35,9 @@ public class RequirementUpdateRequest {
   private String complexity;
 
   private Long projectId;
+
+  /** v0.0.8: owner IS mutable (admin can transfer requirement to another PO). */
+  @NotNull private Long ownerUserId;
 
   @Size(max = 500)
   private String closeReason;
@@ -89,6 +96,14 @@ public class RequirementUpdateRequest {
 
   public void setProjectId(Long projectId) {
     this.projectId = projectId;
+  }
+
+  public Long getOwnerUserId() {
+    return ownerUserId;
+  }
+
+  public void setOwnerUserId(Long ownerUserId) {
+    this.ownerUserId = ownerUserId;
   }
 
   public String getCloseReason() {

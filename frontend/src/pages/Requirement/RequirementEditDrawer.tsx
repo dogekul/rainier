@@ -5,6 +5,7 @@ import { Input } from '../../components/ui/Input';
 import { Pagination } from '../../components/ui/Pagination';
 import { Table, type TableColumn } from '../../components/ui/Table';
 import { listDemands, type Demand, type Priority } from '../../api/demand';
+import { listProjects, type Project } from '../../api/project';
 import { listUsers, type User } from '../../api/user';
 import {
   type Complexity,
@@ -61,6 +62,7 @@ export function RequirementEditDrawer({
   // sourceDemandIds multi-select state (Set for O(1) toggle); only used on create path.
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [userOptions, setUserOptions] = useState<User[]>([]);
+  const [projectOptions, setProjectOptions] = useState<Project[]>([]);
 
   const demandFetcher = useCallback(
     async ({ page, size, search }: { page: number; size: number; search: string }) =>
@@ -73,6 +75,7 @@ export function RequirementEditDrawer({
     if (!open) return;
     // PageParams 校验 size <= 100；v0 池大小足够。
     void listUsers({ size: 100 }).then((r) => setUserOptions(r.content));
+    void listProjects({ size: 100 }).then((r) => setProjectOptions(r.content));
     if (editing) {
       setCode(editing.code);
       setTitle(editing.title);
@@ -145,7 +148,6 @@ export function RequirementEditDrawer({
           onChange={(e) =>
             setOwnerUserId(e.target.value === '' ? '' : Number(e.target.value))
           }
-          disabled={editing !== null}
           data-testid="req-owner-select"
         >
           <option value="">请选择</option>
@@ -199,14 +201,24 @@ export function RequirementEditDrawer({
           ))}
         </select>
       </div>
-      <Input
-        label="所属 Project ID（占位，可空）"
-        value={projectId === '' ? '' : String(projectId)}
-        onChange={(e) => {
-          const v = e.target.value;
-          setProjectId(v === '' ? '' : Number(v));
-        }}
-      />
+      <div style={{ marginBottom: 12 }}>
+        <label style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }}>
+          所属项目（可空）
+        </label>
+        <select
+          className="rainier-treeselect-trigger"
+          value={projectId}
+          onChange={(e) => setProjectId(e.target.value === '' ? '' : Number(e.target.value))}
+          data-testid="req-project-select"
+        >
+          <option value="">（无）</option>
+          {projectOptions.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.name}（{p.code}）
+            </option>
+          ))}
+        </select>
+      </div>
       {status === 'DEPRECATED' && (
         <Input
           label="弃用原因"
@@ -249,14 +261,17 @@ export function RequirementEditDrawer({
           type="button"
           onClick={async () => {
             if (editing) {
+              if (!ownerUserId) return;
               await onUpdate(editing.id, {
                 code,
                 title,
                 description: description || undefined,
+                ownerUserId,
                 status,
                 priority,
                 complexity: (complexity || undefined) as Complexity | undefined,
-                projectId: projectId === '' ? undefined : projectId,
+                // v0.0.8: explicit null clears link (backend treats omitted as null too).
+                projectId: projectId === '' ? null : projectId,
                 closeReason: closeReason || undefined,
               });
             } else {

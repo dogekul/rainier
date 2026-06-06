@@ -15,6 +15,10 @@ public class UserRoleDetail {
   private String userLoginName;
   private String roleName;
   private String roleCode;
+  /** v0.0.8 enrichment — service join with Project. */
+  private String projectName;
+
+  private String projectCode;
   private Instant createTime;
   private Instant updateTime;
   private String createBy;
@@ -79,6 +83,22 @@ public class UserRoleDetail {
 
   public void setRoleCode(String roleCode) {
     this.roleCode = roleCode;
+  }
+
+  public String getProjectName() {
+    return projectName;
+  }
+
+  public void setProjectName(String projectName) {
+    this.projectName = projectName;
+  }
+
+  public String getProjectCode() {
+    return projectCode;
+  }
+
+  public void setProjectCode(String projectCode) {
+    this.projectCode = projectCode;
   }
 
   public Instant getCreateTime() {

@@ -29,7 +29,17 @@ export function RequirementsPage() {
   const columns: TableColumn<Requirement>[] = [
     { key: 'code', title: '编码', render: (r) => r.code },
     { key: 'title', title: '标题', render: (r) => r.title },
-    { key: 'ownerUserId', title: '负责人', render: (r) => r.ownerUserId },
+    {
+      key: 'owner',
+      title: '负责人',
+      render: (r) =>
+        r.ownerName ? `${r.ownerName}（${r.ownerLoginName ?? ''}）` : r.ownerUserId,
+    },
+    {
+      key: 'project',
+      title: '项目',
+      render: (r) => (r.projectName ? `${r.projectName}（${r.projectCode ?? ''}）` : '—'),
+    },
     { key: 'status', title: '状态', render: (r) => r.status },
     { key: 'priority', title: '优先级', render: (r) => r.priority },
     { key: 'complexity', title: '复杂度', render: (r) => r.complexity ?? '—' },

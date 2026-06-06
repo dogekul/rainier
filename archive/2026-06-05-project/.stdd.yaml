@@ -1,0 +1,177 @@
+change:
+  name: project
+  date: '2026-06-05'
+  title: Project 实体 + 激活 v0.0.6/v0.0.7 占位 FK 校验
+  type: domain-entity
+  triggered_by: 'v0.0.6 / v0.0.7 architecture comments promised v0.0.8 Project + project_id activation'
+  follows_up:
+    - 2026-06-05-demand-requirement   # v0.0.6 — established Requirement.project_id placeholder
+    - 2026-06-05-position-role        # v0.0.7 — established UserRole.project_id placeholder
+  prepares_for:
+    - pmo-board-query                 # v0.0.9 (planned) — GET /api/users?roleCode=PMO&projectId=X
+
+phase:
+  current: archived
+  archived_at: '2026-06-07'
+  understand:
+    status: completed
+    confirmed_at: '2026-06-05'
+    artifact: proposal.md
+  spec:
+    status: completed
+    confirmed_at: '2026-06-05'
+    artifacts:
+      - design.md
+      - specs/entity-project/spec.md
+      - specs/entity-requirement/spec.md
+      - specs/entity-user-role/spec.md
+      - specs/frontend-scaffold/spec.md
+      - test-plan.md
+    metrics:
+      capabilities: 4              # 1 NEW + 3 MODIFIED
+      requirements: 10
+      scenarios: 28
+      tc_cases: 28
+      p0: 28
+      p1: 0
+      p2: 0
+  slice:
+    status: completed
+    confirmed_at: '2026-06-05'
+    artifacts:
+      - slices.md
+      - tasks.md
+    metrics:
+      slices: 11
+      p0_slices: 11
+      backend_slices: 5   # M01-M05
+      frontend_slices: 5  # M06-M10
+      e2e_slices: 1       # M11
+  build:
+    status: completed
+    completed_at: '2026-06-06'
+    metrics:
+      backend_tests: 147   # 125 baseline + 22 new
+      frontend_tests: 31   # 25 baseline + 6 new
+      e2e_curl: green
+  verify:
+    status: completed
+    completed_at: '2026-06-07'
+    artifacts:
+      - test-report.md
+      - design-adjustments.md
+      - pending-adjustments.md
+    metrics:
+      backend_tests_total: 147
+      frontend_tests_total: 31
+      review_round0_aggregate:
+        critical: 0
+        high: 3       # recorded as design intent (Decision 6 + 6b family)
+        medium: 10
+      scenario_coverage_percent: 100   # 28 / 28
+      e2e_status: green
+  deliver:
+    status: completed
+    completed_at: '2026-06-07'
+    artifacts:
+      - archive/2026-06-05-project/
+      - specs/entity-project/spec.md      # NEW
+      - specs/entity-requirement/spec.md  # MODIFIED — owner mutable + projectId enrich
+      - specs/entity-user-role/spec.md    # MODIFIED — projectId activation + 启动自愈
+      - specs/frontend-scaffold/spec.md   # MODIFIED — 项目 menu + /pm/projects + projectId controls
+    tag: v0.0.8-project
+
+scope:
+  type: domain-entity
+  entities:
+    - rainier_project     # NEW (soft-delete)
+  column_additions: []    # zero — only activating existing placeholder columns
+  activations:
+    - rainier_requirement.project_id   # v0.0.6 placeholder — now validated + enriched
+    - rainier_user_role.project_id     # v0.0.7 placeholder — now validated + enriched
+  capabilities_modified:
+    - entity-requirement              # projectId validation + enrichment
+    - entity-user-role                # projectId validation + enrichment
+    - frontend-scaffold               # Sider 「项目」+ /pm/projects + control type change
+  capabilities_new:
+    - entity-project
+  explicitly_excluded:
+    - pmo-board-query-endpoint        # v0.0.9
+    - project-members-m2m             # roles already express this
+    - project-milestones
+    - project-budget
+    - project-sub-projects            # no tree structure
+    - status-auto-transition
+    - v4-init-sql                     # Flyway disabled
+    - mandatory-projectid             # NULL still allowed (公司级 hat / 未指派)
+    - api-auth-me-enhancement         # frontend resolves default owner from listUsers
+
+long_range:
+  enabled: true
+  mode: full_auto
+  pre_auth_completed: true
+  pre_auth_timestamp: '2026-06-05'
+  pre_auth:
+    design_deviation:
+      minor: auto_record
+      major: auto_record_continue
+    technical_blocker:
+      strategy: workaround
+    iteration:
+      max_rounds: 10
+      on_cap: report_in_summary
+    operations:
+      directory: allow
+      file_write: allow
+      command_exec: allow
+      script_exec: allow
+      network: allow
+      file_read: allow
+      git_readonly: allow
+    gate3: mandatory
+  degradation:
+    max_consecutive_failures: 3
+    pass_rate_threshold: 0.95
+    safety_check: true
+  settings_file: .claude/settings.local.json  # already configured in v0.0.3..v0.0.7
+
+baselines_preserved:
+  v0_0_3: 'User / Organization / UserOrganization (UO.role=HEAD/MEMBER unchanged)'
+  v0_0_4: 'all v1 entities BIGINT IDENTITY; single BaseEntity'
+  v0_0_5: 'Organization has NO isPmo field'
+  v0_0_6: 'demand / requirement / demand_requirement intact; Requirement.project_id retrofitted'
+  v0_0_7: 'position / role / user_role intact; User.position_id intact; UserRole.project_id retrofitted'
+
+design_decisions_pre_locked:
+  project_role_modeling: |
+    All project-dimensional role hats (PM/PMO/TechLead/QA Lead/Architect/...) live
+    in UserRole M2M (user × role × project). Project entity holds ONLY owner_user_id
+    (the project lead / creator, an entity-essential attribute, not a hat).
+  owner_mutability: |
+    BOTH Project.owner_user_id AND Requirement.owner_user_id are mutable in v0.0.8.
+    The v0.0.6 "Requirement.owner immutable" rule is reversed by Decision 6b — admin
+    may transfer ownership (e.g. PO handoff) without recreating the entity. Project
+    lifecycles are long, Requirement lifecycles can be too. Service validates new
+    ownerUserId exists. createBy/updateBy audit trail captures who did the change.
+  ownership_resolution: |
+    ownerUserId is a business field on the DTO (admin-selected, required).
+    NOT auto-derived from JWT username. JWT is only for createBy/updateBy audit
+    fields (AuditorAwareImpl handles those, unchanged).
+    Frontend defaults the dropdown to current logged-in user's id by matching
+    loginName against the listUsers result; admin can change to any other user.
+  dirty_data_strategy: |
+    Decision 6 "启动自愈" (startup self-heal). A @Component CommandLineRunner
+    `DanglingProjectIdCleanup` scans rainier_requirement and rainier_user_role on
+    every backend boot; rows whose project_id does NOT match a live (del_flag=0)
+    rainier_project.id are NULL'd via native UPDATE within a @Transactional
+    boundary. Each row cleared emits a WARN line tagged with table.id and the
+    old project_id value. Writes (POST/PUT) are strict from v0.0.8 onward
+    (404 → 400 "project not found"). Reads can therefore assume no dangling refs.
+    The known v0.0.7 dirty row (user_role.id=2 projectId=42) is cleared on the
+    first v0.0.8 boot — verified in E2E by docker logs grep.
+  schema_change_policy: |
+    No new columns added. v0.0.6 Requirement.project_id and v0.0.7 UserRole.project_id
+    are the activation targets — they already exist as BIGINT NULL placeholders.
+  docker_strategy: |
+    No docker compose down -v. Hibernate ddl-auto=update adds rainier_project table
+    without touching existing 9 tables. Frontend container rebuild + recreate only.

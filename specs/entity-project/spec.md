@@ -1,0 +1,124 @@
+# Capability: entity-project
+
+> NEW capability from `archive/2026-06-05-project` (v0.0.8-project, 2026-06-07).
+> Project entity holds ONLY `owner_user_id` — all project-dimensional role hats
+> (PM / PMO / TechLead / etc.) live in UserRole M2M. `owner_user_id` is mutable
+> (admin transfer); `code` is immutable after creation. FK protection on delete
+> (rainier_requirement + rainier_user_role). Service-level code uniqueness
+> (no DB UNIQUE — soft-deleted codes can be reused, same family pattern as
+> Requirement / Position / Role / Demand).
+
+## Requirements
+
+### Requirement: 创建项目
+
+后端 SHALL 通过 `POST /api/projects` 接受 `code` + `name` + `ownerUserId`（必填），其余字段使用默认值，持久化并返回 201。
+
+#### Scenario: 最小 payload 创建项目 + 默认值 + 富化
+
+- **GIVEN** 数据库已存在用户 id=1（loginName="alice"，name="Alice"）
+- **WHEN** 客户端 `POST /api/projects` body `{"code":"PROJ-001","name":"采购系统改造","ownerUserId":1}`
+- **THEN** 系统 SHALL 返回 HTTP 201
+- **AND** body.id SHALL 为正整数（JSON number 类型）
+- **AND** body SHALL 含 `code="PROJ-001"` / `name="采购系统改造"` / `status="PLANNING"` / `enabled=true` / `ownerUserId=1`
+- **AND** body SHALL 富化 `ownerName="Alice"` / `ownerLoginName="alice"`
+
+#### Scenario: code 重复被拒（service 级唯一）
+
+- **GIVEN** 数据库已存在 `code="PROJ-001"` 项目
+- **WHEN** 再 `POST /api/projects` 同 `code="PROJ-001"`
+- **THEN** SHALL 返回 409
+- **AND** body.message SHALL 含 "code already exists"
+
+#### Scenario: 缺 ownerUserId 被拒
+
+- **GIVEN** backend 已启动
+- **WHEN** `POST /api/projects` body `{"code":"PROJ-002","name":"X"}`（缺 ownerUserId）
+- **THEN** SHALL 返回 400
+- **AND** body.fieldErrors[*].field SHALL 含 "ownerUserId"
+
+#### Scenario: ownerUserId 不存在被拒
+
+- **GIVEN** 数据库无 id=999_999 的用户
+- **WHEN** `POST /api/projects` body 含 `ownerUserId=999999`
+- **THEN** SHALL 返回 400
+- **AND** body.message SHALL 含 "owner user not found"
+
+#### Scenario: 非法 status 被拒
+
+- **GIVEN** backend 已启动
+- **WHEN** `POST /api/projects` body 含 `status="UNKNOWN_STATUS"`
+- **THEN** SHALL 返回 400
+- **AND** body.message SHALL 含 "invalid status"
+
+#### Scenario: createBy 自动注入登录 username
+
+- **GIVEN** JWT 当前 username="alice"
+- **WHEN** `POST /api/projects` body 创建项目
+- **THEN** SHALL 返回 201
+- **AND** body.createBy SHALL 为 "alice"（由 AuditorAwareImpl 自动注入）
+
+### Requirement: 查询项目
+
+后端 SHALL 通过 `GET /api/projects/{id}` 返回单项目详情（含富化）；通过 `GET /api/projects?status=&enabled=&search=&page=&size=` 返回 PageResponse。
+
+#### Scenario: GET 详情返完整字段 + 富化 + N+1 容错
+
+- **GIVEN** 项目 id=1 存在 owner_user_id=1，用户 id=1 loginName=alice / name=Alice
+- **WHEN** `GET /api/projects/1`
+- **THEN** SHALL 返回 200
+- **AND** body 字段集 SHALL 等于 [id, code, name, description, status, ownerUserId, ownerName, ownerLoginName, startDate, endDate, enabled, createTime, updateTime, createBy, updateBy]
+- **AND** body.ownerName SHALL 为 "Alice"
+- **AND** body.ownerLoginName SHALL 为 "alice"
+
+#### Scenario: 按 status 过滤列表
+
+- **GIVEN** 数据库 2 个 ACTIVE + 1 个 ARCHIVED 项目
+- **WHEN** `GET /api/projects?status=ACTIVE`
+- **THEN** body.total SHALL 为 2
+- **AND** body.content 全部 `status="ACTIVE"`
+
+### Requirement: 更新项目（含 owner 可改）
+
+后端 SHALL 通过 `PUT /api/projects/{id}` 修改 code（重检唯一） / name / description / status / ownerUserId（可改） / startDate / endDate / enabled。
+
+#### Scenario: 更新 ownerUserId 转移负责人
+
+- **GIVEN** 项目 id=1，owner_user_id=1；用户 id=2 loginName="lili" 存在
+- **WHEN** `PUT /api/projects/1` body `{"code":"PROJ-001","name":"X","ownerUserId":2,"status":"ACTIVE"}`
+- **THEN** SHALL 返回 200
+- **AND** body.ownerUserId SHALL 为 2
+- **AND** body.ownerLoginName SHALL 为 "lili"
+- **AND** body.status SHALL 为 "ACTIVE"
+
+#### Scenario: PUT 新 ownerUserId 不存在被拒
+
+- **GIVEN** 项目 id=1 存在；用户 id=999_999 不存在
+- **WHEN** `PUT /api/projects/1` body 含 `ownerUserId=999999`
+- **THEN** SHALL 返回 400
+- **AND** body.message SHALL 含 "owner user not found"
+
+### Requirement: 软删项目（FK 保护）
+
+后端 SHALL 通过 `DELETE /api/projects/{id}` 标记 `del_flag=1`；若有 Requirement.project_id 或 UserRole.project_id 引用 → 409，错误 message 指明哪个表。
+
+#### Scenario: 无引用软删成功
+
+- **GIVEN** 项目 id=1，无 Requirement / UserRole 引用
+- **WHEN** `DELETE /api/projects/1`
+- **THEN** SHALL 返回 204
+- **AND** 后续 `GET /api/projects/1` SHALL 返回 404
+
+#### Scenario: 被 Requirement 引用 → 409
+
+- **GIVEN** 项目 id=1 在 `rainier_requirement` 表中有 ≥ 1 行（projectId=1）
+- **WHEN** `DELETE /api/projects/1`
+- **THEN** SHALL 返回 409
+- **AND** body.message SHALL 含 "project has linked requirements"
+
+#### Scenario: 被 UserRole 引用 → 409
+
+- **GIVEN** 项目 id=1 在 `rainier_user_role` 表中有 ≥ 1 行（projectId=1）
+- **WHEN** `DELETE /api/projects/1`
+- **THEN** SHALL 返回 409
+- **AND** body.message SHALL 含 "project has assigned user-roles"

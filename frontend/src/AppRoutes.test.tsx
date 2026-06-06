@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -51,6 +53,13 @@ vi.mock('./api/userRole', async () => {
     listUserRoles: vi.fn().mockResolvedValue({ content: [], total: 0, page: 0, size: 20 }),
   };
 });
+vi.mock('./api/project', async () => {
+  const actual = await vi.importActual<typeof import('./api/project')>('./api/project');
+  return {
+    ...actual,
+    listProjects: vi.fn().mockResolvedValue({ content: [], total: 0, page: 0, size: 20 }),
+  };
+});
 
 describe('AppRoutes /pm/*', () => {
   beforeEach(() => {
@@ -69,14 +78,38 @@ describe('AppRoutes /pm/*', () => {
     });
   });
 
-  it('redirects /pm to /pm/demands', async () => {
+  /** TC-FES-P02 (v0.0.8): /pm redirects to /pm/projects (was /pm/demands). */
+  it('redirects /pm to /pm/projects (TC-FES-P02 redirect)', async () => {
     render(
       <MemoryRouter initialEntries={['/pm']}>
         <AppRoutes />
       </MemoryRouter>,
     );
     await waitFor(() => {
-      expect(screen.getByTestId('demands-new-btn')).toBeInTheDocument();
+      expect(screen.getByTestId('projects-new-btn')).toBeInTheDocument();
+    });
+  });
+
+  /**
+   * TC-FES-P02 belt-and-suspenders: literal route string must appear at least once in
+   * AppRoutes.tsx — guards against a linter "unused import" sweep silently dropping the route.
+   */
+  it('AppRoutes.tsx contains /pm/projects route literal (TC-FES-P02 guard)', () => {
+    const path = resolve(__dirname, 'AppRoutes.tsx');
+    const src = readFileSync(path, 'utf-8');
+    const occurrences = src.split('/pm/projects').length - 1;
+    expect(occurrences).toBeGreaterThanOrEqual(1);
+  });
+
+  /** TC-FES-P02 (v0.0.8): /pm/projects mounts ProjectsPage. */
+  it('mounts ProjectsPage at /pm/projects (TC-FES-P02)', async () => {
+    render(
+      <MemoryRouter initialEntries={['/pm/projects']}>
+        <AppRoutes />
+      </MemoryRouter>,
+    );
+    await waitFor(() => {
+      expect(screen.getByTestId('projects-new-btn')).toBeInTheDocument();
     });
   });
 

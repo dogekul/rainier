@@ -30,8 +30,8 @@ describe('AppLayout Sider (TC-FES-201)', () => {
     );
   });
 
-  /** TC-FES-D01: Sider 含「需求管理」菜单组 + 3 子项。 */
-  it('renders the 需求管理 menu group with 3 items (TC-FES-D01)', () => {
+  /** TC-FES-D01 (v0.0.8 retrofit / TC-FES-P01): Sider 含「需求管理」菜单组 + 4 子项 + 项目排第一。 */
+  it('renders the 需求管理 menu group with 4 items (项目 first) (TC-FES-D01 / TC-FES-P01)', () => {
     render(
       <MemoryRouter initialEntries={['/']}>
         <Routes>
@@ -42,13 +42,22 @@ describe('AppLayout Sider (TC-FES-201)', () => {
       </MemoryRouter>,
     );
     expect(screen.getByText('需求管理')).toBeInTheDocument();
+    expect(screen.getByText('项目')).toBeInTheDocument();
     expect(screen.getByText('诉求')).toBeInTheDocument();
     expect(screen.getByText('需求')).toBeInTheDocument();
     expect(screen.getByText('诉求-需求关联')).toBeInTheDocument();
+    expect(screen.getByTestId('appshell-nav-/pm/projects')).toHaveAttribute(
+      'href',
+      '/pm/projects',
+    );
     expect(screen.getByTestId('appshell-nav-/pm/demands')).toHaveAttribute(
       'href',
       '/pm/demands',
     );
+    // 项目项 SHALL 位于诉求项之前.
+    const sider = screen.getByTestId('appshell-sider');
+    const html = sider.innerHTML;
+    expect(html.indexOf('/pm/projects')).toBeLessThan(html.indexOf('/pm/demands'));
   });
 
   /** TC-FES-H01: Sider 含「人事配置」菜单组 + 3 子项 + /hr/positions 链接。 */

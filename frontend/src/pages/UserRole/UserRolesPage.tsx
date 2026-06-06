@@ -5,6 +5,7 @@ import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import { Drawer } from '../../components/ui/Drawer';
 import { Pagination } from '../../components/ui/Pagination';
 import { Table, type TableColumn } from '../../components/ui/Table';
+import { listProjects, type Project } from '../../api/project';
 import { listRoles, type Role } from '../../api/role';
 import { listUsers, type User } from '../../api/user';
 import {
@@ -28,18 +29,20 @@ export function UserRolesPage() {
 
   const [users, setUsers] = useState<User[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [userId, setUserId] = useState<number | ''>('');
   const [roleId, setRoleId] = useState<number | ''>('');
-  const [projectIdInput, setProjectIdInput] = useState('');
+  const [projectId, setProjectId] = useState<number | ''>('');
 
   useEffect(() => {
     if (!drawerOpen) return;
     // PageParams 校验 size <= 100；v0 池大小足够。
     void listUsers({ size: 100 }).then((r) => setUsers(r.content));
     void listRoles({ size: 100 }).then((r) => setRoles(r.content));
+    void listProjects({ size: 100 }).then((r) => setProjects(r.content));
     setUserId('');
     setRoleId('');
-    setProjectIdInput('');
+    setProjectId('');
   }, [drawerOpen]);
 
   const columns: TableColumn<UserRoleLink>[] = [
@@ -53,7 +56,16 @@ export function UserRolesPage() {
       title: '角色',
       render: (r) => `${r.roleName ?? ''}（${r.roleCode ?? ''}）`,
     },
-    { key: 'projectId', title: '项目 ID', render: (r) => r.projectId ?? '（公司级）' },
+    {
+      key: 'project',
+      title: '项目',
+      render: (r) =>
+        r.projectName
+          ? `${r.projectName}（${r.projectCode ?? ''}）`
+          : r.projectId
+            ? `#${r.projectId}`
+            : '（公司级）',
+    },
     {
       key: 'actions',
       title: '操作',
@@ -118,16 +130,21 @@ export function UserRolesPage() {
         </div>
         <div style={{ marginBottom: 12 }}>
           <label style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }}>
-            项目 ID（留白 = 公司级 hat；Project 实体待 v0.0.8）
+            项目（留白 = 公司级 hat）
           </label>
-          <input
-            className="rainier-input"
-            type="number"
-            value={projectIdInput}
-            onChange={(e) => setProjectIdInput(e.target.value)}
-            placeholder="任意 BIGINT，或留白"
-            data-testid="user-roles-project-input"
-          />
+          <select
+            className="rainier-treeselect-trigger"
+            value={projectId}
+            onChange={(e) => setProjectId(e.target.value === '' ? '' : Number(e.target.value))}
+            data-testid="user-roles-project-select"
+          >
+            <option value="">（公司级 / 留白）</option>
+            {projects.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}（{p.code}）
+              </option>
+            ))}
+          </select>
         </div>
         <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
           <Button type="button" variant="secondary" onClick={() => setDrawerOpen(false)}>
@@ -137,8 +154,8 @@ export function UserRolesPage() {
             type="button"
             onClick={async () => {
               if (!userId || !roleId) return;
-              const projectId = projectIdInput === '' ? null : Number(projectIdInput);
-              await createUserRole({ userId, roleId, projectId });
+              const pid = projectId === '' ? null : projectId;
+              await createUserRole({ userId, roleId, projectId: pid });
               setDrawerOpen(false);
               void list.refetch();
             }}
