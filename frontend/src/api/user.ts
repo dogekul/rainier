@@ -10,6 +10,11 @@ export interface User {
   isInternal: boolean;
   enabled: boolean;
   delFlag?: boolean;
+  /** v0.0.7 — single-valued Position attachment (nullable; unset = "未定级"). */
+  positionId?: number | null;
+  /** v0.0.7 enrichment — backend join result. */
+  positionName?: string | null;
+  positionCategory?: string | null;
   createBy?: string;
   createTime?: string;
   updateBy?: string;
@@ -23,6 +28,7 @@ export interface UserCreate {
   emailAddress?: string;
   isInternal?: boolean;
   enabled?: boolean;
+  positionId?: number | null;
 }
 
 export interface UserUpdate {
@@ -31,6 +37,8 @@ export interface UserUpdate {
   emailAddress?: string;
   isInternal?: boolean;
   enabled?: boolean;
+  /** Pass null to explicitly clear the position; absent and null behave the same way. */
+  positionId?: number | null;
 }
 
 export interface UserListParams {

@@ -35,9 +35,15 @@ class UserControllerTest {
   @Autowired private UserRepository repo;
   @Autowired private ObjectMapper json;
 
+  @Autowired private com.rainier.position.repository.PositionRepository userTestPositionRepo;
+
   @BeforeEach
   void cleanDb() {
     repo.deleteAll();
+    // v0.0.7 hygiene: TC-USR-001/003/004 create Position rows; clean them too so codes
+    // BE_ENG / PO don't accumulate across tests within the same run (service-only
+    // uniqueness — no DB UNIQUE on code).
+    userTestPositionRepo.deleteAll();
   }
 
   @Test
@@ -196,5 +202,111 @@ class UserControllerTest {
             .andExpect(status().isCreated())
             .andReturn();
     return json.readTree(r.getResponse().getContentAsString()).get("id").asLong();
+  }
+
+  // ===================== v0.0.7 Position MODIFIED block (TC-USR-001..004) =====================
+
+  @org.springframework.beans.factory.annotation.Autowired
+  private com.rainier.position.repository.PositionRepository positionRepo;
+
+  private Long createPosition(String code, String name, String category) {
+    com.rainier.position.domain.Position p = new com.rainier.position.domain.Position();
+    p.setCode(code);
+    p.setName(name);
+    p.setCategory(category);
+    p.setEnabled(true);
+    return positionRepo.saveAndFlush(p).getId();
+  }
+
+  /** TC-USR-001: POST 含 positionId 创建 + 富化. */
+  @Test
+  void post_withPositionId_returnsEnrichedDetail() throws Exception {
+    Long positionId = createPosition("BE_ENG", "Backend Engineer", "TECH");
+    ObjectNode body = json.createObjectNode();
+    body.put("loginName", "alice");
+    body.put("name", "Alice");
+    body.put("positionId", positionId);
+    mockMvc
+        .perform(
+            post("/api/users").contentType(MediaType.APPLICATION_JSON).content(body.toString()))
+        .andExpect(status().isCreated())
+        .andExpect(jsonPath("$.positionId").value(positionId))
+        .andExpect(jsonPath("$.positionName").value("Backend Engineer"))
+        .andExpect(jsonPath("$.positionCategory").value("TECH"));
+  }
+
+  /** TC-USR-002: POST positionId 不存在 → 400. */
+  @Test
+  void post_unknownPositionId_returns400() throws Exception {
+    ObjectNode body = json.createObjectNode();
+    body.put("loginName", "bob");
+    body.put("name", "Bob");
+    body.put("positionId", 999_999L);
+    mockMvc
+        .perform(
+            post("/api/users").contentType(MediaType.APPLICATION_JSON).content(body.toString()))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.message", startsWith("position not found")));
+  }
+
+  /** TC-USR-003: PUT 更新 positionId 后富化跟随. */
+  @Test
+  void put_updatePositionId_enrichmentFollows() throws Exception {
+    Long pos1 = createPosition("BE_ENG", "Backend Engineer", "TECH");
+    Long pos2 = createPosition("PO", "Product Owner", "PM");
+    Long userId = createWithFlags("alice", "Alice", true);
+    // first set positionId to pos1
+    ObjectNode body1 = json.createObjectNode();
+    body1.put("name", "Alice");
+    body1.put("positionId", pos1);
+    mockMvc
+        .perform(
+            put("/api/users/" + userId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(body1.toString()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.positionId").value(pos1))
+        .andExpect(jsonPath("$.positionName").value("Backend Engineer"));
+    // change to pos2
+    ObjectNode body2 = json.createObjectNode();
+    body2.put("name", "Alice");
+    body2.put("positionId", pos2);
+    mockMvc
+        .perform(
+            put("/api/users/" + userId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(body2.toString()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.positionId").value(pos2))
+        .andExpect(jsonPath("$.positionName").value("Product Owner"))
+        .andExpect(jsonPath("$.positionCategory").value("PM"));
+  }
+
+  /** TC-USR-004: PUT positionId=null 清空岗位. */
+  @Test
+  void put_nullPositionId_clearsPosition() throws Exception {
+    Long pos = createPosition("BE_ENG", "Backend Engineer", "TECH");
+    Long userId = createWithFlags("alice", "Alice", true);
+    ObjectNode setBody = json.createObjectNode();
+    setBody.put("name", "Alice");
+    setBody.put("positionId", pos);
+    mockMvc
+        .perform(
+            put("/api/users/" + userId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(setBody.toString()))
+        .andExpect(status().isOk());
+    ObjectNode clearBody = json.createObjectNode();
+    clearBody.put("name", "Alice");
+    clearBody.putNull("positionId");
+    mockMvc
+        .perform(
+            put("/api/users/" + userId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(clearBody.toString()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.positionId").isEmpty())
+        .andExpect(jsonPath("$.positionName").isEmpty())
+        .andExpect(jsonPath("$.positionCategory").isEmpty());
   }
 }

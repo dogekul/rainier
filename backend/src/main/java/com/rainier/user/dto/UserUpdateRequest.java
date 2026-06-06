@@ -21,6 +21,14 @@ public class UserUpdateRequest {
 
   private Boolean isInternal;
   private Boolean enabled;
+  /**
+   * v0.0.7: nullable — {@code null} clears the position; non-null requires existing Position.
+   *
+   * <p>NOTE: Jackson treats absent JSON keys and explicit {@code "positionId": null} the same way
+   * here — both result in {@code positionId == null}. The service therefore cannot distinguish
+   * "leave unchanged" from "explicitly clear"; behavior is "set to value or null based on body".
+   */
+  private Long positionId;
 
   public String getName() {
     return name;
@@ -60,5 +68,13 @@ public class UserUpdateRequest {
 
   public void setEnabled(Boolean enabled) {
     this.enabled = enabled;
+  }
+
+  public Long getPositionId() {
+    return positionId;
+  }
+
+  public void setPositionId(Long positionId) {
+    this.positionId = positionId;
   }
 }

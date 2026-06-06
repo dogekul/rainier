@@ -1,10 +1,13 @@
 /* (C) 2026 Rainier — internal use only. */
 package com.rainier.user.service;
 
+import com.rainier.common.exception.BadRequestException;
 import com.rainier.common.exception.ConflictException;
 import com.rainier.common.exception.NotFoundException;
 import com.rainier.common.web.PageParams;
 import com.rainier.common.web.PageResponse;
+import com.rainier.position.domain.Position;
+import com.rainier.position.repository.PositionRepository;
 import com.rainier.user.domain.User;
 import com.rainier.user.dto.UserCreateRequest;
 import com.rainier.user.dto.UserDetail;
@@ -19,17 +22,27 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-/** Business operations for {@link User}. */
+/**
+ * Business operations for {@link User}.
+ *
+ * <p>v0.0.7 enrichment: when reading, if {@code positionId != null} the service looks up the
+ * Position and copies {@code positionName} / {@code positionCategory} into the response DTO.
+ */
 @Service
 @Transactional(readOnly = true)
 public class UserService {
 
   private final UserRepository repo;
   private final UserOrganizationRepository userOrgRepo;
+  private final PositionRepository positionRepo;
 
-  public UserService(UserRepository repo, UserOrganizationRepository userOrgRepo) {
+  public UserService(
+      UserRepository repo,
+      UserOrganizationRepository userOrgRepo,
+      PositionRepository positionRepo) {
     this.repo = repo;
     this.userOrgRepo = userOrgRepo;
+    this.positionRepo = positionRepo;
   }
 
   @Transactional
@@ -43,6 +56,9 @@ public class UserService {
     if (nonBlank(req.getEmailAddress()) && repo.existsByEmailAddress(req.getEmailAddress())) {
       throw new ConflictException("emailAddress already exists: " + req.getEmailAddress());
     }
+    if (req.getPositionId() != null && !positionRepo.existsById(req.getPositionId())) {
+      throw new BadRequestException("position not found: id=" + req.getPositionId());
+    }
     User u = new User();
     u.setLoginName(req.getLoginName());
     u.setName(req.getName());
@@ -50,11 +66,12 @@ public class UserService {
     u.setEmailAddress(nullIfBlank(req.getEmailAddress()));
     u.setIsInternal(req.getIsInternal() == null ? Boolean.TRUE : req.getIsInternal());
     u.setEnabled(req.getEnabled() == null ? Boolean.TRUE : req.getEnabled());
-    return UserDetail.from(repo.saveAndFlush(u));
+    u.setPositionId(req.getPositionId());
+    return enrich(repo.saveAndFlush(u));
   }
 
   public UserDetail findById(Long id) {
-    return UserDetail.from(getOrThrow(id));
+    return enrich(getOrThrow(id));
   }
 
   public PageResponse<UserDetail> list(Boolean isInternal, Boolean enabled, PageParams page) {
@@ -85,7 +102,7 @@ public class UserService {
         PageRequest.of(page.getPage(), page.getSize(), Sort.by(Sort.Direction.DESC, "createTime"));
     Page<User> result = repo.findAll(spec, req);
     return PageResponse.of(
-        result.stream().map(UserDetail::from).collect(Collectors.toList()),
+        result.stream().map(this::enrich).collect(Collectors.toList()),
         page.getPage(),
         page.getSize(),
         result.getTotalElements());
@@ -104,6 +121,9 @@ public class UserService {
         throw new ConflictException("emailAddress already exists: " + req.getEmailAddress());
       }
     }
+    if (req.getPositionId() != null && !positionRepo.existsById(req.getPositionId())) {
+      throw new BadRequestException("position not found: id=" + req.getPositionId());
+    }
     u.setName(req.getName());
     u.setCode(nullIfBlank(req.getCode()));
     u.setEmailAddress(nullIfBlank(req.getEmailAddress()));
@@ -113,7 +133,10 @@ public class UserService {
     if (req.getEnabled() != null) {
       u.setEnabled(req.getEnabled());
     }
-    return UserDetail.from(repo.saveAndFlush(u));
+    // v0.0.7: positionId — UpdateRequest treats absent and explicit-null the same way (set value or
+    // clear).
+    u.setPositionId(req.getPositionId());
+    return enrich(repo.saveAndFlush(u));
   }
 
   @Transactional
@@ -128,6 +151,18 @@ public class UserService {
 
   User getOrThrow(Long id) {
     return repo.findById(id).orElseThrow(() -> new NotFoundException("user not found: id=" + id));
+  }
+
+  private UserDetail enrich(User u) {
+    UserDetail dto = UserDetail.from(u);
+    if (u.getPositionId() != null) {
+      Position p = positionRepo.findById(u.getPositionId()).orElse(null);
+      if (p != null) {
+        dto.setPositionName(p.getName());
+        dto.setPositionCategory(p.getCategory());
+      }
+    }
+    return dto;
   }
 
   private static boolean nonBlank(String s) {

@@ -50,4 +50,25 @@ describe('AppLayout Sider (TC-FES-201)', () => {
       '/pm/demands',
     );
   });
+
+  /** TC-FES-H01: Sider 含「人事配置」菜单组 + 3 子项 + /hr/positions 链接。 */
+  it('renders the 人事配置 menu group with 3 items (TC-FES-H01)', () => {
+    render(
+      <MemoryRouter initialEntries={['/']}>
+        <Routes>
+          <Route element={<AppLayout />}>
+            <Route path="/" element={<div>home</div>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>,
+    );
+    expect(screen.getByText('人事配置')).toBeInTheDocument();
+    expect(screen.getByText('岗位')).toBeInTheDocument();
+    expect(screen.getByText('角色')).toBeInTheDocument();
+    expect(screen.getByText('用户角色')).toBeInTheDocument();
+    expect(screen.getByTestId('appshell-nav-/hr/positions')).toHaveAttribute(
+      'href',
+      '/hr/positions',
+    );
+  });
 });

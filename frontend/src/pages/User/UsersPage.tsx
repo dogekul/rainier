@@ -7,6 +7,7 @@ import { Input } from '../../components/ui/Input';
 import { Pagination } from '../../components/ui/Pagination';
 import { Table, type TableColumn } from '../../components/ui/Table';
 import { createUser, deleteUser, listUsers, updateUser, type User } from '../../api/user';
+import { listPositions, type Position } from '../../api/position';
 import { usePaginated } from '../../hooks/usePaginated';
 
 export function UsersPage() {
@@ -27,6 +28,8 @@ export function UsersPage() {
   const [emailAddress, setEmailAddress] = useState('');
   const [isInternal, setIsInternal] = useState(true);
   const [enabled, setEnabled] = useState(true);
+  const [positionId, setPositionId] = useState<number | ''>('');
+  const [positionOptions, setPositionOptions] = useState<Position[]>([]);
 
   useEffect(() => {
     setSearchInput(list.search);
@@ -34,6 +37,8 @@ export function UsersPage() {
 
   useEffect(() => {
     if (!drawerOpen) return;
+    // PageParams 校验 size <= 100；v0 池大小足够。
+    void listPositions({ size: 100, enabled: true }).then((r) => setPositionOptions(r.content));
     if (editing) {
       setLoginName(editing.loginName);
       setName(editing.name);
@@ -41,6 +46,7 @@ export function UsersPage() {
       setEmailAddress(editing.emailAddress ?? '');
       setIsInternal(editing.isInternal);
       setEnabled(editing.enabled);
+      setPositionId(editing.positionId ?? '');
     } else {
       setLoginName('');
       setName('');
@@ -48,6 +54,7 @@ export function UsersPage() {
       setEmailAddress('');
       setIsInternal(true);
       setEnabled(true);
+      setPositionId('');
     }
   }, [drawerOpen, editing]);
 
@@ -55,6 +62,12 @@ export function UsersPage() {
     { key: 'loginName', title: '登录账号', render: (r) => r.loginName },
     { key: 'name', title: '姓名', render: (r) => r.name },
     { key: 'code', title: '工号', render: (r) => r.code ?? '—' },
+    {
+      key: 'position',
+      title: '岗位',
+      render: (r) =>
+        r.positionName ? `${r.positionName} (${r.positionCategory ?? ''})` : '—',
+    },
     { key: 'emailAddress', title: '邮箱', render: (r) => r.emailAddress ?? '—' },
     { key: 'isInternal', title: '内部', render: (r) => (r.isInternal ? '是' : '否') },
     { key: 'enabled', title: '启用', render: (r) => (r.enabled ? '是' : '否') },
@@ -131,6 +144,24 @@ export function UsersPage() {
           onChange={(e) => setEmailAddress(e.target.value)}
         />
         <div style={{ marginBottom: 12 }}>
+          <label style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }}>岗位</label>
+          <select
+            className="rainier-treeselect-trigger"
+            value={positionId}
+            onChange={(e) =>
+              setPositionId(e.target.value === '' ? '' : Number(e.target.value))
+            }
+            data-testid="users-position-select"
+          >
+            <option value="">（未定级）</option>
+            {positionOptions.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}（{p.category}）
+              </option>
+            ))}
+          </select>
+        </div>
+        <div style={{ marginBottom: 12 }}>
           <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
             <input
               type="checkbox"
@@ -151,6 +182,7 @@ export function UsersPage() {
           <Button
             type="button"
             onClick={async () => {
+              const positionIdPayload = positionId === '' ? null : positionId;
               if (editing) {
                 await updateUser(editing.id, {
                   name,
@@ -158,6 +190,7 @@ export function UsersPage() {
                   emailAddress: emailAddress || undefined,
                   isInternal,
                   enabled,
+                  positionId: positionIdPayload,
                 });
               } else {
                 await createUser({
@@ -167,6 +200,7 @@ export function UsersPage() {
                   emailAddress: emailAddress || undefined,
                   isInternal,
                   enabled,
+                  positionId: positionIdPayload,
                 });
               }
               setDrawerOpen(false);

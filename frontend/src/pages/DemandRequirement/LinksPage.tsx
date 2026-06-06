@@ -37,8 +37,9 @@ export function LinksPage() {
 
   useEffect(() => {
     if (!drawerOpen) return;
-    void listDemands({ size: 200 }).then((r) => setDemands(r.content));
-    void listRequirements({ size: 200 }).then((r) => setRequirements(r.content));
+    // PageParams 校验 size <= 100；v0 池大小足够。
+    void listDemands({ size: 100 }).then((r) => setDemands(r.content));
+    void listRequirements({ size: 100 }).then((r) => setRequirements(r.content));
     setDemandId('');
     setRequirementId('');
     setLinkType('RELATED');

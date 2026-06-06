@@ -46,7 +46,8 @@ export function DemandsPage() {
 
   useEffect(() => {
     if (!drawerOpen) return;
-    void listUsers({ size: 200 }).then((r) => setUserOptions(r.content));
+    // PageParams 校验 size <= 100；v0 池大小足够。
+    void listUsers({ size: 100 }).then((r) => setUserOptions(r.content));
     if (editing) {
       setTitle(editing.title);
       setDescription(editing.description ?? '');

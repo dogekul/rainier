@@ -25,6 +25,7 @@ public class UserCreateRequest {
 
   private Boolean isInternal;
   private Boolean enabled;
+  private Long positionId;
 
   public String getLoginName() {
     return loginName;
@@ -72,5 +73,13 @@ public class UserCreateRequest {
 
   public void setEnabled(Boolean enabled) {
     this.enabled = enabled;
+  }
+
+  public Long getPositionId() {
+    return positionId;
+  }
+
+  public void setPositionId(Long positionId) {
+    this.positionId = positionId;
   }
 }

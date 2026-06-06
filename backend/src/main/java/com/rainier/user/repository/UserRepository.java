@@ -15,4 +15,7 @@ public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificat
   boolean existsByCode(String code);
 
   boolean existsByEmailAddress(String emailAddress);
+
+  /** v0.0.7: used by PositionService.delete to enforce FK protection. */
+  long countByPositionId(Long positionId);
 }

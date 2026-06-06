@@ -15,6 +15,11 @@ public class UserDetail {
   private Boolean isInternal;
   private Boolean enabled;
   private Boolean delFlag;
+  // v0.0.7: position attachment (single-valued); positionName / positionCategory are enriched in
+  // UserService when reading.
+  private Long positionId;
+  private String positionName;
+  private String positionCategory;
   private Instant createTime;
   private Instant updateTime;
   private String createBy;
@@ -30,6 +35,7 @@ public class UserDetail {
     d.isInternal = u.getIsInternal();
     d.enabled = u.getEnabled();
     d.delFlag = u.getDelFlag();
+    d.positionId = u.getPositionId();
     d.createTime = u.getCreateTime();
     d.updateTime = u.getUpdateTime();
     d.createBy = u.getCreateBy();
@@ -67,6 +73,26 @@ public class UserDetail {
 
   public Boolean getDelFlag() {
     return delFlag;
+  }
+
+  public Long getPositionId() {
+    return positionId;
+  }
+
+  public String getPositionName() {
+    return positionName;
+  }
+
+  public void setPositionName(String positionName) {
+    this.positionName = positionName;
+  }
+
+  public String getPositionCategory() {
+    return positionCategory;
+  }
+
+  public void setPositionCategory(String positionCategory) {
+    this.positionCategory = positionCategory;
   }
 
   public Instant getCreateTime() {

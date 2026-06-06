@@ -42,7 +42,7 @@ vi.mock('../../api/user', async () => {
       ],
       total: 1,
       page: 0,
-      size: 200,
+      size: 100,
     }),
   };
 });

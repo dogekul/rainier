@@ -30,6 +30,27 @@ vi.mock('./api/demandRequirement', async () => {
       .mockResolvedValue({ content: [], total: 0, page: 0, size: 20 }),
   };
 });
+vi.mock('./api/position', async () => {
+  const actual = await vi.importActual<typeof import('./api/position')>('./api/position');
+  return {
+    ...actual,
+    listPositions: vi.fn().mockResolvedValue({ content: [], total: 0, page: 0, size: 20 }),
+  };
+});
+vi.mock('./api/role', async () => {
+  const actual = await vi.importActual<typeof import('./api/role')>('./api/role');
+  return {
+    ...actual,
+    listRoles: vi.fn().mockResolvedValue({ content: [], total: 0, page: 0, size: 20 }),
+  };
+});
+vi.mock('./api/userRole', async () => {
+  const actual = await vi.importActual<typeof import('./api/userRole')>('./api/userRole');
+  return {
+    ...actual,
+    listUserRoles: vi.fn().mockResolvedValue({ content: [], total: 0, page: 0, size: 20 }),
+  };
+});
 
 describe('AppRoutes /pm/*', () => {
   beforeEach(() => {
@@ -78,6 +99,51 @@ describe('AppRoutes /pm/*', () => {
     );
     await waitFor(() => {
       expect(screen.getByTestId('links-new-btn')).toBeInTheDocument();
+    });
+  });
+
+  /** TC-FES-H02: /hr/positions route resolves to PositionsPage. */
+  it('mounts PositionsPage at /hr/positions (TC-FES-H02)', async () => {
+    render(
+      <MemoryRouter initialEntries={['/hr/positions']}>
+        <AppRoutes />
+      </MemoryRouter>,
+    );
+    await waitFor(() => {
+      expect(screen.getByTestId('positions-new-btn')).toBeInTheDocument();
+    });
+  });
+
+  it('redirects /hr to /hr/positions', async () => {
+    render(
+      <MemoryRouter initialEntries={['/hr']}>
+        <AppRoutes />
+      </MemoryRouter>,
+    );
+    await waitFor(() => {
+      expect(screen.getByTestId('positions-new-btn')).toBeInTheDocument();
+    });
+  });
+
+  it('mounts RolesPage at /hr/roles', async () => {
+    render(
+      <MemoryRouter initialEntries={['/hr/roles']}>
+        <AppRoutes />
+      </MemoryRouter>,
+    );
+    await waitFor(() => {
+      expect(screen.getByTestId('roles-new-btn')).toBeInTheDocument();
+    });
+  });
+
+  it('mounts UserRolesPage at /hr/user-roles', async () => {
+    render(
+      <MemoryRouter initialEntries={['/hr/user-roles']}>
+        <AppRoutes />
+      </MemoryRouter>,
+    );
+    await waitFor(() => {
+      expect(screen.getByTestId('user-roles-new-btn')).toBeInTheDocument();
     });
   });
 });

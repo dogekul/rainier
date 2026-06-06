@@ -1,0 +1,180 @@
+change:
+  name: position-role
+  date: '2026-06-05'
+  title: 岗位（Position）+ 角色（Role）实体 — 双轴建模
+  type: domain-entity
+  triggered_by: 'v0.0.5 commitment to model PMO via people × position/role'
+  follows_up:
+    - 2026-06-04-org-tree-and-employee  # v0.0.3 — provides User entity to add position_id
+    - 2026-06-05-v1-id-migration         # v0.0.4 — single-BaseEntity (Long IDENTITY)
+    - 2026-06-05-remove-org-pmo          # v0.0.5 — confirmed PMO is not org concept
+    - 2026-06-05-demand-requirement      # v0.0.6 — established project_id placeholder pattern
+  prepares_for:
+    - position-role-pmo-board            # v0.0.8 (planned) — Project entity + PMO query endpoints
+
+phase:
+  current: archived
+  understand:
+    status: completed
+    confirmed_at: '2026-06-05'
+    artifact: proposal.md
+  spec:
+    status: completed
+    confirmed_at: '2026-06-05'
+    artifacts:
+      - design.md
+      - specs/entity-position/spec.md
+      - specs/entity-role/spec.md
+      - specs/entity-user-role/spec.md
+      - specs/entity-user/spec.md
+      - specs/frontend-scaffold/spec.md
+      - test-plan.md
+    metrics:
+      capabilities: 5            # 3 NEW + 2 MODIFIED
+      requirements: 15
+      scenarios: 34
+      tc_cases: 34
+      p0: 34
+      p1: 0
+      p2: 0
+  slice:
+    status: completed
+    confirmed_at: '2026-06-05'
+    artifacts:
+      - slices.md
+      - tasks.md
+    metrics:
+      slices: 11
+      p0_slices: 11
+      backend_slices: 4   # M01-M04
+      frontend_slices: 6  # M05-M10
+      e2e_slices: 1       # M11
+  build:
+    status: completed
+    completed_at: '2026-06-05'
+    slices_done: 11
+    metrics:
+      backend_tests: 125
+      frontend_tests: 25
+      lint_clean: true
+      compile_clean: true
+  verify:
+    status: completed
+    completed_at: '2026-06-05'
+    artifacts:
+      - test-report.md
+      - design-adjustments.md
+    metrics:
+      backend_tests:
+        total: 125
+        passed: 125
+        failed: 0
+      frontend_tests:
+        total: 25
+        passed: 25
+        failed: 0
+      e2e_tests:
+        total: 8
+        passed: 8
+        failed: 0
+      pass_rate: 1.0
+      backend_lint: pass
+      frontend_lint: pass
+      frontend_build: pass
+      review_summary:
+        critical: 0
+        high: 1
+        medium: 3
+        low: 10
+        fixed: 1   # M-3 cleanDb hygiene
+        accepted_with_rationale: 13
+      design_adjustments: 2   # +1 Gate 3 hand-test fix (size: 200 → 100)
+      failure_modes_hits: 0
+  deliver:
+    status: completed
+    completed_at: '2026-06-05'
+    tag: v0.0.7-position-role
+    specs_merged:
+      - entity-position             # NEW
+      - entity-role                 # NEW
+      - entity-user-role            # NEW
+      - entity-user                 # MODIFIED block appended
+      - frontend-scaffold           # MODIFIED block appended
+    deferred_followups:
+      - 'KL-1 (H): Position/Role.code TOCTOU race (no DB UNIQUE per design)'
+      - 'KL-2/3: TOCTOU windows in update/delete (v0 single-admin acceptable)'
+      - 'KL-4: UserRoleService.enrich N+1 (matches v0.0.6 pattern)'
+      - 'KL-5: description field cannot be cleared via PUT (project-wide consistency)'
+      - 'KL-12: UserOrgRole vs Role disambiguation note in merged main spec'
+
+scope:
+  type: domain-entity
+  entities:
+    - rainier_position    # NEW (soft-delete)
+    - rainier_role        # NEW (soft-delete)
+    - rainier_user_role   # NEW (hard-delete M2M)
+  column_additions:
+    - rainier_user.position_id   # BIGINT NULL FK rainier_position(id)
+  capabilities_modified:
+    - entity-user                 # User + position_id + Detail enrichment
+    - frontend-scaffold           # Sider 「人事配置」+ /hr/* routes + UsersPage position dropdown
+  capabilities_new:
+    - entity-position
+    - entity-role
+    - entity-user-role
+  explicitly_excluded:
+    - project-entity               # v0.0.8
+    - pmo-board-query-endpoint     # v0.0.8
+    - role-rbac-permission         # not a permission system
+    - position-level-grade         # initial/senior/staff/principal
+    - salary-band
+    - position-history
+    - role-auto-inference          # from UO.role=HEAD
+    - cross-project-inheritance
+    - position-role-i18n           # localized names
+    - v3-init-sql                  # Flyway disabled
+    - user-role-project-id-validation  # placeholder column accepts any BIGINT
+    - multi-position-per-user      # User.position_id is single-valued
+
+long_range:
+  enabled: true
+  mode: full_auto
+  pre_auth_completed: true
+  pre_auth_timestamp: '2026-06-05'
+  pre_auth:
+    design_deviation:
+      minor: auto_record
+      major: auto_record_continue
+    technical_blocker:
+      strategy: workaround
+    iteration:
+      max_rounds: 10
+      on_cap: report_in_summary
+    operations:
+      directory: allow
+      file_write: allow
+      command_exec: allow
+      script_exec: allow
+      network: allow
+      file_read: allow
+      git_readonly: allow
+    gate3: mandatory
+  degradation:
+    max_consecutive_failures: 3
+    pass_rate_threshold: 0.95
+    safety_check: true
+  settings_file: .claude/settings.local.json  # already configured in v0.0.3..v0.0.6
+
+baselines_preserved:
+  v0_0_3: 'User / Organization / UserOrganization (UO.role=HEAD/MEMBER unchanged)'
+  v0_0_4: 'all v1 entities BIGINT IDENTITY; single BaseEntity'
+  v0_0_5: 'Organization has NO isPmo field (cannot be reintroduced)'
+  v0_0_6: 'demand / requirement / demand_requirement intact; Requirement.project_id placeholder pattern reused'
+
+design_decisions_pre_locked:
+  position_attachment: 'User.position_id (single-valued; follows the person, not per-org assignment)'
+  role_scope: 'project (via UserRole.project_id placeholder column)'
+  project_id_validation: 'none in v0; placeholder follows v0.0.6 Requirement.project_id pattern'
+  naming_collision: 'UserOrganization.role (HEAD/MEMBER hierarchy) and new Role entity (functional hat) coexist; both kept'
+  route_prefix: '/hr/* (new namespace; avoids overloading /pm/*)'
+  delete_protection: 'Position (FK from User) → 409; Role (FK from UserRole) → 409; UserRole hard delete no protection'

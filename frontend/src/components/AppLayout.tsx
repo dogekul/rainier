@@ -32,6 +32,15 @@ const navGroups: NavGroup[] = [
       { to: '/pm/demand-requirements', label: '诉求-需求关联' },
     ],
   },
+  {
+    key: 'hr',
+    title: '人事配置',
+    items: [
+      { to: '/hr/positions', label: '岗位' },
+      { to: '/hr/roles', label: '角色' },
+      { to: '/hr/user-roles', label: '用户角色' },
+    ],
+  },
 ];
 
 /**

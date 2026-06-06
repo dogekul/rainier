@@ -38,6 +38,10 @@ public class User extends BaseEntity {
   @Column(nullable = false)
   private Boolean enabled = Boolean.TRUE;
 
+  /** v0.0.7: optional FK to {@code rainier_position(id)} — see entity-user MODIFIED spec. */
+  @Column(name = "position_id")
+  private Long positionId;
+
   public String getLoginName() {
     return loginName;
   }
@@ -84,5 +88,13 @@ public class User extends BaseEntity {
 
   public void setEnabled(Boolean enabled) {
     this.enabled = enabled;
+  }
+
+  public Long getPositionId() {
+    return positionId;
+  }
+
+  public void setPositionId(Long positionId) {
+    this.positionId = positionId;
   }
 }
