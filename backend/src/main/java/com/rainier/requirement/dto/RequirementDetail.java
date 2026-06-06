@@ -1,0 +1,99 @@
+/* (C) 2026 Rainier — internal use only. */
+package com.rainier.requirement.dto;
+
+import com.rainier.requirement.domain.Requirement;
+import java.time.Instant;
+
+/** Response DTO for {@link Requirement} read endpoints. */
+public class RequirementDetail {
+
+  private Long id;
+  private String code;
+  private String title;
+  private String description;
+  private Long ownerUserId;
+  private String status;
+  private String priority;
+  private String complexity;
+  private Long projectId;
+  private String closeReason;
+  private Instant createTime;
+  private Instant updateTime;
+  private String createBy;
+  private String updateBy;
+
+  public static RequirementDetail from(Requirement r) {
+    RequirementDetail dto = new RequirementDetail();
+    dto.id = r.getId();
+    dto.code = r.getCode();
+    dto.title = r.getTitle();
+    dto.description = r.getDescription();
+    dto.ownerUserId = r.getOwnerUserId();
+    dto.status = r.getStatus();
+    dto.priority = r.getPriority();
+    dto.complexity = r.getComplexity();
+    dto.projectId = r.getProjectId();
+    dto.closeReason = r.getCloseReason();
+    dto.createTime = r.getCreateTime();
+    dto.updateTime = r.getUpdateTime();
+    dto.createBy = r.getCreateBy();
+    dto.updateBy = r.getUpdateBy();
+    return dto;
+  }
+
+  public Long getId() {
+    return id;
+  }
+
+  public String getCode() {
+    return code;
+  }
+
+  public String getTitle() {
+    return title;
+  }
+
+  public String getDescription() {
+    return description;
+  }
+
+  public Long getOwnerUserId() {
+    return ownerUserId;
+  }
+
+  public String getStatus() {
+    return status;
+  }
+
+  public String getPriority() {
+    return priority;
+  }
+
+  public String getComplexity() {
+    return complexity;
+  }
+
+  public Long getProjectId() {
+    return projectId;
+  }
+
+  public String getCloseReason() {
+    return closeReason;
+  }
+
+  public Instant getCreateTime() {
+    return createTime;
+  }
+
+  public Instant getUpdateTime() {
+    return updateTime;
+  }
+
+  public String getCreateBy() {
+    return createBy;
+  }
+
+  public String getUpdateBy() {
+    return updateBy;
+  }
+}

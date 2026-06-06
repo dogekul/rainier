@@ -29,4 +29,25 @@ describe('AppLayout Sider (TC-FES-201)', () => {
       '/org/organizations',
     );
   });
+
+  /** TC-FES-D01: Sider 含「需求管理」菜单组 + 3 子项。 */
+  it('renders the 需求管理 menu group with 3 items (TC-FES-D01)', () => {
+    render(
+      <MemoryRouter initialEntries={['/']}>
+        <Routes>
+          <Route element={<AppLayout />}>
+            <Route path="/" element={<div>home</div>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>,
+    );
+    expect(screen.getByText('需求管理')).toBeInTheDocument();
+    expect(screen.getByText('诉求')).toBeInTheDocument();
+    expect(screen.getByText('需求')).toBeInTheDocument();
+    expect(screen.getByText('诉求-需求关联')).toBeInTheDocument();
+    expect(screen.getByTestId('appshell-nav-/pm/demands')).toHaveAttribute(
+      'href',
+      '/pm/demands',
+    );
+  });
 });

@@ -1,0 +1,191 @@
+change:
+  name: demand-requirement
+  date: '2026-06-05'
+  title: 诉求 + 需求 + M2M 关联 (rainier_demand / rainier_requirement / rainier_demand_requirement)
+  source_doc: A-角色意图卡片.md  # §4.1 卡片 2-3 (PO / 业务方)
+  follows_up:
+    - 2026-06-04-org-tree-and-employee  # v0.0.3 — uses rainier_user as FK target
+    - 2026-06-04-add-language-standards  # v0.0.2 — uses .stdd/standards/{java,typescript}.md
+    - 2026-06-05-v1-id-migration         # v0.0.4 — provides BIGINT v1 tables
+    - 2026-06-05-remove-org-pmo          # v0.0.5 — confirms PMO is not org concept
+
+resume_history:
+  - paused_at: '2026-06-05'
+    paused_reason: 'v1 id-strategy decision reversal triggered 2026-06-05-v1-id-migration first'
+  - resumed_at: '2026-06-05'
+    resumed_reason: 'v0.0.4 + v0.0.5 delivered; single BaseEntity + no Org.isPmo'
+    proposal_revised: true
+    revision_summary:
+      - dropped BaseAutoIdEntity (single BaseEntity world now)
+      - dropped cross_generation_fk varchar(32) section (all FKs BIGINT)
+      - dropped v1-id-migration from explicitly_excluded (already done)
+      - added Position/Role to explicitly_excluded (future change)
+      - added "no BaseAutoIdEntity" + "no V2 SQL file" to explicitly_excluded
+      - SC baselines adjusted to v0.0.5 (64 backend / 13 frontend)
+
+phase:
+  current: archived
+  understand:
+    status: completed
+    confirmed_at: '2026-06-05'
+    artifact: proposal.md
+    note: revised on resume; original Phase 1 (pre-resume) is preserved via git history
+  spec:
+    status: completed
+    confirmed_at: '2026-06-05'
+    artifacts:
+      - design.md
+      - specs/entity-demand/spec.md
+      - specs/entity-requirement/spec.md
+      - specs/entity-demand-requirement/spec.md
+      - specs/workflow-demand-conversion/spec.md
+      - specs/frontend-scaffold/spec.md
+      - test-plan.md
+    metrics:
+      capabilities: 5  # 4 NEW + 1 MODIFIED
+      requirements: 16
+      scenarios: 33
+      tc_cases: 33
+      p0: 33
+      p1: 0
+      p2: 0
+  slice:
+    status: completed
+    confirmed_at: '2026-06-05'
+    artifacts:
+      - slices.md
+      - tasks.md
+    metrics:
+      slices: 12
+      p0_slices: 12
+      backend_slices: 5    # M01-M05
+      frontend_slices: 6   # M06-M11
+      e2e_slices: 1        # M12
+  build:
+    status: completed
+    completed_at: '2026-06-05'
+    slices_done: 12
+    metrics:
+      backend_tests: 94
+      frontend_tests: 19
+      lint_clean: true
+      compile_clean: true
+  verify:
+    status: completed
+    completed_at: '2026-06-05'
+    artifacts:
+      - test-report.md
+      - design-adjustments.md
+    metrics:
+      backend_tests:
+        total: 94
+        passed: 94
+        failed: 0
+      frontend_tests:
+        total: 19
+        passed: 19
+        failed: 0
+      e2e_tests:
+        total: 7
+        passed: 7
+        failed: 0
+      pass_rate: 1.0
+      backend_lint: pass
+      frontend_lint: pass
+      frontend_build: pass
+      review_summary:
+        critical: 0
+        high: 4
+        medium: 6
+        low: 10
+        fixed: 5   # 4 H + 1 M (dedup)
+        accepted_with_rationale: 15
+      design_adjustments: 6  # 2 build-time + 4 review-driven
+      failure_modes_hits: 0
+  deliver:
+    status: completed
+    completed_at: '2026-06-05'
+    tag: v0.0.6-demand-requirement
+    specs_merged:
+      - entity-demand               # NEW
+      - entity-requirement          # NEW
+      - entity-demand-requirement   # NEW
+      - workflow-demand-conversion  # NEW
+      - frontend-scaffold           # MODIFIED block appended
+    deferred_followups:
+      - 'L-5 frontend: delete-error not surfaced in UI (silent 409 swallow)'
+      - 'M-1 backend: N+1 query in auxiliary findSourceDemands/findDerivedRequirements'
+      - 'L-2 backend: Repository.hardDeleteAll() unused — drop or wire into tests'
+      - 'L-3 backend: @Transactional(rollbackFor=Exception.class) redundant'
+
+scope:
+  type: domain-entity
+  entities:
+    - rainier_demand
+    - rainier_requirement
+    - rainier_demand_requirement
+  capabilities_modified:
+    - frontend-scaffold      # Sider menu + /pm/* routes
+  capabilities_new:
+    - entity-demand
+    - entity-requirement
+    - entity-demand-requirement
+    - workflow-demand-conversion
+  explicitly_excluded:
+    - project-entity
+    - epic-story-task-entities
+    - position-or-role-entity   # future change; PMO dashboards depend on it
+    - real-ai-classification
+    - real-source-integration   # wechat/email/dingtalk
+    - business-stakeholder-simplified-ui
+    - status-auto-transition
+    - requirement-code-auto-generation
+    - acceptance-workflow-tables
+    - v2-init-pm-sql            # Flyway disabled; no SQL historical archive
+    - base-auto-id-entity       # single BaseEntity world
+    - reintroduce-org-ispmo     # deleted in v0.0.5
+
+id_strategy:
+  approach: all-tables-bigint-identity   # established in v0.0.4
+  rationale: 'Single uniform standard; no dual-base-class complexity'
+  base_class: com.rainier.common.persistence.BaseEntity
+  fk_types:
+    submitter_user_id: BIGINT
+    owner_user_id: BIGINT
+    demand_id: BIGINT
+    requirement_id: BIGINT
+    ai_duplicate_hint: BIGINT  # self-ref, no FK constraint
+
+long_range:
+  enabled: true
+  mode: full_auto
+  pre_auth_completed: true
+  pre_auth_timestamp: '2026-06-05'
+  pre_auth:
+    design_deviation:
+      minor: auto_record
+      major: auto_record_continue
+    technical_blocker:
+      strategy: workaround
+    iteration:
+      max_rounds: 10
+      on_cap: report_in_summary
+    operations:
+      directory: allow
+      file_write: allow
+      command_exec: allow
+      script_exec: allow
+      network: allow
+      file_read: allow
+      git_readonly: allow
+    gate3: mandatory
+  degradation:
+    max_consecutive_failures: 3
+    pass_rate_threshold: 0.95
+    safety_check: true
+  settings_file: .claude/settings.local.json  # already configured in v0.0.3..v0.0.5
+
+baselines_preserved:
+  v0_0_3_org_tree_and_employee: 'org tree CRUD + user CRUD + user-organization CRUD all functional'
+  v0_0_4_id_migration: 'all v1 entities use BIGINT IDENTITY'
+  v0_0_5_remove_org_pmo: 'Organization has NO isPmo field; will not be reintroduced'

@@ -23,6 +23,15 @@ const navGroups: NavGroup[] = [
       { to: '/org/user-organizations', label: '用户-组织关系' },
     ],
   },
+  {
+    key: 'pm',
+    title: '需求管理',
+    items: [
+      { to: '/pm/demands', label: '诉求' },
+      { to: '/pm/requirements', label: '需求' },
+      { to: '/pm/demand-requirements', label: '诉求-需求关联' },
+    ],
+  },
 ];
 
 /**

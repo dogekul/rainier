@@ -1,9 +1,12 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { AppLayout } from './components/AppLayout';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import DemandsPage from './pages/Demand';
+import DemandRequirementsPage from './pages/DemandRequirement';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import OrganizationsPage from './pages/Organization';
+import RequirementsPage from './pages/Requirement';
 import UsersPage from './pages/User';
 import UserOrganizationsPage from './pages/UserOrganization';
 
@@ -19,6 +22,10 @@ export function AppRoutes() {
           <Route path="/org/organizations" element={<OrganizationsPage />} />
           <Route path="/org/users" element={<UsersPage />} />
           <Route path="/org/user-organizations" element={<UserOrganizationsPage />} />
+          <Route path="/pm" element={<Navigate to="/pm/demands" replace />} />
+          <Route path="/pm/demands" element={<DemandsPage />} />
+          <Route path="/pm/requirements" element={<RequirementsPage />} />
+          <Route path="/pm/demand-requirements" element={<DemandRequirementsPage />} />
         </Route>
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
