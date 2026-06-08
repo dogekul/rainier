@@ -19,6 +19,9 @@ import com.rainier.demandrequirement.domain.DemandRequirementLink;
 import com.rainier.demandrequirement.domain.LinkType;
 import com.rainier.demandrequirement.repository.DemandRequirementLinkRepository;
 import com.rainier.requirement.repository.RequirementRepository;
+import com.rainier.story.domain.Story;
+import com.rainier.story.domain.StoryStatus;
+import com.rainier.story.repository.StoryRepository;
 import com.rainier.user.domain.User;
 import com.rainier.user.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -42,10 +45,12 @@ class RequirementControllerDeleteTest {
   @Autowired private DemandRepository demandRepo;
   @Autowired private DemandRequirementLinkRepository linkRepo;
   @Autowired private UserRepository userRepo;
+  @Autowired private StoryRepository storyRepo;
   @Autowired private ObjectMapper json;
 
   @BeforeEach
   void cleanDb() {
+    storyRepo.deleteAll();
     linkRepo.deleteAll();
     demandRepo.deleteAll();
     repo.deleteAll();
@@ -113,5 +118,54 @@ class RequirementControllerDeleteTest {
         .perform(delete("/api/requirements/" + reqId))
         .andExpect(status().isConflict())
         .andExpect(jsonPath("$.message", startsWith("requirement has linked demands")));
+  }
+
+  /**
+   * TC-REQS-001b (v0.0.9): when BOTH demand_requirement AND Story refs exist, the `requirement has
+   * linked demands` check fires first (intentional ordering). Pin the contract.
+   */
+  @Test
+  void delete_withDemandAndStoryReferences_returnsDemandsFirst() throws Exception {
+    Long userId = createUser();
+    Long reqId = createReq(userId, "REQ-BOTH");
+    // Story FK
+    Story s = new Story();
+    s.setCode("STR-BOTH");
+    s.setTitle("x");
+    s.setStatus(StoryStatus.DRAFT);
+    s.setPriority(Priority.MEDIUM);
+    s.setRequirementId(reqId);
+    s.setOwnerUserId(userId);
+    storyRepo.saveAndFlush(s);
+    // Demand link FK
+    Long demandId = createDemandDirect(userId);
+    DemandRequirementLink link = new DemandRequirementLink();
+    link.setDemandId(demandId);
+    link.setRequirementId(reqId);
+    link.setLinkType(LinkType.DERIVED);
+    linkRepo.saveAndFlush(link);
+    mockMvc
+        .perform(delete("/api/requirements/" + reqId))
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.message", startsWith("requirement has linked demands")));
+  }
+
+  /** TC-REQS-001 (v0.0.9): Requirement 有 Story 引用 → 409 "requirement has linked stories". */
+  @Test
+  void delete_withStoryReference_returns409() throws Exception {
+    Long userId = createUser();
+    Long reqId = createReq(userId, "REQ-WITH-STORY");
+    Story s = new Story();
+    s.setCode("STR-FK-1");
+    s.setTitle("x");
+    s.setStatus(StoryStatus.DRAFT);
+    s.setPriority(Priority.MEDIUM);
+    s.setRequirementId(reqId);
+    s.setOwnerUserId(userId);
+    storyRepo.saveAndFlush(s);
+    mockMvc
+        .perform(delete("/api/requirements/" + reqId))
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.message", startsWith("requirement has linked stories")));
   }
 }

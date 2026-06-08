@@ -4,6 +4,7 @@
 > - 2026-06-05 (v0.0.6-demand-requirement) — added 需求管理 menu group + `/pm/*` routes.
 > - 2026-06-05 (v0.0.7-position-role) — added 人事配置 menu group + `/hr/*` routes.
 > - 2026-06-07 (v0.0.8-project) — added 项目 menu item (first position in 需求管理) + `/pm/projects` route + ProjectsPage; converted projectId numeric input → Project dropdown in RequirementEditDrawer and UserRolesPage; added 项目 column to Requirement / UserRole lists; `/pm` redirect now points at `/pm/projects` (was `/pm/demands`).
+> - 2026-06-08 (v0.0.9-story) — RequirementsPage row drilldown: per-Requirement expand button reveals a StoryListPanel (sub-table + new Story button + edit/delete); added `"Story 数"` column showing `storyCount` enrichment; introduced `StoryEditDrawer` for Story create/edit (default owner = current logged-in user, Requirement field locked; sibling of v0.0.8 default-owner pattern); added shared Table primitive `isExpanded` / `renderExpanded` props to support drilldown without bespoke per-page expand state.
 
 ## Requirements
 
@@ -244,3 +245,52 @@
 - **GIVEN** 抽屉打开（mock `listPositions` 返回 2 条岗位 id=1/2）
 - **WHEN** 用户从下拉选择 id=1，填写 loginName + name，点保存
 - **THEN** mock `createUser` SHALL 被调用且参数 body.positionId SHALL 等于 1
+
+### Requirement: RequirementsPage 行级 Story drilldown + storyCount 列（v0.0.9）
+
+前端 SHALL 在 RequirementsPage 列表新增一列 `"Story 数"` 显示 `r.storyCount`；每行新增展开按钮，点击展开后渲染子区域 `StoryListPanel`，调用 `listStories({requirementId: r.id})` 取该 Requirement 下的 Stories，渲染为表格 + "新建 Story" 按钮 + 每行"编辑 / 删除"按钮。**不**新增独立 Sider 菜单项，**不**新增独立 `/pm/stories` 路由。
+
+#### Scenario: RequirementsPage 表格含 Story 数 列
+
+- **GIVEN** 用户已登录访问 `/pm/requirements`；mock `listRequirements` 返回 1 行 `{id: 1, code: "REQ-1", title: "X", storyCount: 3}`
+- **WHEN** 页面渲染完成
+- **THEN** 表格 SHALL 含一列标题 `"Story 数"`
+- **AND** 该行 `"Story 数"` 单元格 SHALL 显示 `"3"`
+- **AND** 该行 SHALL 渲染 `"展开"` 按钮
+
+#### Scenario: 点开行渲染 StoryListPanel + 子表
+
+- **GIVEN** mock `listStories({requirementId: 1})` 返回 2 行 Story `[{id:10, code:"STR-10", title:"S10", status:"DRAFT"}, {id:11, code:"STR-11", title:"S11", status:"IN_PROGRESS"}]`
+- **WHEN** 用户点击 Requirement 行的展开按钮
+- **THEN** 子区域 SHALL 渲染 `data-testid="story-list-panel-1"`
+- **AND** 子表 SHALL 含 `"STR-10"` 与 `"STR-11"` 两行
+- **AND** 子区域 SHALL 含 `"新建 Story"` 按钮（`data-testid="stories-new-btn"`）
+
+### Requirement: StoryEditDrawer 新增/编辑 Story 抽屉（v0.0.9）
+
+前端 SHALL 提供 `StoryEditDrawer` 组件用于新增 / 编辑 Story；新建路径从 `StoryListPanel` 的 "新建 Story" 按钮触发，传入 `requirementId`；编辑路径从子表行 "编辑" 按钮触发，回显 editing Story。新建抽屉「负责人」下拉 SHALL 默认选中当前登录用户（按 loginName 匹配 listUsers 池），编辑时 SHALL 不 disabled（可改，沿用 v0.0.8 模式）。「所属 Requirement」字段在新建/编辑两个模式下都 SHALL 锁定显示（不可改），格式为 `"<requirementTitle>（<requirementCode>）— 创建时锁定"`。Drawer SHALL 在 owner 为空时显示表单错误提示（沿用 v0.0.8.1 Code-M7 模式），不再静默 no-op。
+
+#### Scenario: 新建 Story 抽屉默认 owner = 当前登录用户
+
+- **GIVEN** Auth store 中 `user.username="alice"`；mock `listUsers` 返回包含 `{id:1, loginName:"alice"}`；用户在 RequirementsPage 展开了 Requirement id=1
+- **WHEN** 用户点击 "新建 Story" 按钮打开抽屉，且 listUsers promise 已 resolve
+- **THEN** 「负责人」下拉的当前选中值 SHALL 等于 `1`
+- **AND** 「Requirement」字段 SHALL 锁定显示 Requirement 1 信息，**不**可选择其它 Requirement
+
+#### Scenario: 编辑 Story 抽屉 owner 可改 → 调用 updateStory
+
+- **GIVEN** 抽屉打开为编辑模式 editing.ownerUserId=1；mock listUsers 返回 `[{id:1, loginName:"alice"}, {id:2, loginName:"lili"}]`
+- **WHEN** 用户切换下拉到 lili (id=2) 并点保存
+- **THEN** 「负责人」下拉 SHALL 不 disabled
+- **AND** mock `updateStory` SHALL 被调用且参数 body.ownerUserId SHALL 等于 2
+
+### Requirement: 共享 Table 组件支持可展开行（v0.0.9 加）
+
+`components/ui/Table.tsx` SHALL 增加可选 `isExpanded?: (row) => boolean` + `renderExpanded?: (row) => ReactNode` 两个 props。当 `isExpanded(row)` 返回 true，紧随该行的次行 SHALL 跨所有列渲染 `renderExpanded(row)`。父组件 SHALL 拥有展开状态（Set / Map），通过 props 注入控制；Table 本身 SHALL 不持有 expand state。
+
+#### Scenario: Table 展开行渲染
+
+- **GIVEN** Table props 含 `isExpanded={(r) => r.id === 1}` + `renderExpanded={(r) => <div data-testid="exp">{r.id}</div>}`
+- **WHEN** Table 渲染含 id=1 的行
+- **THEN** id=1 的行 SHALL 渲染常规 cells
+- **AND** 紧随其后 SHALL 有一行 `<td colSpan=N>` 包含 `data-testid="exp"` 显示 "1"

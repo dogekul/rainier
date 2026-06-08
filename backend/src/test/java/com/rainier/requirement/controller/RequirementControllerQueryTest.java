@@ -10,10 +10,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.rainier.common.domain.Priority;
 import com.rainier.demand.repository.DemandRepository;
 import com.rainier.demandrequirement.repository.DemandRequirementLinkRepository;
 import com.rainier.requirement.domain.Requirement;
 import com.rainier.requirement.repository.RequirementRepository;
+import com.rainier.story.domain.Story;
+import com.rainier.story.domain.StoryStatus;
+import com.rainier.story.repository.StoryRepository;
 import com.rainier.user.domain.User;
 import com.rainier.user.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -37,10 +41,12 @@ class RequirementControllerQueryTest {
   @Autowired private DemandRepository demandRepo;
   @Autowired private DemandRequirementLinkRepository linkRepo;
   @Autowired private UserRepository userRepo;
+  @Autowired private StoryRepository storyRepo;
   @Autowired private ObjectMapper json;
 
   @BeforeEach
   void cleanDb() {
+    storyRepo.deleteAll();
     linkRepo.deleteAll();
     demandRepo.deleteAll();
     repo.deleteAll();
@@ -191,5 +197,43 @@ class RequirementControllerQueryTest {
                 .content(body.toString()))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.message", org.hamcrest.Matchers.startsWith("owner user not found")));
+  }
+
+  /** TC-REQS-002 (v0.0.9): GET 详情 + list 项含 storyCount = 该 Requirement 下非软删 Story 数。 */
+  @Test
+  void get_requirement_includesStoryCountEnrichment() throws Exception {
+    Long userId = createUser();
+    Long reqId = createReq(userId, "REQ-COUNT");
+    // Seed 3 Stories (DRAFT / IN_PROGRESS / DONE — all del_flag=0).
+    for (int i = 0; i < 3; i++) {
+      Story s = new Story();
+      s.setCode("STR-CNT-" + i);
+      s.setTitle("x");
+      s.setStatus(i == 0 ? StoryStatus.DRAFT : i == 1 ? StoryStatus.IN_PROGRESS : StoryStatus.DONE);
+      s.setPriority(Priority.MEDIUM);
+      s.setRequirementId(reqId);
+      s.setOwnerUserId(userId);
+      storyRepo.saveAndFlush(s);
+    }
+    // GET single
+    mockMvc
+        .perform(get("/api/requirements/" + reqId))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.storyCount").value(3));
+    // GET list — find this Requirement and assert its storyCount
+    MvcResult res =
+        mockMvc
+            .perform(get("/api/requirements?page=0&size=20"))
+            .andExpect(status().isOk())
+            .andReturn();
+    JsonNode content = json.readTree(res.getResponse().getContentAsString()).get("content");
+    boolean found = false;
+    for (JsonNode item : content) {
+      if (item.get("id").asLong() == reqId) {
+        org.junit.jupiter.api.Assertions.assertEquals(3L, item.get("storyCount").asLong());
+        found = true;
+      }
+    }
+    org.junit.jupiter.api.Assertions.assertTrue(found, "expected REQ-COUNT in list");
   }
 }

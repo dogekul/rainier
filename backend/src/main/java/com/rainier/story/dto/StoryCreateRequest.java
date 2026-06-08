@@ -1,0 +1,126 @@
+/* (C) 2026 Rainier — internal use only. */
+package com.rainier.story.dto;
+
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
+
+/**
+ * Payload for {@code POST /api/stories}.
+ *
+ * <p>Note: {@code projectId} is intentionally NOT exposed — Service copies it from the parent
+ * Requirement at creation time. {@code status} / {@code priority} / {@code complexity} default to
+ * {@code DRAFT} / {@code MEDIUM} / null when omitted.
+ */
+public class StoryCreateRequest {
+
+  @NotBlank
+  @Size(max = 64)
+  private String code;
+
+  @NotBlank
+  @Size(max = 100)
+  private String title;
+
+  @Size(max = 4000)
+  private String description;
+
+  @Size(max = 4000)
+  private String acceptanceCriteria;
+
+  @Size(max = 16)
+  private String status;
+
+  @Size(max = 16)
+  private String priority;
+
+  @Size(max = 8)
+  private String complexity;
+
+  @NotNull private Long requirementId;
+
+  @NotNull private Long ownerUserId;
+
+  @Size(max = 500)
+  private String closeReason;
+
+  public String getCode() {
+    return code;
+  }
+
+  public void setCode(String code) {
+    this.code = code;
+  }
+
+  public String getTitle() {
+    return title;
+  }
+
+  public void setTitle(String title) {
+    this.title = title;
+  }
+
+  public String getDescription() {
+    return description;
+  }
+
+  public void setDescription(String description) {
+    this.description = description;
+  }
+
+  public String getAcceptanceCriteria() {
+    return acceptanceCriteria;
+  }
+
+  public void setAcceptanceCriteria(String acceptanceCriteria) {
+    this.acceptanceCriteria = acceptanceCriteria;
+  }
+
+  public String getStatus() {
+    return status;
+  }
+
+  public void setStatus(String status) {
+    this.status = status;
+  }
+
+  public String getPriority() {
+    return priority;
+  }
+
+  public void setPriority(String priority) {
+    this.priority = priority;
+  }
+
+  public String getComplexity() {
+    return complexity;
+  }
+
+  public void setComplexity(String complexity) {
+    this.complexity = complexity;
+  }
+
+  public Long getRequirementId() {
+    return requirementId;
+  }
+
+  public void setRequirementId(Long requirementId) {
+    this.requirementId = requirementId;
+  }
+
+  public Long getOwnerUserId() {
+    return ownerUserId;
+  }
+
+  public void setOwnerUserId(Long ownerUserId) {
+    this.ownerUserId = ownerUserId;
+  }
+
+  public String getCloseReason() {
+    return closeReason;
+  }
+
+  public void setCloseReason(String closeReason) {
+    this.closeReason = closeReason;
+  }
+}

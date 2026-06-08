@@ -27,6 +27,8 @@ export interface Requirement {
   /** v0.0.8: enrichment from join with Project. */
   projectName?: string | null;
   projectCode?: string | null;
+  /** v0.0.9 enrichment — count of non-deleted Stories under this Requirement. */
+  storyCount?: number;
   closeReason?: string | null;
   createBy?: string;
   createTime?: string;

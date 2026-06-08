@@ -25,6 +25,9 @@ public class RequirementDetail {
 
   private String projectCode;
   private String closeReason;
+  /** v0.0.9 enrichment — service join with Story (count of non-deleted Stories). */
+  private Long storyCount;
+
   private Instant createTime;
   private Instant updateTime;
   private String createBy;
@@ -119,6 +122,14 @@ public class RequirementDetail {
 
   public String getCloseReason() {
     return closeReason;
+  }
+
+  public Long getStoryCount() {
+    return storyCount;
+  }
+
+  public void setStoryCount(Long storyCount) {
+    this.storyCount = storyCount;
   }
 
   public Instant getCreateTime() {

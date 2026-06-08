@@ -1,0 +1,176 @@
+change:
+  name: story
+  date: '2026-06-07'
+  title: Story 实体补全 Requirement 下层切片
+  type: domain-entity
+  triggered_by: 'A-角色意图卡片.md 卡片 2 PO 高频动作 + archive/B-驱动飞轮.md § 4.1 OKR↔项目↔Story 关联'
+  follows_up:
+    - 2026-06-05-demand-requirement   # v0.0.6 — established Requirement entity
+    - 2026-06-05-project              # v0.0.8 — owner mutability + FK protection pattern reused
+  prepares_for:
+    - task-entity                     # 待办 (独立 change) — Task 来源多元，与 Story 解耦
+    - events-foundation               # 飞轮 ① 地基 — events 抽取的对象包含 Story 状态
+
+phase:
+  current: archived
+  archived_at: '2026-06-08'
+  understand:
+    status: completed
+    confirmed_at: '2026-06-07'
+    artifact: proposal.md
+  spec:
+    status: completed
+    confirmed_at: '2026-06-07'
+    artifacts:
+      - design.md
+      - specs/entity-story/spec.md
+      - specs/entity-requirement/spec.md
+      - specs/frontend-scaffold/spec.md
+      - test-plan.md
+    metrics:
+      capabilities: 3              # 1 NEW + 2 MODIFIED
+      requirements: 8
+      scenarios: 22                # 16 entity-story + 2 entity-requirement + 4 frontend-scaffold
+      tc_cases: 22
+      p0: 22
+      p1: 0
+      p2: 0
+  slice:
+    status: completed
+    confirmed_at: '2026-06-07'
+    artifacts:
+      - slices.md
+      - tasks.md
+    metrics:
+      slices: 9
+      p0_slices: 9
+      backend_slices: 5   # M01-M05
+      frontend_slices: 3  # M06-M08
+      e2e_slices: 1       # M09
+  build:
+    status: completed
+    completed_at: '2026-06-08'
+    metrics:
+      backend_tests: 166   # 148 baseline + 18 new
+      frontend_tests: 37   # 32 baseline + 5 new
+      e2e_curl: green
+  verify:
+    status: completed
+    completed_at: '2026-06-08'
+    artifacts:
+      - test-report.md
+      - design-adjustments.md
+      - pending-adjustments.md
+    metrics:
+      backend_tests_total: 167
+      frontend_tests_total: 37
+      review_round0_aggregate:
+        critical: 0
+        high: 0       # all 4 fixed
+        medium: 13    # 3 over threshold; recorded in design-adjustments §E
+      scenario_coverage_percent: 100   # 22 / 22
+      e2e_status: green
+  deliver:
+    status: completed
+    completed_at: '2026-06-08'
+    artifacts:
+      - archive/2026-06-07-story/
+      - specs/entity-story/spec.md       # NEW
+      - specs/entity-requirement/spec.md # MODIFIED — Story FK + storyCount enrichment
+      - specs/frontend-scaffold/spec.md  # MODIFIED — drilldown + StoryEditDrawer
+    tag: v0.0.9-story
+
+scope:
+  type: domain-entity
+  entities:
+    - rainier_story     # NEW (soft-delete)
+  column_additions: []  # zero — no existing-table schema changes
+  capabilities_modified:
+    - entity-requirement              # DELETE FK protection + storyCount enrichment
+    - frontend-scaffold               # RequirementsPage drilldown + api/story.ts
+  capabilities_new:
+    - entity-story
+  explicitly_excluded:
+    - task-entity                     # 独立 change，Task 来源多元
+    - story-dependencies              # dependsOn / blocks
+    - story-sort-order                # 拖拽 / sort_order 字段
+    - story-comments                  # 评论 / 讨论
+    - story-status-auto-transition    # commit → IN_PROGRESS 等，飞轮 ① 集成后
+    - story-acceptance-tests-json     # 结构化验收清单
+    - ai-story-suggestion             # AI 拆 Requirement
+    - sider-stories-menu              # 独立菜单项
+    - my-stories-workbench            # 跨 Requirement 工作台
+
+baselines_preserved:
+  v0_0_3: 'User / Organization / UserOrganization (UO.role=HEAD/MEMBER unchanged)'
+  v0_0_4: 'all v1 entities BIGINT IDENTITY; single BaseEntity'
+  v0_0_5: 'Organization has NO isPmo field'
+  v0_0_6: 'demand / requirement / demand_requirement intact'
+  v0_0_7: 'position / role / user_role intact; User.position_id intact'
+  v0_0_8: 'project intact; Requirement.project_id activated + owner mutable'
+  v0_0_8_1: 'DanglingProjectIdCleanup @Order + FOR UPDATE; ProjectService PUT description full-replace; form error feedback'
+
+design_decisions_pre_locked:
+  story_anchor: |
+    Story MUST be anchored to a Requirement (NN FK). No "free-floating" Stories
+    at Project-level. Keeps the Demand → Requirement → Story narrative pure.
+  acceptance_criteria_field: |
+    Independent `acceptance_criteria` VARCHAR(4000) column, parallel to
+    description. PM / test validation reads it directly; no need to scan the
+    free-form description block.
+  status_machine: |
+    6-state: DRAFT / READY / IN_PROGRESS / DONE / BLOCKED / CANCELLED.
+    BLOCKED is a first-class state (not a closeReason) because the blueprint
+    flywheel ② risk radar will surface BLOCKED Stories as a signal class.
+  project_id_inheritance: |
+    Story.projectId is NOT exposed on the create DTO. StoryService.create reads
+    the parent Requirement.projectId and copies it into Story.projectId. Story
+    has its own column (not a join-at-read) for query / index efficiency.
+    Subsequent change to Requirement.projectId does NOT cascade — consistency
+    is repaired by the existing DanglingProjectIdCleanup family pattern (when
+    we eventually add StoryProjectId self-heal in a later change).
+  soft_delete: |
+    @SQLDelete + del_flag, same family as Project / Requirement / Demand /
+    Organization.
+  owner_mutability: |
+    Inherits v0.0.8 Decision 6b: ownerUserId is mutable; service validates
+    new owner exists. createBy / updateBy capture transfers via
+    AuditorAwareImpl.
+  frontend_shape: |
+    RequirementsPage drilldown ONLY in this change. Each Requirement row
+    expandable to reveal its Stories sub-table with new/edit/delete drawer.
+    No independent Sider "故事" menu item (deferred to v0.1.x cross-Requirement
+    workbench).
+  default_sort: |
+    createTime DESC. No sort_order column in this change. PO can rely on
+    priority enumeration for now; drag-and-drop sort is a deferred change.
+
+long_range:
+  enabled: true
+  mode: full_auto
+  pre_auth_completed: true
+  pre_auth_timestamp: '2026-06-07'
+  pre_auth:
+    design_deviation:
+      minor: auto_record
+      major: auto_record_continue
+    technical_blocker:
+      strategy: workaround
+    iteration:
+      max_rounds: 10
+      on_cap: report_in_summary
+    operations:
+      directory: allow
+      file_write: allow
+      command_exec: allow
+      script_exec: allow
+      network: allow
+      file_read: allow
+      git_readonly: allow
+      git_commit_tag_no_push: allow
+    gate3: mandatory
+  degradation:
+    max_consecutive_failures: 3
+    pass_rate_threshold: 0.95
+    safety_check: true
+  settings_file: .claude/settings.local.json  # 复用 v0.0.3..v0.0.8 已配置规则

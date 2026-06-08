@@ -47,18 +47,21 @@ public class RequirementService {
   private final DemandRepository demandRepo;
   private final DemandRequirementLinkRepository linkRepo;
   private final ProjectRepository projectRepo;
+  private final com.rainier.story.repository.StoryRepository storyRepo;
 
   public RequirementService(
       RequirementRepository repo,
       UserRepository userRepo,
       DemandRepository demandRepo,
       DemandRequirementLinkRepository linkRepo,
-      ProjectRepository projectRepo) {
+      ProjectRepository projectRepo,
+      com.rainier.story.repository.StoryRepository storyRepo) {
     this.repo = repo;
     this.userRepo = userRepo;
     this.demandRepo = demandRepo;
     this.linkRepo = linkRepo;
     this.projectRepo = projectRepo;
+    this.storyRepo = storyRepo;
   }
 
   @Transactional(rollbackFor = Exception.class)
@@ -223,6 +226,11 @@ public class RequirementService {
     if (linkCount > 0) {
       throw new ConflictException("requirement has linked demands");
     }
+    // v0.0.9: also block delete when Stories still reference this Requirement.
+    long storyCount = storyRepo.countByRequirementId(id);
+    if (storyCount > 0) {
+      throw new ConflictException("requirement has linked stories");
+    }
     repo.delete(r);
   }
 
@@ -254,6 +262,8 @@ public class RequirementService {
         dto.setProjectCode(p.getCode());
       }
     }
+    // v0.0.9: storyCount enrichment for RequirementsPage drilldown count column.
+    dto.setStoryCount(storyRepo.countByRequirementId(r.getId()));
     return dto;
   }
 }
