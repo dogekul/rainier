@@ -9,22 +9,24 @@ import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.Where;
 
 /**
- * A Story is a PO-authored vertical slice of a {@code Requirement} — the management view of a
- * deliverable unit. Soft-deleted via {@link BaseEntity#delFlag}.
+ * A Story is a PO-authored vertical slice of a {@code Sprint}, which in turn belongs to a {@code
+ * Requirement}. Story → Sprint → Requirement → Project hierarchy. Soft-deleted via {@link
+ * BaseEntity#delFlag}.
  *
- * <p>v0.0.9 invariants:
+ * <p>v0.0.10 invariants:
  *
  * <ul>
- *   <li>{@code requirementId} is NOT NULL (every Story belongs to a Requirement).
- *   <li>{@code projectId} is auto-copied from the parent Requirement at creation time (may be null
- *       if the parent Requirement has no project). NOT exposed on the create DTO.
- *   <li>{@code ownerUserId} is mutable (sibling pattern of v0.0.8 Project / Requirement).
- *   <li>Uniqueness on {@code code} is enforced at the service layer (no DB UNIQUE — family
- *       pattern).
+ *   <li>{@code sprintId} is NOT NULL (every Story belongs to a Sprint). The DB column is upgraded
+ *       to NOT NULL by {@code LegacyStoryToSprintMigration} Step 2 at first v0.0.10 startup; {@code
+ *       columnDefinition="BIGINT"} lets Hibernate's first-boot ADD COLUMN land as nullable so
+ *       existing rows can be migrated.
+ *   <li>{@code projectId} is auto-copied from the parent Sprint's Requirement at creation time.
+ *   <li>{@code ownerUserId} is mutable.
+ *   <li>Uniqueness on {@code code} is enforced at the service layer (no DB UNIQUE).
+ *   <li>{@code requirement_id} column is a legacy v0.0.9 artifact, no longer in the entity; the
+ *       column was loosened to NULL by the migration to allow new inserts to omit it. v0.0.11+
+ *       cleanup will DROP the column.
  * </ul>
- *
- * <p>Task is a separate entity (not modeled here) — it can be user-created / system-scheduled /
- * AI-generated and is intentionally decoupled from Story.
  */
 @Entity
 @Table(name = "rainier_story")
@@ -54,10 +56,18 @@ public class Story extends BaseEntity {
   @Column(length = 8)
   private String complexity;
 
-  @Column(name = "requirement_id", nullable = false)
-  private Long requirementId;
+  /**
+   * v0.0.10: every Story belongs to exactly one Sprint. The DB column starts nullable (Hibernate
+   * adds via {@code columnDefinition}) so the first-boot migration can fill existing rows; Step 2
+   * of {@code LegacyStoryToSprintMigration} then runs ALTER MODIFY COLUMN to upgrade to NOT NULL.
+   */
+  @Column(name = "sprint_id", nullable = false, columnDefinition = "BIGINT")
+  private Long sprintId;
 
-  /** Inherited from parent Requirement at creation. Nullable when parent has no Project. */
+  /**
+   * Inherited from parent Sprint's Requirement at creation. Nullable when grandparent Requirement
+   * has no Project.
+   */
   @Column(name = "project_id")
   private Long projectId;
 
@@ -123,12 +133,12 @@ public class Story extends BaseEntity {
     this.complexity = complexity;
   }
 
-  public Long getRequirementId() {
-    return requirementId;
+  public Long getSprintId() {
+    return sprintId;
   }
 
-  public void setRequirementId(Long requirementId) {
-    this.requirementId = requirementId;
+  public void setSprintId(Long sprintId) {
+    this.sprintId = sprintId;
   }
 
   public Long getProjectId() {

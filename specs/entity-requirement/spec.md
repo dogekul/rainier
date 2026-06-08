@@ -4,6 +4,7 @@
 > - 2026-06-05 (v0.0.6-demand-requirement) — capability introduced; `project_id` BIGINT NULL placeholder column added without validation.
 > - 2026-06-07 (v0.0.8-project) — `projectId` activated (strict create/update validation + projectName/projectCode enrichment + startup self-heal). `ownerUserId` mutability reversed: now mutable, service validates new owner exists.
 > - 2026-06-08 (v0.0.9-story) — DELETE FK protection extended with Story-reference check (ordered after demand_requirement check); `storyCount` enrichment added to GET single + list paths.
+> - 2026-06-09 (v0.0.10-sprint) — Story moved under Sprint, so the Requirement-level FK now blocks on Sprint references (message "requirement has linked sprints"); `storyCount` removed from RequirementDetail and replaced by `sprintCount`. The demand_requirement → sprint check ordering is preserved (demands first).
 
 ## Requirements
 
@@ -119,28 +120,29 @@
 - **THEN** SHALL 返回 409
 - **AND** body.message SHALL 含 "requirement has linked demands"
 
-#### Scenario: v0.0.9 加 — 有 Story 引用被拒
+#### Scenario: v0.0.10 — 有 Sprint 引用被拒 (替换 v0.0.9 Story FK 检查)
 
-- **GIVEN** 需求 id=1 在 `rainier_story` 中有 ≥ 1 行 `requirement_id=1 AND del_flag=0`；无 demand_requirement 引用
+- **GIVEN** 需求 id=1 在 `rainier_sprint` 中有 ≥ 1 行 `requirement_id=1 AND del_flag=0`；无 demand_requirement 引用
 - **WHEN** `DELETE /api/requirements/1`
 - **THEN** SHALL 返回 409
-- **AND** body.message SHALL 含 "requirement has linked stories"
+- **AND** body.message SHALL 含 "requirement has linked sprints"
 
-#### Scenario: v0.0.9 加 — 同时有 Demand 和 Story 引用时优先返 demand 错误
+#### Scenario: v0.0.10 — 同时有 Demand 和 Sprint 引用时优先返 demand 错误
 
-- **GIVEN** 需求 id=1 同时有 ≥ 1 demand_requirement 行 AND ≥ 1 story 行
+- **GIVEN** 需求 id=1 同时有 ≥ 1 demand_requirement 行 AND ≥ 1 sprint 行
 - **WHEN** `DELETE /api/requirements/1`
 - **THEN** SHALL 返回 409
 - **AND** body.message SHALL 含 "requirement has linked demands"（先检查 demand 引用，与 v0.0.8 Project FK 检查顺序家族一致）
 
-### Requirement: storyCount 富化（v0.0.9 加）
+### Requirement: sprintCount 富化（v0.0.10 — 替换 v0.0.9 storyCount）
 
-后端 SHALL 在 `GET /api/requirements/{id}` 与 `GET /api/requirements?...` 列表的每个返回项中加入 `storyCount` 字段，值为该 Requirement 关联的、`del_flag=0` 的 Story 行数（含所有状态）。
+后端 SHALL 在 `GET /api/requirements/{id}` 与 `GET /api/requirements?...` 列表的每个返回项中加入 `sprintCount` 字段，值为该 Requirement 关联的、`del_flag=0` 的 Sprint 行数（含所有状态）。`storyCount` 字段在 v0.0.10 起不再出现于 RequirementDetail（Story 通过 Sprint 间接归属，跨层计数另谋）。
 
-#### Scenario: GET 详情 + list 项含 storyCount
+#### Scenario: GET 详情 + list 项含 sprintCount
 
-- **GIVEN** Requirement id=1 下有 3 个 Story（status: DRAFT、IN_PROGRESS、DONE，del_flag 都为 0）
+- **GIVEN** Requirement id=1 下有 3 个 Sprint（status: PLANNING、ACTIVE、COMPLETED，del_flag 都为 0）
 - **WHEN** `GET /api/requirements/1`
 - **THEN** SHALL 返回 200
-- **AND** body.storyCount SHALL 为 3
-- **AND** `GET /api/requirements?page=0&size=20` 返回的列表项 SHALL 也含 `storyCount = 3`
+- **AND** body.sprintCount SHALL 为 3
+- **AND** body SHALL **不**含 `storyCount` 字段
+- **AND** `GET /api/requirements?page=0&size=20` 返回的列表项 SHALL 也含 `sprintCount = 3`

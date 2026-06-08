@@ -19,8 +19,9 @@ import com.rainier.demandrequirement.domain.DemandRequirementLink;
 import com.rainier.demandrequirement.domain.LinkType;
 import com.rainier.demandrequirement.repository.DemandRequirementLinkRepository;
 import com.rainier.requirement.repository.RequirementRepository;
-import com.rainier.story.domain.Story;
-import com.rainier.story.domain.StoryStatus;
+import com.rainier.sprint.domain.Sprint;
+import com.rainier.sprint.domain.SprintStatus;
+import com.rainier.sprint.repository.SprintRepository;
 import com.rainier.story.repository.StoryRepository;
 import com.rainier.user.domain.User;
 import com.rainier.user.repository.UserRepository;
@@ -46,15 +47,27 @@ class RequirementControllerDeleteTest {
   @Autowired private DemandRequirementLinkRepository linkRepo;
   @Autowired private UserRepository userRepo;
   @Autowired private StoryRepository storyRepo;
+  @Autowired private SprintRepository sprintRepo;
   @Autowired private ObjectMapper json;
 
   @BeforeEach
   void cleanDb() {
     storyRepo.deleteAll();
+    sprintRepo.deleteAll();
     linkRepo.deleteAll();
     demandRepo.deleteAll();
     repo.deleteAll();
     userRepo.deleteAll();
+  }
+
+  private Long createSprint(Long reqId, Long ownerId, String code) {
+    Sprint sp = new Sprint();
+    sp.setCode(code);
+    sp.setName("x");
+    sp.setStatus(SprintStatus.PLANNING);
+    sp.setRequirementId(reqId);
+    sp.setOwnerUserId(ownerId);
+    return sprintRepo.saveAndFlush(sp).getId();
   }
 
   private Long createUser() {
@@ -121,23 +134,14 @@ class RequirementControllerDeleteTest {
   }
 
   /**
-   * TC-REQS-001b (v0.0.9): when BOTH demand_requirement AND Story refs exist, the `requirement has
-   * linked demands` check fires first (intentional ordering). Pin the contract.
+   * TC-REQS-SPR-002 (v0.0.10): when BOTH demand_requirement AND Sprint refs exist, the `requirement
+   * has linked demands` check still fires first (intentional ordering).
    */
   @Test
-  void delete_withDemandAndStoryReferences_returnsDemandsFirst() throws Exception {
+  void delete_withDemandAndSprintReferences_returnsDemandsFirst() throws Exception {
     Long userId = createUser();
     Long reqId = createReq(userId, "REQ-BOTH");
-    // Story FK
-    Story s = new Story();
-    s.setCode("STR-BOTH");
-    s.setTitle("x");
-    s.setStatus(StoryStatus.DRAFT);
-    s.setPriority(Priority.MEDIUM);
-    s.setRequirementId(reqId);
-    s.setOwnerUserId(userId);
-    storyRepo.saveAndFlush(s);
-    // Demand link FK
+    createSprint(reqId, userId, "SPR-BOTH");
     Long demandId = createDemandDirect(userId);
     DemandRequirementLink link = new DemandRequirementLink();
     link.setDemandId(demandId);
@@ -150,22 +154,15 @@ class RequirementControllerDeleteTest {
         .andExpect(jsonPath("$.message", startsWith("requirement has linked demands")));
   }
 
-  /** TC-REQS-001 (v0.0.9): Requirement 有 Story 引用 → 409 "requirement has linked stories". */
+  /** TC-REQS-SPR-001 (v0.0.10): Requirement 有 Sprint 引用 → 409 "requirement has linked sprints". */
   @Test
-  void delete_withStoryReference_returns409() throws Exception {
+  void delete_withSprintReference_returns409() throws Exception {
     Long userId = createUser();
-    Long reqId = createReq(userId, "REQ-WITH-STORY");
-    Story s = new Story();
-    s.setCode("STR-FK-1");
-    s.setTitle("x");
-    s.setStatus(StoryStatus.DRAFT);
-    s.setPriority(Priority.MEDIUM);
-    s.setRequirementId(reqId);
-    s.setOwnerUserId(userId);
-    storyRepo.saveAndFlush(s);
+    Long reqId = createReq(userId, "REQ-WITH-SPRINT");
+    createSprint(reqId, userId, "SPR-FK-1");
     mockMvc
         .perform(delete("/api/requirements/" + reqId))
         .andExpect(status().isConflict())
-        .andExpect(jsonPath("$.message", startsWith("requirement has linked stories")));
+        .andExpect(jsonPath("$.message", startsWith("requirement has linked sprints")));
   }
 }

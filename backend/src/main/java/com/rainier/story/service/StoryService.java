@@ -12,6 +12,8 @@ import com.rainier.project.repository.ProjectRepository;
 import com.rainier.requirement.domain.Complexity;
 import com.rainier.requirement.domain.Requirement;
 import com.rainier.requirement.repository.RequirementRepository;
+import com.rainier.sprint.domain.Sprint;
+import com.rainier.sprint.repository.SprintRepository;
 import com.rainier.story.domain.Story;
 import com.rainier.story.domain.StoryStatus;
 import com.rainier.story.dto.StoryCreateRequest;
@@ -46,16 +48,19 @@ import org.springframework.transaction.annotation.Transactional;
 public class StoryService {
 
   private final StoryRepository repo;
+  private final SprintRepository sprintRepo;
   private final RequirementRepository requirementRepo;
   private final UserRepository userRepo;
   private final ProjectRepository projectRepo;
 
   public StoryService(
       StoryRepository repo,
+      SprintRepository sprintRepo,
       RequirementRepository requirementRepo,
       UserRepository userRepo,
       ProjectRepository projectRepo) {
     this.repo = repo;
+    this.sprintRepo = sprintRepo;
     this.requirementRepo = requirementRepo;
     this.userRepo = userRepo;
     this.projectRepo = projectRepo;
@@ -63,12 +68,11 @@ public class StoryService {
 
   @Transactional
   public StoryDetail create(StoryCreateRequest req) {
-    Requirement parent =
-        requirementRepo
-            .findById(req.getRequirementId())
+    Sprint sprint =
+        sprintRepo
+            .findById(req.getSprintId())
             .orElseThrow(
-                () ->
-                    new BadRequestException("requirement not found: id=" + req.getRequirementId()));
+                () -> new BadRequestException("sprint not found: id=" + req.getSprintId()));
     if (!userRepo.existsById(req.getOwnerUserId())) {
       throw new BadRequestException("owner user not found: id=" + req.getOwnerUserId());
     }
@@ -94,9 +98,10 @@ public class StoryService {
     s.setStatus(status);
     s.setPriority(priority);
     s.setComplexity(req.getComplexity());
-    s.setRequirementId(parent.getId());
-    // v0.0.9 Decision 4: projectId auto-inherited from parent Requirement at creation only.
-    s.setProjectId(parent.getProjectId());
+    s.setSprintId(sprint.getId());
+    // v0.0.10: projectId auto-inherited transitively from grandparent Requirement.
+    Requirement parentReq = requirementRepo.findById(sprint.getRequirementId()).orElse(null);
+    s.setProjectId(parentReq == null ? null : parentReq.getProjectId());
     s.setOwnerUserId(req.getOwnerUserId());
     s.setCloseReason(req.getCloseReason());
     return enrich(repo.saveAndFlush(s));
@@ -107,12 +112,12 @@ public class StoryService {
   }
 
   public PageResponse<StoryDetail> list(
-      Long requirementId, String status, String priority, PageParams page) {
+      Long sprintId, String status, String priority, PageParams page) {
     Specification<Story> spec =
         (root, query, cb) -> {
           javax.persistence.criteria.Predicate p = cb.conjunction();
-          if (requirementId != null) {
-            p = cb.and(p, cb.equal(root.get("requirementId"), requirementId));
+          if (sprintId != null) {
+            p = cb.and(p, cb.equal(root.get("sprintId"), sprintId));
           }
           if (status != null) {
             p = cb.and(p, cb.equal(root.get("status"), status));
@@ -188,8 +193,9 @@ public class StoryService {
   }
 
   /**
-   * Joins User + Requirement + Project to populate display fields. Defensive null handling so a
-   * hard-deleted referent doesn't 500 the read path.
+   * v0.0.10: 2-stage join Sprint → Requirement → Project + owner join. Populates sprintCode /
+   * sprintName / sprintStatus / requirementId / requirementCode / requirementTitle / projectName /
+   * projectCode / ownerName / ownerLoginName. Defensive null handling for read path.
    */
   private StoryDetail enrich(Story s) {
     StoryDetail dto = StoryDetail.from(s);
@@ -200,13 +206,20 @@ public class StoryService {
               dto.setOwnerName(u.getName());
               dto.setOwnerLoginName(u.getLoginName());
             });
-    requirementRepo
-        .findById(s.getRequirementId())
-        .ifPresent(
-            r -> {
-              dto.setRequirementCode(r.getCode());
-              dto.setRequirementTitle(r.getTitle());
-            });
+    Sprint sprint = sprintRepo.findById(s.getSprintId()).orElse(null);
+    if (sprint != null) {
+      dto.setSprintCode(sprint.getCode());
+      dto.setSprintName(sprint.getName());
+      dto.setSprintStatus(sprint.getStatus());
+      dto.setRequirementId(sprint.getRequirementId());
+      requirementRepo
+          .findById(sprint.getRequirementId())
+          .ifPresent(
+              r -> {
+                dto.setRequirementCode(r.getCode());
+                dto.setRequirementTitle(r.getTitle());
+              });
+    }
     if (s.getProjectId() != null) {
       Project p = projectRepo.findById(s.getProjectId()).orElse(null);
       if (p != null) {

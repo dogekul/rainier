@@ -20,6 +20,9 @@ import com.rainier.project.repository.ProjectRepository;
 import com.rainier.requirement.domain.Requirement;
 import com.rainier.requirement.domain.RequirementStatus;
 import com.rainier.requirement.repository.RequirementRepository;
+import com.rainier.sprint.domain.Sprint;
+import com.rainier.sprint.domain.SprintStatus;
+import com.rainier.sprint.repository.SprintRepository;
 import com.rainier.story.repository.StoryRepository;
 import com.rainier.user.domain.User;
 import com.rainier.user.repository.UserRepository;
@@ -41,6 +44,7 @@ class StoryControllerQueryTest {
 
   @Autowired private MockMvc mockMvc;
   @Autowired private StoryRepository storyRepo;
+  @Autowired private SprintRepository sprintRepo;
   @Autowired private RequirementRepository requirementRepo;
   @Autowired private ProjectRepository projectRepo;
   @Autowired private UserRepository userRepo;
@@ -49,6 +53,7 @@ class StoryControllerQueryTest {
   @BeforeEach
   void cleanDb() {
     storyRepo.deleteAll();
+    sprintRepo.deleteAll();
     requirementRepo.deleteAll();
     projectRepo.deleteAll();
     userRepo.deleteAll();
@@ -84,11 +89,22 @@ class StoryControllerQueryTest {
     return requirementRepo.saveAndFlush(r).getId();
   }
 
-  private Long createStory(Long ownerId, Long reqId, String code, String status) throws Exception {
+  private Long createSprint(Long reqId, Long ownerId, String code) {
+    Sprint sp = new Sprint();
+    sp.setCode(code);
+    sp.setName("Phase 1");
+    sp.setStatus(SprintStatus.PLANNING);
+    sp.setRequirementId(reqId);
+    sp.setOwnerUserId(ownerId);
+    return sprintRepo.saveAndFlush(sp).getId();
+  }
+
+  private Long createStory(Long ownerId, Long sprintId, String code, String status)
+      throws Exception {
     ObjectNode body = json.createObjectNode();
     body.put("code", code);
     body.put("title", "S");
-    body.put("requirementId", reqId);
+    body.put("sprintId", sprintId);
     body.put("ownerUserId", ownerId);
     if (status != null) {
       body.put("status", status);
@@ -104,13 +120,14 @@ class StoryControllerQueryTest {
     return json.readTree(res.getResponse().getContentAsString()).get("id").asLong();
   }
 
-  /** TC-STR-010: GET 详情完整字段集 + 富化. */
+  /** TC-STR-SPR-003 (v0.0.10): GET 详情字段集 + 二段富化（sprintCode/Name + requirementCode/Title）. */
   @Test
   void get_existingId_returnsFullDetailAndEnriched() throws Exception {
     Long userId = createUser("alice", "Alice");
     Long projectId = createProject(userId, "PROJ-Q1");
     Long reqId = createRequirement(userId, projectId, "REQ-1", "登录流程");
-    Long id = createStory(userId, reqId, "STR-Q1", null);
+    Long sprintId = createSprint(reqId, userId, "SPR-Q1");
+    Long id = createStory(userId, sprintId, "STR-Q1", null);
     MvcResult res =
         mockMvc
             .perform(get("/api/stories/" + id))
@@ -136,6 +153,10 @@ class StoryControllerQueryTest {
       "status",
       "priority",
       "complexity",
+      "sprintId",
+      "sprintCode",
+      "sprintName",
+      "sprintStatus",
       "requirementId",
       "requirementCode",
       "requirementTitle",
@@ -156,23 +177,24 @@ class StoryControllerQueryTest {
     }
   }
 
-  /** TC-STR-011: 按 requirementId 过滤列表. */
+  /** TC-STR-SPR-004 (v0.0.10): 按 sprintId 过滤列表. */
   @Test
-  void getList_filterByRequirementId_returnsOnlyMatching() throws Exception {
+  void getList_filterBySprintId_returnsOnlyMatching() throws Exception {
     Long userId = createUser("alice", "Alice");
     Long projectId = createProject(userId, "PROJ-F1");
     Long reqA = createRequirement(userId, projectId, "REQ-A", "x");
-    Long reqB = createRequirement(userId, projectId, "REQ-B", "x");
-    createStory(userId, reqA, "STR-F1", null);
-    createStory(userId, reqA, "STR-F2", null);
-    createStory(userId, reqA, "STR-F3", null);
-    createStory(userId, reqB, "STR-F4", null);
-    createStory(userId, reqB, "STR-F5", null);
+    Long sprA = createSprint(reqA, userId, "SPR-A");
+    Long sprB = createSprint(reqA, userId, "SPR-B");
+    createStory(userId, sprA, "STR-F1", null);
+    createStory(userId, sprA, "STR-F2", null);
+    createStory(userId, sprA, "STR-F3", null);
+    createStory(userId, sprB, "STR-F4", null);
+    createStory(userId, sprB, "STR-F5", null);
     mockMvc
-        .perform(get("/api/stories?requirementId=" + reqA))
+        .perform(get("/api/stories?sprintId=" + sprA))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.total").value(3))
-        .andExpect(jsonPath("$.content[*].requirementId", everyItem(is(reqA.intValue()))));
+        .andExpect(jsonPath("$.content[*].sprintId", everyItem(is(sprA.intValue()))));
   }
 
   /** TC-STR-012: 按 status 过滤列表. */
@@ -181,9 +203,10 @@ class StoryControllerQueryTest {
     Long userId = createUser("alice", "Alice");
     Long projectId = createProject(userId, "PROJ-F2");
     Long reqId = createRequirement(userId, projectId, "REQ-S", "x");
-    createStory(userId, reqId, "STR-S1", "IN_PROGRESS");
-    createStory(userId, reqId, "STR-S2", "IN_PROGRESS");
-    createStory(userId, reqId, "STR-S3", "DONE");
+    Long sprintId = createSprint(reqId, userId, "SPR-S");
+    createStory(userId, sprintId, "STR-S1", "IN_PROGRESS");
+    createStory(userId, sprintId, "STR-S2", "IN_PROGRESS");
+    createStory(userId, sprintId, "STR-S3", "DONE");
     mockMvc
         .perform(get("/api/stories?status=IN_PROGRESS"))
         .andExpect(status().isOk())
@@ -197,7 +220,8 @@ class StoryControllerQueryTest {
     Long userId = createUser("alice", "Alice");
     Long projectId = createProject(userId, "PROJ-U1");
     Long reqId = createRequirement(userId, projectId, "REQ-U", "x");
-    Long id = createStory(userId, reqId, "STR-U1", null);
+    Long sprintId = createSprint(reqId, userId, "SPR-U1");
+    Long id = createStory(userId, sprintId, "STR-U1", null);
     ObjectNode body = json.createObjectNode();
     body.put("code", "STR-U1");
     body.put("title", "X");
@@ -223,7 +247,8 @@ class StoryControllerQueryTest {
     Long userB = createUser("lili", "黎立");
     Long projectId = createProject(userA, "PROJ-U2");
     Long reqId = createRequirement(userA, projectId, "REQ-U2", "x");
-    Long id = createStory(userA, reqId, "STR-OWN", null);
+    Long sprintId = createSprint(reqId, userA, "SPR-U2");
+    Long id = createStory(userA, sprintId, "STR-OWN", null);
     ObjectNode body = json.createObjectNode();
     body.put("code", "STR-OWN");
     body.put("title", "X");
@@ -247,7 +272,8 @@ class StoryControllerQueryTest {
     Long userId = createUser("alice", "Alice");
     Long projectId = createProject(userId, "PROJ-U3");
     Long reqId = createRequirement(userId, projectId, "REQ-U3", "x");
-    Long id = createStory(userId, reqId, "STR-U3", null);
+    Long sprintId = createSprint(reqId, userId, "SPR-U3");
+    Long id = createStory(userId, sprintId, "STR-U3", null);
     ObjectNode body = json.createObjectNode();
     body.put("code", "STR-U3");
     body.put("title", "X");

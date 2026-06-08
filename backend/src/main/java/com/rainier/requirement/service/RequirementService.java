@@ -47,7 +47,7 @@ public class RequirementService {
   private final DemandRepository demandRepo;
   private final DemandRequirementLinkRepository linkRepo;
   private final ProjectRepository projectRepo;
-  private final com.rainier.story.repository.StoryRepository storyRepo;
+  private final com.rainier.sprint.repository.SprintRepository sprintRepo;
 
   public RequirementService(
       RequirementRepository repo,
@@ -55,13 +55,13 @@ public class RequirementService {
       DemandRepository demandRepo,
       DemandRequirementLinkRepository linkRepo,
       ProjectRepository projectRepo,
-      com.rainier.story.repository.StoryRepository storyRepo) {
+      com.rainier.sprint.repository.SprintRepository sprintRepo) {
     this.repo = repo;
     this.userRepo = userRepo;
     this.demandRepo = demandRepo;
     this.linkRepo = linkRepo;
     this.projectRepo = projectRepo;
-    this.storyRepo = storyRepo;
+    this.sprintRepo = sprintRepo;
   }
 
   @Transactional(rollbackFor = Exception.class)
@@ -227,9 +227,10 @@ public class RequirementService {
       throw new ConflictException("requirement has linked demands");
     }
     // v0.0.9: also block delete when Stories still reference this Requirement.
-    long storyCount = storyRepo.countByRequirementId(id);
-    if (storyCount > 0) {
-      throw new ConflictException("requirement has linked stories");
+    // v0.0.10: Story is no longer directly under Requirement; check Sprint FK instead.
+    long sprintCount = sprintRepo.countByRequirementId(id);
+    if (sprintCount > 0) {
+      throw new ConflictException("requirement has linked sprints");
     }
     repo.delete(r);
   }
@@ -262,8 +263,8 @@ public class RequirementService {
         dto.setProjectCode(p.getCode());
       }
     }
-    // v0.0.9: storyCount enrichment for RequirementsPage drilldown count column.
-    dto.setStoryCount(storyRepo.countByRequirementId(r.getId()));
+    // v0.0.10: sprintCount enrichment replaces v0.0.9 storyCount (Story now under Sprint).
+    dto.setSprintCount(sprintRepo.countByRequirementId(r.getId()));
     return dto;
   }
 }

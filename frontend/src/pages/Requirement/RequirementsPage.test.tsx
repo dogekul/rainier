@@ -20,7 +20,7 @@ vi.mock('../../api/requirement', async () => {
           ownerLoginName: 'alice',
           status: 'DRAFT',
           priority: 'MEDIUM',
-          storyCount: 3,
+          sprintCount: 3,
         },
       ],
       total: 1,
@@ -30,29 +30,29 @@ vi.mock('../../api/requirement', async () => {
   };
 });
 
-vi.mock('../../api/story', async () => {
-  const actual = await vi.importActual<typeof import('../../api/story')>('../../api/story');
+vi.mock('../../api/sprint', async () => {
+  const actual = await vi.importActual<typeof import('../../api/sprint')>('../../api/sprint');
   return {
     ...actual,
-    listStories: vi.fn().mockResolvedValue({
+    listSprints: vi.fn().mockResolvedValue({
       content: [
         {
           id: 10,
-          code: 'STR-10',
-          title: 'S10',
-          status: 'DRAFT',
-          priority: 'MEDIUM',
+          code: 'SPR-A',
+          name: 'Phase 1',
+          status: 'PLANNING',
           requirementId: 1,
           ownerUserId: 1,
+          storyCount: 0,
         },
         {
           id: 11,
-          code: 'STR-11',
-          title: 'S11',
-          status: 'IN_PROGRESS',
-          priority: 'HIGH',
+          code: 'SPR-B',
+          name: 'Phase 2',
+          status: 'ACTIVE',
           requirementId: 1,
           ownerUserId: 1,
+          storyCount: 0,
         },
       ],
       total: 2,
@@ -82,33 +82,31 @@ describe('RequirementsPage drilldown', () => {
     useAuthStore.setState({ token: 'tk', user: { username: 'alice' } });
   });
 
-  /** TC-FES-S01: 表格含 "Story 数" 列 + 单元格显示 r.storyCount. */
-  it('renders Story 数 column with storyCount value (TC-FES-S01)', async () => {
+  /** TC-FES-SPR-05 (v0.0.10): 表格含 "Sprint 数" 列 + 单元格显示 r.sprintCount. */
+  it('renders Sprint 数 column with sprintCount value (TC-FES-SPR-05)', async () => {
     render(<RequirementsPage />);
     await waitFor(() => {
       expect(screen.getByText('REQ-1')).toBeInTheDocument();
     });
-    expect(screen.getByText('Story 数')).toBeInTheDocument();
-    // The storyCount cell renders "3" for the seeded Requirement.
+    expect(screen.getByText('Sprint 数')).toBeInTheDocument();
     expect(screen.getByText('3')).toBeInTheDocument();
-    // Expand button is present.
     expect(screen.getByTestId('req-expand-btn-1')).toBeInTheDocument();
   });
 
-  /** TC-FES-S02: 点开行渲染 StoryListPanel + 子表含 STR-10/STR-11 + 新建按钮. */
-  it('expanding a row renders the StoryListPanel sub-table (TC-FES-S02)', async () => {
+  /** TC-FES-SPR-05 part B (v0.0.10): expanding a row renders SprintListPanel + sub-table. */
+  it('expanding a row renders the SprintListPanel sub-table (TC-FES-SPR-05)', async () => {
     render(<RequirementsPage />);
     await waitFor(() => {
       expect(screen.getByTestId('req-expand-btn-1')).toBeInTheDocument();
     });
     fireEvent.click(screen.getByTestId('req-expand-btn-1'));
     await waitFor(() => {
-      expect(screen.getByTestId('story-list-panel-1')).toBeInTheDocument();
+      expect(screen.getByTestId('sprint-list-panel-1')).toBeInTheDocument();
     });
     await waitFor(() => {
-      expect(screen.getByText('STR-10')).toBeInTheDocument();
-      expect(screen.getByText('STR-11')).toBeInTheDocument();
+      expect(screen.getByText('SPR-A')).toBeInTheDocument();
+      expect(screen.getByText('SPR-B')).toBeInTheDocument();
     });
-    expect(screen.getByTestId('stories-new-btn')).toBeInTheDocument();
+    expect(screen.getByTestId('sprints-new-btn')).toBeInTheDocument();
   });
 });

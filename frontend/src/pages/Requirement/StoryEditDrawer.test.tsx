@@ -29,7 +29,9 @@ describe('StoryEditDrawer', () => {
     render(
       <StoryEditDrawer
         open={true}
-        requirementId={42}
+        sprintId={10}
+        sprintCode="SPR-A"
+        sprintName="Phase 1"
         requirementCode="REQ-42"
         requirementTitle="登录流程"
         editing={null}
@@ -57,7 +59,9 @@ describe('StoryEditDrawer', () => {
     render(
       <StoryEditDrawer
         open={true}
-        requirementId={42}
+        sprintId={10}
+        sprintCode="SPR-A"
+        sprintName="Phase 1"
         requirementCode="REQ-42"
         requirementTitle="登录流程"
         editing={{
@@ -66,6 +70,7 @@ describe('StoryEditDrawer', () => {
           title: 'X',
           status: 'DRAFT',
           priority: 'MEDIUM',
+          sprintId: 10,
           requirementId: 42,
           ownerUserId: 1,
         }}
@@ -97,7 +102,9 @@ describe('StoryEditDrawer', () => {
     render(
       <StoryEditDrawer
         open={true}
-        requirementId={42}
+        sprintId={10}
+        sprintCode="SPR-A"
+        sprintName="Phase 1"
         requirementCode="REQ-42"
         requirementTitle="登录流程"
         editing={null}

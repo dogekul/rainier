@@ -26,8 +26,11 @@ const COMPLEXITY_OPTIONS: Complexity[] = ['XS', 'S', 'M', 'L', 'XL'];
 
 export interface StoryEditDrawerProps {
   open: boolean;
-  /** Parent Requirement context (id + code + title for the locked display field). */
-  requirementId: number;
+  /** v0.0.10: parent Sprint context (locked display). */
+  sprintId: number;
+  sprintCode: string;
+  sprintName: string;
+  /** Grandparent Requirement display info (also shown in locked panel). */
   requirementCode: string;
   requirementTitle: string;
   /** Edit mode when non-null. */
@@ -39,7 +42,9 @@ export interface StoryEditDrawerProps {
 
 export function StoryEditDrawer({
   open,
-  requirementId,
+  sprintId,
+  sprintCode,
+  sprintName,
   requirementCode,
   requirementTitle,
   editing,
@@ -108,7 +113,7 @@ export function StoryEditDrawer({
       onClose={onClose}
     >
       <div style={{ marginBottom: 12 }}>
-        <label style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }}>所属需求</label>
+        <label style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }}>所属 Sprint</label>
         <div
           style={{
             padding: '6px 10px',
@@ -116,9 +121,22 @@ export function StoryEditDrawer({
             borderRadius: 4,
             fontSize: 13,
           }}
+          data-testid="story-drawer-sprint-display"
+        >
+          {sprintName}（{sprintCode}）— 创建时锁定
+        </div>
+        <div
+          style={{
+            padding: '4px 10px',
+            background: 'var(--rainier-color-bg-2)',
+            borderRadius: 4,
+            fontSize: 11,
+            color: 'var(--rainier-color-text-2)',
+            marginTop: 2,
+          }}
           data-testid="story-drawer-requirement-display"
         >
-          {requirementTitle}（{requirementCode}）— 创建时锁定
+          上级需求：{requirementTitle}（{requirementCode}）
         </div>
       </div>
       <Input
@@ -258,7 +276,7 @@ export function StoryEditDrawer({
                 status,
                 priority,
                 complexity: (complexity || undefined) as Complexity | undefined,
-                requirementId,
+                sprintId,
                 ownerUserId,
                 closeReason: closeReason || undefined,
               });

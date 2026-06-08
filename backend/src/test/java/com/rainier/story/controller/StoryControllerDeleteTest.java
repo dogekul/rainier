@@ -15,6 +15,9 @@ import com.rainier.project.repository.ProjectRepository;
 import com.rainier.requirement.domain.Requirement;
 import com.rainier.requirement.domain.RequirementStatus;
 import com.rainier.requirement.repository.RequirementRepository;
+import com.rainier.sprint.domain.Sprint;
+import com.rainier.sprint.domain.SprintStatus;
+import com.rainier.sprint.repository.SprintRepository;
 import com.rainier.story.repository.StoryRepository;
 import com.rainier.user.domain.User;
 import com.rainier.user.repository.UserRepository;
@@ -36,6 +39,7 @@ class StoryControllerDeleteTest {
 
   @Autowired private MockMvc mockMvc;
   @Autowired private StoryRepository storyRepo;
+  @Autowired private SprintRepository sprintRepo;
   @Autowired private RequirementRepository requirementRepo;
   @Autowired private ProjectRepository projectRepo;
   @Autowired private UserRepository userRepo;
@@ -44,6 +48,7 @@ class StoryControllerDeleteTest {
   @BeforeEach
   void cleanDb() {
     storyRepo.deleteAll();
+    sprintRepo.deleteAll();
     requirementRepo.deleteAll();
     projectRepo.deleteAll();
     userRepo.deleteAll();
@@ -73,11 +78,18 @@ class StoryControllerDeleteTest {
     r.setStatus(RequirementStatus.DRAFT);
     r.setPriority(Priority.MEDIUM);
     Long reqId = requirementRepo.saveAndFlush(r).getId();
+    Sprint sp = new Sprint();
+    sp.setCode("SPR-D");
+    sp.setName("x");
+    sp.setStatus(SprintStatus.PLANNING);
+    sp.setRequirementId(reqId);
+    sp.setOwnerUserId(userId);
+    Long sprintId = sprintRepo.saveAndFlush(sp).getId();
 
     ObjectNode body = json.createObjectNode();
     body.put("code", "STR-D1");
     body.put("title", "x");
-    body.put("requirementId", reqId);
+    body.put("sprintId", sprintId);
     body.put("ownerUserId", userId);
     MvcResult res =
         mockMvc

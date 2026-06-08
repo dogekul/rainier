@@ -37,7 +37,8 @@ public class StoryCreateRequest {
   @Size(max = 8)
   private String complexity;
 
-  @NotNull private Long requirementId;
+  /** v0.0.10: Story belongs to Sprint, not Requirement directly. */
+  @NotNull private Long sprintId;
 
   @NotNull private Long ownerUserId;
 
@@ -100,12 +101,12 @@ public class StoryCreateRequest {
     this.complexity = complexity;
   }
 
-  public Long getRequirementId() {
-    return requirementId;
+  public Long getSprintId() {
+    return sprintId;
   }
 
-  public void setRequirementId(Long requirementId) {
-    this.requirementId = requirementId;
+  public void setSprintId(Long sprintId) {
+    this.sprintId = sprintId;
   }
 
   public Long getOwnerUserId() {

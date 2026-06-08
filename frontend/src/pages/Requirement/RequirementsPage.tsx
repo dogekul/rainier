@@ -13,7 +13,7 @@ import {
 } from '../../api/requirement';
 import { usePaginated } from '../../hooks/usePaginated';
 import { RequirementEditDrawer } from './RequirementEditDrawer';
-import { StoryListPanel } from './StoryListPanel';
+import { SprintListPanel } from './SprintListPanel';
 
 export function RequirementsPage() {
   const fetcher = useCallback(
@@ -39,7 +39,7 @@ export function RequirementsPage() {
   // Memoize so StoryListPanel's effect doesn't re-trigger on every parent render
   // (a fresh-function identity would cause an infinite refetch loop).
   const refetchRequirements = list.refetch;
-  const onStoryCountChange = useCallback(() => {
+  const onSprintCountChange = useCallback(() => {
     void refetchRequirements();
   }, [refetchRequirements]);
 
@@ -72,9 +72,9 @@ export function RequirementsPage() {
       render: (r) => (r.projectName ? `${r.projectName}（${r.projectCode ?? ''}）` : '—'),
     },
     {
-      key: 'storyCount',
-      title: 'Story 数',
-      render: (r) => (r.storyCount ?? 0).toString(),
+      key: 'sprintCount',
+      title: 'Sprint 数',
+      render: (r) => (r.sprintCount ?? 0).toString(),
     },
     { key: 'status', title: '状态', render: (r) => r.status },
     { key: 'priority', title: '优先级', render: (r) => r.priority },
@@ -122,11 +122,11 @@ export function RequirementsPage() {
         rowKey="id"
         isExpanded={(r) => expanded.has(r.id)}
         renderExpanded={(r) => (
-          <StoryListPanel
+          <SprintListPanel
             requirementId={r.id}
             requirementCode={r.code}
             requirementTitle={r.title}
-            onCountChange={onStoryCountChange}
+            onCountChange={onSprintCountChange}
           />
         )}
       />
@@ -154,7 +154,7 @@ export function RequirementsPage() {
       <ConfirmDialog
         open={confirmDelete !== null}
         title="删除需求"
-        message={`确认删除需求「${confirmDelete?.code ?? ''}」？有关联诉求或 Story 时会被拒绝。`}
+        message={`确认删除需求「${confirmDelete?.code ?? ''}」？有关联诉求或 Sprint 时会被拒绝。`}
         onCancel={() => setConfirmDelete(null)}
         onConfirm={async () => {
           if (confirmDelete) await deleteRequirement(confirmDelete.id);

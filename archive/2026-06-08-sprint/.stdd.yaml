@@ -1,0 +1,196 @@
+change:
+  name: sprint
+  date: '2026-06-08'
+  title: Sprint 实体补全 Requirement → Sprint → Story 三层
+  type: domain-entity
+  triggered_by: 'user request post v0.0.9-story Phase 5 — "在需求和 Story 之间增加 Sprint 中间层"'
+  follows_up:
+    - 2026-06-07-story                # v0.0.9 — Story 当前直挂 Requirement
+  prepares_for:
+    - task-entity                     # 待办 (v0.0.11+) — Task 多源
+    - story-requirement-id-column-drop # 待办 — DROP rainier_story.requirement_id 死列
+
+phase:
+  current: archived
+  archived_at: '2026-06-09'
+  understand:
+    status: completed
+    confirmed_at: '2026-06-08'
+    artifact: proposal.md
+  spec:
+    status: completed
+    confirmed_at: '2026-06-08'
+    artifacts:
+      - design.md
+      - specs/entity-sprint/spec.md
+      - specs/entity-requirement/spec.md
+      - specs/entity-story/spec.md
+      - specs/frontend-scaffold/spec.md
+      - test-plan.md
+    metrics:
+      capabilities: 4              # 1 NEW + 3 MODIFIED
+      requirements: 14
+      scenarios: 33
+      tc_cases: 33
+      p0: 33
+      p1: 0
+      p2: 0
+    revisions:
+      - 'Decision 2 revised post-Gate-2: DB-level NOT NULL via post-migration ALTER. LegacyStoryToSprintMigration adds Step 2 native ALTER MODIFY COLUMN sprint_id BIGINT NOT NULL after data fill.'
+  slice:
+    status: completed
+    confirmed_at: '2026-06-08'
+    artifacts:
+      - slices.md
+      - tasks.md
+    metrics:
+      slices: 13
+      p0_slices: 13
+      backend_slices: 8   # M01-M08
+      frontend_slices: 4  # M09-M12
+      e2e_slices: 1       # M13
+  build:
+    status: completed
+    completed_at: '2026-06-09'
+    metrics:
+      backend_tests: 186     # 167 baseline + 19 new (Sprint CRUD + migration + Req改造已合入)
+      frontend_tests: 37     # baseline 37 — v0.0.9 tests adapted to v0.0.10 in-place
+      e2e_curl: green
+    notable_fixes:
+      - 'migration column check: lowercased TABLE_NAME / COLUMN_NAME for MySQL case-sensitivity'
+      - 'orphan detection broadened: sprint_id IS NULL OR =0 OR NOT IN (live sprints) — MySQL ADD COLUMN NOT NULL auto-fills 0'
+      - 'H2 fallback ALTER syntax: MODIFY vs ALTER COLUMN SET NOT NULL (try/catch)'
+  verify:
+    status: completed
+    completed_at: '2026-06-09'
+    artifacts:
+      - test-report.md
+      - design-adjustments.md
+      - pending-adjustments.md
+    metrics:
+      backend_tests_total: 186
+      frontend_tests_total: 41
+      review_round0_aggregate_initial:
+        critical: 2
+        high: 11
+        medium: 17
+      review_round0_aggregate_post_fix:
+        critical: 0
+        high: 3       # all recorded; Code-H3 mitigated via addSuppressed
+        medium: 12    # 2 over threshold; family-pattern / cosmetic
+      scenario_coverage_percent: 100   # 33 / 33
+      e2e_status: green
+  deliver:
+    status: completed
+    completed_at: '2026-06-09'
+    artifacts:
+      - archive/2026-06-08-sprint/
+      - specs/entity-sprint/spec.md       # NEW
+      - specs/entity-story/spec.md        # MODIFIED — drop requirementId, add sprintId
+      - specs/entity-requirement/spec.md  # MODIFIED — storyCount → sprintCount + Story FK → Sprint FK
+      - specs/frontend-scaffold/spec.md   # MODIFIED — Sprint menu + /pm/sprints + drilldown reshape
+    tag: v0.0.10-sprint
+
+scope:
+  type: domain-entity
+  entities:
+    - rainier_sprint     # NEW (soft-delete)
+  column_additions:
+    - rainier_story.sprint_id BIGINT NN  # 通过 LegacyStoryToSprintMigration 在 NN 生效前先填好
+  column_orphans:        # 列保留但代码不再读写
+    - rainier_story.requirement_id        # v0.0.11+ cleanup 时 DROP
+  capabilities_modified:
+    - entity-requirement              # DELETE FK 改 sprint + sprintCount 富化（替换 storyCount）
+    - entity-story                    # requirementId → sprintId；enrich 改二段 join
+    - frontend-scaffold               # Sider Sprint 菜单 + /pm/sprints + drilldown 重构
+  capabilities_new:
+    - entity-sprint
+  explicitly_excluded:
+    - drop-legacy-requirement-id-column  # v0.0.11+
+    - sprint-time-coherence-check        # 语义是层级
+    - sprint-dependencies                # dependsOn
+    - sprint-burndown-velocity           # 报表
+    - sprint-status-auto-transition      # 自动状态转换
+    - sprint-story-sort-order            # 拖拽
+    - cross-requirement-sprint           # 一 Sprint 只挂一 Requirement
+    - cross-sprint-story                 # 一 Story 只挂一 Sprint
+    - task-entity                        # v0.0.11+
+    - ai-sprint-suggestion               # AI 拆解
+
+baselines_preserved:
+  v0_0_3: 'User / Organization / UserOrganization'
+  v0_0_4: 'all v1 entities BIGINT IDENTITY; single BaseEntity'
+  v0_0_5: 'Organization has NO isPmo field'
+  v0_0_6: 'demand / requirement / demand_requirement intact'
+  v0_0_7: 'position / role / user_role intact'
+  v0_0_8: 'project + Requirement.project_id activation + owner mutable'
+  v0_0_8_1: 'DanglingProjectIdCleanup hardening + PUT semantics'
+  v0_0_9: 'story entity + Requirement.storyCount enrichment + drilldown'
+
+design_decisions_pre_locked:
+  timing: |
+    v0.0.9-story Phase 6 DELIVER must complete (archive + merge specs + commit + tag
+    v0.0.9-story) before this change starts. v0.0.10 source paths reference Story
+    files from v0.0.9.
+  sprint_semantics: |
+    Sprint is a HIERARCHICAL grouping (Requirement decomposition layer), NOT an
+    agile time-box. Service does NOT enforce start_date ≤ end_date or any time
+    coherence. The date / goal fields are reference metadata only.
+  story_sprint_mandatory: |
+    Story.sprintId is NOT NULL. Story cannot float free of a Sprint. The legacy
+    v0.0.9 Story.requirementId column stays in DB (ddl-auto=update never drops
+    columns) but is removed from the Java entity / DTO / Service code path.
+  sprint_field_set: |
+    code (UNIQUE service-level) / name / description / goal VARCHAR(2000) /
+    status VARCHAR(16) / requirement_id BIGINT NN / owner_user_id BIGINT NN /
+    start_date DATE NULL / end_date DATE NULL + 6 audit + del_flag.
+  story_requirement_id_removal: |
+    Story.requirementId column is intentionally orphaned. New code paths reach
+    Requirement via sprint.requirementId. A separate v0.0.11+ change will
+    DROP COLUMN rainier_story.requirement_id once long-tail readers are confirmed
+    absent.
+  sprint_status_machine: |
+    4-state: PLANNING / ACTIVE / COMPLETED / CANCELLED. No state transition
+    guards in v0.0.10 (parallels Story v0.0.9 design decision 8).
+  frontend_shape: |
+    Two-page split: /pm/requirements drilldown shows Sprints (SprintListPanel);
+    /pm/sprints (new menu item + page) shows Sprint CRUD with drilldown to Stories
+    (reuses v0.0.9 StoryListPanel). StoryEditDrawer's locked-display swaps from
+    Requirement to Sprint.
+  legacy_migration: |
+    LegacyStoryToSprintMigration @Component @Order(HIGHEST_PRECEDENCE) +
+    @Transactional. Scans rainier_story.sprint_id IS NULL rows; groups by
+    requirement_id; for each group creates Sprint(code="SPRINT-DEFAULT-<reqCode>",
+    name="默认 Sprint", status=ACTIVE, owner=requirement.owner) and assigns its
+    Story.sprint_id. Idempotent: subsequent boots find 0 rows and exit early.
+    Parallels v0.0.8 DanglingProjectIdCleanup.
+
+long_range:
+  enabled: true
+  mode: full_auto
+  pre_auth_completed: true
+  pre_auth_timestamp: '2026-06-08'
+  pre_auth:
+    design_deviation:
+      minor: auto_record
+      major: auto_record_continue
+    technical_blocker:
+      strategy: workaround
+    iteration:
+      max_rounds: 10
+      on_cap: report_in_summary
+    operations:
+      directory: allow
+      file_write: allow
+      command_exec: allow
+      script_exec: allow
+      network: allow
+      file_read: allow
+      git_readonly: allow
+      git_commit_tag_no_push: allow
+    gate3: mandatory
+  degradation:
+    max_consecutive_failures: 3
+    pass_rate_threshold: 0.95
+    safety_check: true
+  settings_file: .claude/settings.local.json  # 复用 v0.0.3..v0.0.9 配置

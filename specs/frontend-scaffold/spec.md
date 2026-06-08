@@ -5,6 +5,7 @@
 > - 2026-06-05 (v0.0.7-position-role) — added 人事配置 menu group + `/hr/*` routes.
 > - 2026-06-07 (v0.0.8-project) — added 项目 menu item (first position in 需求管理) + `/pm/projects` route + ProjectsPage; converted projectId numeric input → Project dropdown in RequirementEditDrawer and UserRolesPage; added 项目 column to Requirement / UserRole lists; `/pm` redirect now points at `/pm/projects` (was `/pm/demands`).
 > - 2026-06-08 (v0.0.9-story) — RequirementsPage row drilldown: per-Requirement expand button reveals a StoryListPanel (sub-table + new Story button + edit/delete); added `"Story 数"` column showing `storyCount` enrichment; introduced `StoryEditDrawer` for Story create/edit (default owner = current logged-in user, Requirement field locked; sibling of v0.0.8 default-owner pattern); added shared Table primitive `isExpanded` / `renderExpanded` props to support drilldown without bespoke per-page expand state.
+> - 2026-06-09 (v0.0.10-sprint) — Sider 「需求管理」 grows to 5 items: 项目 / **Sprint** / 诉求 / 需求 / 诉求-需求关联; added `/pm/sprints` route → SprintsPage (read-only browser with row-expand revealing StoryListPanel keyed by sprintId); RequirementsPage drilldown swapped: StoryListPanel → SprintListPanel (CRUD for Sprint, with row Sprint count column renamed 'Story 数' → 'Sprint 数' sourced from `sprintCount`); SprintEditDrawer mirrors StoryEditDrawer pattern (default owner = current logged-in user, parent Requirement field locked at creation, owner mutable on edit); StoryEditDrawer locked-display swap: shows parent Sprint + grandparent Requirement (was Requirement-only); StoryListPanel prop change: requirementId → sprintId; new `api/sprint.ts` for Sprint CRUD.
 
 ## Requirements
 
@@ -138,24 +139,30 @@
 
 ## MODIFIED Requirements (from change 2026-06-05-demand-requirement)
 
-### Requirement: Sider 含「需求管理」菜单组（v0.0.8 起 4 项，项目排第一）
+### Requirement: Sider 含「需求管理」菜单组（v0.0.10 起 5 项，Sprint 排第二）
 
-前端 SHALL 在登录后页面（AppLayout 下）的左侧 Sider 中新增菜单组「需求管理」，位于「组织」之后；展开后含 4 项（v0.0.8 起）：项目 / 诉求 / 需求 / 诉求-需求关联，项目项排第一。
+前端 SHALL 在登录后页面（AppLayout 下）的左侧 Sider 中渲染菜单组「需求管理」（位于「组织」之后）；展开后含 5 项（v0.0.10 起）：项目 / **Sprint** / 诉求 / 需求 / 诉求-需求关联，Sprint 项位于项目与诉求之间。
 
-#### Scenario: Sider 含「需求管理」4 路由（v0.0.8）
+#### Scenario: Sider 含「需求管理」5 路由（v0.0.10）
 
 - **GIVEN** 用户已登录访问 `/`
 - **WHEN** 页面渲染完成
 - **THEN** 左侧 Sider SHALL 渲染
 - **AND** Sider SHALL 含菜单组 `"需求管理"`
-- **AND** 该组展开后 SHALL 含 4 项：`"项目"`、`"诉求"`、`"需求"`、`"诉求-需求关联"`
-- **AND** 项目项 SHALL 位于诉求项之前
-- **AND** 点击 `"项目"` SHALL 跳转 `/pm/projects`
-- **AND** 点击 `"诉求"` SHALL 跳转 `/pm/demands`
+- **AND** 该组展开后 SHALL 含 5 项：`"项目"`、`"Sprint"`、`"诉求"`、`"需求"`、`"诉求-需求关联"`
+- **AND** Sprint 项 SHALL 位于项目项之后、诉求项之前
+- **AND** 点击 `"Sprint"` SHALL 跳转 `/pm/sprints`
 
-### Requirement: /pm/* 路由全部注册（v0.0.8 加 /pm/projects + 重定向变更）
+### Requirement: /pm/* 路由全部注册（v0.0.10 加 /pm/sprints）
 
-前端 SHALL 在 router 中注册 `/pm/projects`（v0.0.8）、`/pm/demands`、`/pm/requirements`、`/pm/demand-requirements` 四条路由；访问 `/pm` SHALL 重定向至 `/pm/projects`（v0.0.8 起；v0.0.6 重定向至 `/pm/demands`）。
+前端 SHALL 在 router 中注册 `/pm/projects`、**`/pm/sprints`（v0.0.10）**、`/pm/demands`、`/pm/requirements`、`/pm/demand-requirements` 五条路由；`/pm` 重定向至 `/pm/projects` 保持不变。
+
+#### Scenario: /pm/sprints 路由直接访问（v0.0.10）
+
+- **GIVEN** 用户已登录
+- **WHEN** 浏览器直接访问 `/pm/sprints`
+- **THEN** SHALL 渲染 `SprintsPage` 组件
+- **AND** `grep -c "/pm/sprints" frontend/src/AppRoutes.tsx` SHALL ≥ 1（防止 linter 静默回退）
 
 #### Scenario: /pm/projects 路由直接访问（v0.0.8）
 
@@ -246,25 +253,43 @@
 - **WHEN** 用户从下拉选择 id=1，填写 loginName + name，点保存
 - **THEN** mock `createUser` SHALL 被调用且参数 body.positionId SHALL 等于 1
 
-### Requirement: RequirementsPage 行级 Story drilldown + storyCount 列（v0.0.9）
+### Requirement: RequirementsPage 行级 drilldown — v0.0.10 改 Sprint 子表 + sprintCount 列
 
-前端 SHALL 在 RequirementsPage 列表新增一列 `"Story 数"` 显示 `r.storyCount`；每行新增展开按钮，点击展开后渲染子区域 `StoryListPanel`，调用 `listStories({requirementId: r.id})` 取该 Requirement 下的 Stories，渲染为表格 + "新建 Story" 按钮 + 每行"编辑 / 删除"按钮。**不**新增独立 Sider 菜单项，**不**新增独立 `/pm/stories` 路由。
+前端 SHALL 在 RequirementsPage 列表显示一列 `"Sprint 数"` 显示 `r.sprintCount`（v0.0.10 替换 v0.0.9 "Story 数" / `storyCount`）；每行展开按钮点击后渲染 `SprintListPanel`，调用 `listSprints({requirementId: r.id})` 取该 Requirement 下的 Sprints，渲染为表格 + "新建 Sprint" 按钮 + 每行"编辑 / 删除"按钮。**不**新增独立 Sider 菜单项专给 SprintListPanel。
 
-#### Scenario: RequirementsPage 表格含 Story 数 列
+#### Scenario: RequirementsPage 表格含 Sprint 数 列 (v0.0.10)
 
-- **GIVEN** 用户已登录访问 `/pm/requirements`；mock `listRequirements` 返回 1 行 `{id: 1, code: "REQ-1", title: "X", storyCount: 3}`
+- **GIVEN** 用户已登录访问 `/pm/requirements`；mock `listRequirements` 返回 1 行 `{id: 1, code: "REQ-1", title: "X", sprintCount: 3}`
 - **WHEN** 页面渲染完成
-- **THEN** 表格 SHALL 含一列标题 `"Story 数"`
-- **AND** 该行 `"Story 数"` 单元格 SHALL 显示 `"3"`
+- **THEN** 表格 SHALL 含一列标题 `"Sprint 数"`
+- **AND** 该行 `"Sprint 数"` 单元格 SHALL 显示 `"3"`
 - **AND** 该行 SHALL 渲染 `"展开"` 按钮
 
-#### Scenario: 点开行渲染 StoryListPanel + 子表
+#### Scenario: 点开行渲染 SprintListPanel + 子表 (v0.0.10)
 
-- **GIVEN** mock `listStories({requirementId: 1})` 返回 2 行 Story `[{id:10, code:"STR-10", title:"S10", status:"DRAFT"}, {id:11, code:"STR-11", title:"S11", status:"IN_PROGRESS"}]`
+- **GIVEN** mock `listSprints({requirementId: 1})` 返回 2 行 Sprint `[{id:10, code:"SPR-A", name:"Phase 1", status:"PLANNING"}, {id:11, code:"SPR-B", name:"Phase 2", status:"ACTIVE"}]`
 - **WHEN** 用户点击 Requirement 行的展开按钮
-- **THEN** 子区域 SHALL 渲染 `data-testid="story-list-panel-1"`
-- **AND** 子表 SHALL 含 `"STR-10"` 与 `"STR-11"` 两行
-- **AND** 子区域 SHALL 含 `"新建 Story"` 按钮（`data-testid="stories-new-btn"`）
+- **THEN** 子区域 SHALL 渲染 `data-testid="sprint-list-panel-1"`
+- **AND** 子表 SHALL 含 `"SPR-A"` 与 `"SPR-B"` 两行
+- **AND** 子区域 SHALL 含 `"新建 Sprint"` 按钮（`data-testid="sprints-new-btn"`）
+
+### Requirement: SprintsPage + SprintEditDrawer + Story drilldown reshape（v0.0.10）
+
+前端 SHALL 提供 `SprintsPage` 浏览页（`/pm/sprints`，展开行渲染 `StoryListPanel`，按 `sprintId` 查询 Stories）；SHALL 提供 `SprintEditDrawer` 组件用于新增 / 编辑 Sprint（默认 owner = 当前登录用户；「所属 Requirement」字段创建时锁定，编辑模式同样锁定；owner 字段可改；空 owner 时显示表单错误，沿用 v0.0.8.1 Code-M7 模式）。`StoryEditDrawer` 锁定显示 SHALL 升级为「所属 Sprint + 上级 Requirement」两段；`StoryListPanel` 入参 SHALL 改为 sprintId（替换 v0.0.9 requirementId）。
+
+#### Scenario: SprintsPage 行展开渲染 StoryListPanel(sprintId)
+
+- **GIVEN** mock `listSprints` 返回 1 行 `{id:10, code:"SPR-A", name:"Phase 1", ...}`；mock `listStories({sprintId:10})` 返回 2 行
+- **WHEN** 用户访问 `/pm/sprints` 并点击 Sprint 行展开按钮
+- **THEN** 子区域 SHALL 渲染 `data-testid="story-list-panel-10"`
+- **AND** 子区域 SHALL 含 `"新建 Story"` 按钮
+
+#### Scenario: SprintEditDrawer 默认 owner = 当前登录用户
+
+- **GIVEN** Auth store 中 `user.username="alice"`；mock `listUsers` 返回包含 `{id:1, loginName:"alice"}`；用户在 RequirementsPage 展开了 Requirement id=42
+- **WHEN** 用户点击 "新建 Sprint" 按钮打开抽屉，且 listUsers promise 已 resolve
+- **THEN** 「负责人」下拉的当前选中值 SHALL 等于 `1`
+- **AND** 「所属需求」字段 SHALL 锁定显示 Requirement 42 信息，**不**可选择其它 Requirement
 
 ### Requirement: StoryEditDrawer 新增/编辑 Story 抽屉（v0.0.9）
 

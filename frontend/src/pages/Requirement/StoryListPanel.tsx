@@ -12,17 +12,21 @@ import {
 import { StoryEditDrawer } from './StoryEditDrawer';
 
 export interface StoryListPanelProps {
-  requirementId: number;
+  /** v0.0.10: Story belongs to Sprint. */
+  sprintId: number;
+  sprintCode: string;
+  sprintName: string;
+  /** Grandparent Requirement display info (for drawer locked-display). */
   requirementCode: string;
   requirementTitle: string;
-  /** Bumped by the parent to force a refetch (e.g. after the Requirement row mutates). */
   refreshKey?: number;
-  /** Called whenever the Story count under this Requirement changes (count visible to the parent). */
   onCountChange?: (newCount: number) => void;
 }
 
 export function StoryListPanel({
-  requirementId,
+  sprintId,
+  sprintCode,
+  sprintName,
   requirementCode,
   requirementTitle,
   refreshKey,
@@ -34,11 +38,10 @@ export function StoryListPanel({
   const [confirmDelete, setConfirmDelete] = useState<Story | null>(null);
 
   const refetch = useCallback(async () => {
-    // PageParams 校验 size <= 100；一个 Requirement 下的 Stories 池小，100 足够 v0.
-    const res = await listStories({ requirementId, size: 100 });
+    const res = await listStories({ sprintId, size: 100 });
     setStories(res.content);
     onCountChange?.(res.total);
-  }, [requirementId, onCountChange]);
+  }, [sprintId, onCountChange]);
 
   useEffect(() => {
     void refetch();
@@ -93,7 +96,7 @@ export function StoryListPanel({
         borderRadius: 4,
         marginTop: 8,
       }}
-      data-testid={`story-list-panel-${requirementId}`}
+      data-testid={`story-list-panel-${sprintId}`}
     >
       <div style={{ display: 'flex', gap: 12, marginBottom: 12 }}>
         <Button
@@ -109,13 +112,11 @@ export function StoryListPanel({
       </div>
       <Table<Story> columns={columns} dataSource={stories} rowKey="id" />
       <StoryEditDrawer
-        // Remount the drawer when switching between new/edit modes (or between different editing
-        // targets) so its useEffect-driven state reset always fires from a clean slate.
-        // Without this key, the unchanged `open=false` cleanup branch only clears `formError` and
-        // leaves stale `code` / `title` / `owner` from the previous session.
         key={editing?.id ?? 'new'}
         open={drawerOpen}
-        requirementId={requirementId}
+        sprintId={sprintId}
+        sprintCode={sprintCode}
+        sprintName={sprintName}
         requirementCode={requirementCode}
         requirementTitle={requirementTitle}
         editing={editing}

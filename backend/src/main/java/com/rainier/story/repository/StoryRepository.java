@@ -13,7 +13,11 @@ public interface StoryRepository
 
   boolean existsByCode(String code);
 
-  long countByRequirementId(Long requirementId);
+  /**
+   * v0.0.10: replaces v0.0.9 countByRequirementId — Story belongs to Sprint, not directly to
+   * Requirement.
+   */
+  long countBySprintId(Long sprintId);
 
   long countByOwnerUserId(Long ownerUserId);
 }

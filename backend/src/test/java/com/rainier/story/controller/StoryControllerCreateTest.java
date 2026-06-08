@@ -17,6 +17,9 @@ import com.rainier.project.repository.ProjectRepository;
 import com.rainier.requirement.domain.Requirement;
 import com.rainier.requirement.domain.RequirementStatus;
 import com.rainier.requirement.repository.RequirementRepository;
+import com.rainier.sprint.domain.Sprint;
+import com.rainier.sprint.domain.SprintStatus;
+import com.rainier.sprint.repository.SprintRepository;
 import com.rainier.story.repository.StoryRepository;
 import com.rainier.user.domain.User;
 import com.rainier.user.repository.UserRepository;
@@ -37,6 +40,7 @@ class StoryControllerCreateTest {
 
   @Autowired private MockMvc mockMvc;
   @Autowired private StoryRepository storyRepo;
+  @Autowired private SprintRepository sprintRepo;
   @Autowired private RequirementRepository requirementRepo;
   @Autowired private ProjectRepository projectRepo;
   @Autowired private UserRepository userRepo;
@@ -45,6 +49,7 @@ class StoryControllerCreateTest {
   @BeforeEach
   void cleanDb() {
     storyRepo.deleteAll();
+    sprintRepo.deleteAll();
     requirementRepo.deleteAll();
     projectRepo.deleteAll();
     userRepo.deleteAll();
@@ -80,16 +85,27 @@ class StoryControllerCreateTest {
     return requirementRepo.saveAndFlush(r).getId();
   }
 
-  /** TC-STR-001: 最小 payload + 默认值 + 富化 + projectId 继承. */
+  private Long createSprint(Long reqId, Long ownerId, String code) {
+    Sprint sp = new Sprint();
+    sp.setCode(code);
+    sp.setName("Phase 1");
+    sp.setStatus(SprintStatus.PLANNING);
+    sp.setRequirementId(reqId);
+    sp.setOwnerUserId(ownerId);
+    return sprintRepo.saveAndFlush(sp).getId();
+  }
+
+  /** TC-STR-001 (v0.0.10): minimal payload + projectId 二段继承 + sprint/requirement/project 全富化. */
   @Test
   void post_minimalPayload_inheritsProjectId_returnsEnriched() throws Exception {
     Long userId = createUser("alice", "Alice");
     Long projectId = createProject(userId, "PROJ-1");
     Long reqId = createRequirement(userId, projectId, "REQ-1");
+    Long sprintId = createSprint(reqId, userId, "SPR-1");
     ObjectNode body = json.createObjectNode();
     body.put("code", "STR-001");
     body.put("title", "用户登录页");
-    body.put("requirementId", reqId);
+    body.put("sprintId", sprintId);
     body.put("ownerUserId", userId);
     mockMvc
         .perform(
@@ -115,10 +131,11 @@ class StoryControllerCreateTest {
     Long userId = createUser("alice", "Alice");
     Long projectId = createProject(userId, "PROJ-2");
     Long reqId = createRequirement(userId, projectId, "REQ-2");
+    Long sprintId = createSprint(reqId, userId, "SPR-2");
     ObjectNode body = json.createObjectNode();
     body.put("code", "STR-DUP");
     body.put("title", "x");
-    body.put("requirementId", reqId);
+    body.put("sprintId", sprintId);
     body.put("ownerUserId", userId);
     mockMvc
         .perform(
@@ -131,20 +148,20 @@ class StoryControllerCreateTest {
         .andExpect(jsonPath("$.message", startsWith("code already exists")));
   }
 
-  /** TC-STR-003: requirementId 不存在 → 400. */
+  /** TC-STR-SPR-002 (v0.0.10): sprintId 不存在 → 400 "sprint not found". */
   @Test
-  void post_unknownRequirementId_returns400() throws Exception {
+  void post_unknownSprintId_returns400() throws Exception {
     Long userId = createUser("alice", "Alice");
     ObjectNode body = json.createObjectNode();
     body.put("code", "STR-X");
     body.put("title", "x");
-    body.put("requirementId", 999L);
+    body.put("sprintId", 999L);
     body.put("ownerUserId", userId);
     mockMvc
         .perform(
             post("/api/stories").contentType(MediaType.APPLICATION_JSON).content(body.toString()))
         .andExpect(status().isBadRequest())
-        .andExpect(jsonPath("$.message", startsWith("requirement not found")));
+        .andExpect(jsonPath("$.message", startsWith("sprint not found")));
   }
 
   /** TC-STR-004: ownerUserId 不存在 → 400. */
@@ -153,10 +170,11 @@ class StoryControllerCreateTest {
     Long userId = createUser("alice", "Alice");
     Long projectId = createProject(userId, "PROJ-4");
     Long reqId = createRequirement(userId, projectId, "REQ-4");
+    Long sprintId = createSprint(reqId, userId, "SPR-4");
     ObjectNode body = json.createObjectNode();
     body.put("code", "STR-Y");
     body.put("title", "x");
-    body.put("requirementId", reqId);
+    body.put("sprintId", sprintId);
     body.put("ownerUserId", 999_999L);
     mockMvc
         .perform(
@@ -171,10 +189,11 @@ class StoryControllerCreateTest {
     Long userId = createUser("alice", "Alice");
     Long projectId = createProject(userId, "PROJ-5");
     Long reqId = createRequirement(userId, projectId, "REQ-5");
+    Long sprintId = createSprint(reqId, userId, "SPR-5");
     ObjectNode body = json.createObjectNode();
     body.put("code", "STR-Z");
     body.put("title", "x");
-    body.put("requirementId", reqId);
+    body.put("sprintId", sprintId);
     body.put("ownerUserId", userId);
     body.put("status", "UNKNOWN");
     mockMvc
@@ -190,10 +209,11 @@ class StoryControllerCreateTest {
     Long userId = createUser("alice", "Alice");
     Long projectId = createProject(userId, "PROJ-6");
     Long reqId = createRequirement(userId, projectId, "REQ-6");
+    Long sprintId = createSprint(reqId, userId, "SPR-6");
     ObjectNode body = json.createObjectNode();
     body.put("code", "STR-PRIO");
     body.put("title", "x");
-    body.put("requirementId", reqId);
+    body.put("sprintId", sprintId);
     body.put("ownerUserId", userId);
     body.put("priority", "EXTREME");
     mockMvc
@@ -209,10 +229,11 @@ class StoryControllerCreateTest {
     Long userId = createUser("alice", "Alice");
     Long projectId = createProject(userId, "PROJ-7");
     Long reqId = createRequirement(userId, projectId, "REQ-7");
+    Long sprintId = createSprint(reqId, userId, "SPR-7");
     ObjectNode body = json.createObjectNode();
     body.put("code", "STR-CPLX");
     body.put("title", "x");
-    body.put("requirementId", reqId);
+    body.put("sprintId", sprintId);
     body.put("ownerUserId", userId);
     body.put("complexity", "XXL");
     mockMvc
@@ -232,8 +253,7 @@ class StoryControllerCreateTest {
             post("/api/stories").contentType(MediaType.APPLICATION_JSON).content(body.toString()))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.fieldErrors[*].field", org.hamcrest.Matchers.hasItem("title")))
-        .andExpect(
-            jsonPath("$.fieldErrors[*].field", org.hamcrest.Matchers.hasItem("requirementId")))
+        .andExpect(jsonPath("$.fieldErrors[*].field", org.hamcrest.Matchers.hasItem("sprintId")))
         .andExpect(
             jsonPath("$.fieldErrors[*].field", org.hamcrest.Matchers.hasItem("ownerUserId")));
   }
@@ -244,10 +264,11 @@ class StoryControllerCreateTest {
     Long userId = createUser("alice", "Alice");
     Long projectId = createProject(userId, "PROJ-CB");
     Long reqId = createRequirement(userId, projectId, "REQ-CB");
+    Long sprintId = createSprint(reqId, userId, "SPR-CB");
     ObjectNode body = json.createObjectNode();
     body.put("code", "STR-CB");
     body.put("title", "x");
-    body.put("requirementId", reqId);
+    body.put("sprintId", sprintId);
     body.put("ownerUserId", userId);
     mockMvc
         .perform(

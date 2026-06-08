@@ -10,13 +10,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.rainier.common.domain.Priority;
 import com.rainier.demand.repository.DemandRepository;
 import com.rainier.demandrequirement.repository.DemandRequirementLinkRepository;
 import com.rainier.requirement.domain.Requirement;
 import com.rainier.requirement.repository.RequirementRepository;
-import com.rainier.story.domain.Story;
-import com.rainier.story.domain.StoryStatus;
+import com.rainier.sprint.domain.Sprint;
+import com.rainier.sprint.domain.SprintStatus;
+import com.rainier.sprint.repository.SprintRepository;
 import com.rainier.story.repository.StoryRepository;
 import com.rainier.user.domain.User;
 import com.rainier.user.repository.UserRepository;
@@ -42,11 +42,13 @@ class RequirementControllerQueryTest {
   @Autowired private DemandRequirementLinkRepository linkRepo;
   @Autowired private UserRepository userRepo;
   @Autowired private StoryRepository storyRepo;
+  @Autowired private SprintRepository sprintRepo;
   @Autowired private ObjectMapper json;
 
   @BeforeEach
   void cleanDb() {
     storyRepo.deleteAll();
+    sprintRepo.deleteAll();
     linkRepo.deleteAll();
     demandRepo.deleteAll();
     repo.deleteAll();
@@ -199,28 +201,28 @@ class RequirementControllerQueryTest {
         .andExpect(jsonPath("$.message", org.hamcrest.Matchers.startsWith("owner user not found")));
   }
 
-  /** TC-REQS-002 (v0.0.9): GET 详情 + list 项含 storyCount = 该 Requirement 下非软删 Story 数。 */
+  /** TC-REQS-SPR-003 (v0.0.10): GET 详情 + list 项含 sprintCount = 该 Requirement 下非软删 Sprint 数。 */
   @Test
-  void get_requirement_includesStoryCountEnrichment() throws Exception {
+  void get_requirement_includesSprintCountEnrichment() throws Exception {
     Long userId = createUser();
     Long reqId = createReq(userId, "REQ-COUNT");
-    // Seed 3 Stories (DRAFT / IN_PROGRESS / DONE — all del_flag=0).
+    // Seed 3 Sprints (PLANNING / ACTIVE / COMPLETED — all del_flag=0).
+    String[] states = {SprintStatus.PLANNING, SprintStatus.ACTIVE, SprintStatus.COMPLETED};
     for (int i = 0; i < 3; i++) {
-      Story s = new Story();
-      s.setCode("STR-CNT-" + i);
-      s.setTitle("x");
-      s.setStatus(i == 0 ? StoryStatus.DRAFT : i == 1 ? StoryStatus.IN_PROGRESS : StoryStatus.DONE);
-      s.setPriority(Priority.MEDIUM);
-      s.setRequirementId(reqId);
-      s.setOwnerUserId(userId);
-      storyRepo.saveAndFlush(s);
+      Sprint sp = new Sprint();
+      sp.setCode("SPR-CNT-" + i);
+      sp.setName("x");
+      sp.setStatus(states[i]);
+      sp.setRequirementId(reqId);
+      sp.setOwnerUserId(userId);
+      sprintRepo.saveAndFlush(sp);
     }
     // GET single
     mockMvc
         .perform(get("/api/requirements/" + reqId))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.storyCount").value(3));
-    // GET list — find this Requirement and assert its storyCount
+        .andExpect(jsonPath("$.sprintCount").value(3));
+    // GET list — find this Requirement and assert its sprintCount
     MvcResult res =
         mockMvc
             .perform(get("/api/requirements?page=0&size=20"))
@@ -230,7 +232,7 @@ class RequirementControllerQueryTest {
     boolean found = false;
     for (JsonNode item : content) {
       if (item.get("id").asLong() == reqId) {
-        org.junit.jupiter.api.Assertions.assertEquals(3L, item.get("storyCount").asLong());
+        org.junit.jupiter.api.Assertions.assertEquals(3L, item.get("sprintCount").asLong());
         found = true;
       }
     }

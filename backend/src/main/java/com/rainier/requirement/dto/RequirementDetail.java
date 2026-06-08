@@ -25,8 +25,11 @@ public class RequirementDetail {
 
   private String projectCode;
   private String closeReason;
-  /** v0.0.9 enrichment — service join with Story (count of non-deleted Stories). */
-  private Long storyCount;
+  /**
+   * v0.0.10 enrichment — service join with Sprint (count of non-deleted Sprints). Replaces v0.0.9
+   * storyCount.
+   */
+  private Long sprintCount;
 
   private Instant createTime;
   private Instant updateTime;
@@ -124,12 +127,12 @@ public class RequirementDetail {
     return closeReason;
   }
 
-  public Long getStoryCount() {
-    return storyCount;
+  public Long getSprintCount() {
+    return sprintCount;
   }
 
-  public void setStoryCount(Long storyCount) {
-    this.storyCount = storyCount;
+  public void setSprintCount(Long sprintCount) {
+    this.sprintCount = sprintCount;
   }
 
   public Instant getCreateTime() {

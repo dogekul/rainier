@@ -9,6 +9,7 @@ import OrganizationsPage from './pages/Organization';
 import PositionsPage from './pages/Position';
 import ProjectsPage from './pages/Project';
 import RequirementsPage from './pages/Requirement';
+import SprintsPage from './pages/Sprint';
 import RolesPage from './pages/Role';
 import UsersPage from './pages/User';
 import UserOrganizationsPage from './pages/UserOrganization';
@@ -28,6 +29,7 @@ export function AppRoutes() {
           <Route path="/org/user-organizations" element={<UserOrganizationsPage />} />
           <Route path="/pm" element={<Navigate to="/pm/projects" replace />} />
           <Route path="/pm/projects" element={<ProjectsPage />} />
+          <Route path="/pm/sprints" element={<SprintsPage />} />
           <Route path="/pm/demands" element={<DemandsPage />} />
           <Route path="/pm/requirements" element={<RequirementsPage />} />
           <Route path="/pm/demand-requirements" element={<DemandRequirementsPage />} />

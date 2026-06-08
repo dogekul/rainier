@@ -17,7 +17,15 @@ public class StoryDetail {
   private String status;
   private String priority;
   private String complexity;
+  /** v0.0.10: Story belongs to Sprint, which belongs to Requirement. */
+  private Long sprintId;
+
+  private String sprintCode;
+  private String sprintName;
+  private String sprintStatus;
+  /** Enriched via 2-stage join sprint → requirement at read time. */
   private Long requirementId;
+
   private String requirementCode;
   private String requirementTitle;
   private Long projectId;
@@ -42,7 +50,8 @@ public class StoryDetail {
     dto.status = s.getStatus();
     dto.priority = s.getPriority();
     dto.complexity = s.getComplexity();
-    dto.requirementId = s.getRequirementId();
+    dto.sprintId = s.getSprintId();
+    // requirementId populated by service.enrich via 2-stage join.
     dto.projectId = s.getProjectId();
     dto.ownerUserId = s.getOwnerUserId();
     dto.closeReason = s.getCloseReason();
@@ -85,8 +94,40 @@ public class StoryDetail {
     return complexity;
   }
 
+  public Long getSprintId() {
+    return sprintId;
+  }
+
+  public String getSprintCode() {
+    return sprintCode;
+  }
+
+  public void setSprintCode(String sprintCode) {
+    this.sprintCode = sprintCode;
+  }
+
+  public String getSprintName() {
+    return sprintName;
+  }
+
+  public void setSprintName(String sprintName) {
+    this.sprintName = sprintName;
+  }
+
+  public String getSprintStatus() {
+    return sprintStatus;
+  }
+
+  public void setSprintStatus(String sprintStatus) {
+    this.sprintStatus = sprintStatus;
+  }
+
   public Long getRequirementId() {
     return requirementId;
+  }
+
+  public void setRequirementId(Long requirementId) {
+    this.requirementId = requirementId;
   }
 
   public String getRequirementCode() {

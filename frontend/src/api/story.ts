@@ -20,8 +20,13 @@ export interface Story {
   status: StoryStatus;
   priority: Priority;
   complexity?: Complexity | null;
-  requirementId: number;
-  /** v0.0.9 enrichment — backend joins Requirement. */
+  /** v0.0.10: Story now belongs to Sprint, not directly to Requirement. */
+  sprintId: number;
+  sprintCode?: string | null;
+  sprintName?: string | null;
+  sprintStatus?: string | null;
+  /** Populated via 2-stage enrichment sprint → requirement. */
+  requirementId?: number | null;
   requirementCode?: string | null;
   requirementTitle?: string | null;
   projectId?: number | null;
@@ -47,8 +52,8 @@ export interface StoryCreate {
   status?: StoryStatus;
   priority?: Priority;
   complexity?: Complexity;
-  /** Required; backend copies parent Requirement's projectId at creation. */
-  requirementId: number;
+  /** Required; backend copies grandparent Requirement's projectId transitively at creation. */
+  sprintId: number;
   ownerUserId: number;
   closeReason?: string;
 }
@@ -67,7 +72,7 @@ export interface StoryUpdate {
 }
 
 export interface StoryListParams {
-  requirementId?: number;
+  sprintId?: number;
   status?: StoryStatus;
   priority?: Priority;
   search?: string;

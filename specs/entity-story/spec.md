@@ -1,28 +1,36 @@
 # Capability: entity-story
 
-> NEW capability from `archive/2026-06-07-story` (v0.0.9-story, 2026-06-08).
-> Story is the management-view vertical slice of a Requirement — what PO authors
-> when decomposing a Requirement into deliverable units. Strictly attached to a
-> Requirement (NN FK). Service auto-inherits projectId from the parent Requirement
-> at creation time. `code` uniqueness is service-level (no DB UNIQUE — family
-> pattern). Owner is mutable (sibling of v0.0.8 Decision 6b). 6-state machine
-> (DRAFT / READY / IN_PROGRESS / DONE / BLOCKED / CANCELLED). Soft-deleted via
-> `@SQLDelete + del_flag`. Task is a separate entity (not modeled here).
+> Change log:
+> - 2026-06-08 (v0.0.9-story) — NEW capability. Story belongs directly to
+>   Requirement (NN FK). projectId auto-inherited from the parent Requirement.
+> - 2026-06-09 (v0.0.10-sprint) — refactored to Sprint subordinate. Story now
+>   belongs to a Sprint (NN FK); the parent Requirement is reached via
+>   Sprint.requirementId. projectId auto-inherited via 2-stage join
+>   (sprint → requirement → projectId) at creation time. Field set on the
+>   GET-detail response grows by `sprintId / sprintCode / sprintName /
+>   sprintStatus`. The legacy `requirement_id` column is left on
+>   `rainier_story` (loosened to NULL by the migration) and is queued for DROP
+>   in v0.0.11+.
+>
+> Family invariants retained: code service-level unique (soft-delete reuse OK);
+> 6-state machine (DRAFT / READY / IN_PROGRESS / DONE / BLOCKED / CANCELLED);
+> owner mutable (Decision 6b); soft-deleted via `@SQLDelete + del_flag`. Task
+> is a separate entity, not modeled here.
 
 ## Requirements
 
-### Requirement: 创建 Story
+### Requirement: 创建 Story (v0.0.10 — sprint-based)
 
-后端 SHALL 通过 `POST /api/stories` 接受 `code` + `title` + `requirementId` + `ownerUserId`（必填），其余字段使用默认值；Service SHALL 自动从父 Requirement 复制 `projectId` 填入；持久化并返回 201。
+后端 SHALL 通过 `POST /api/stories` 接受 `code` + `title` + `sprintId` + `ownerUserId`（必填），其余字段使用默认值；Service SHALL 通过 2-stage join 从 Sprint → Requirement → projectId 自动继承填入；持久化并返回 201。`requirementId` 字段在 v0.0.10 创建 payload 中不再存在。
 
-#### Scenario: 最小 payload 创建 Story + 默认值 + 富化 + projectId 继承
+#### Scenario: 最小 payload 创建 Story + 默认值 + 富化 + projectId 二段继承 (v0.0.10)
 
-- **GIVEN** 数据库存在 Project id=1 / Requirement id=1（owner=alice，projectId=1）/ User id=1（loginName="alice"，name="Alice"）
-- **WHEN** 客户端 `POST /api/stories` body `{"code":"STR-001","title":"用户登录页","requirementId":1,"ownerUserId":1}`
+- **GIVEN** 数据库存在 Project id=1 / Requirement id=1（projectId=1）/ Sprint id=10（requirementId=1）/ User id=1（loginName="alice"，name="Alice"）
+- **WHEN** 客户端 `POST /api/stories` body `{"code":"STR-001","title":"用户登录页","sprintId":10,"ownerUserId":1}`
 - **THEN** 系统 SHALL 返回 HTTP 201
 - **AND** body 默认值 SHALL 为 `status="DRAFT"` / `priority="MEDIUM"` / `complexity=null`
-- **AND** body.projectId SHALL 为 1（从 Requirement 自动继承）
-- **AND** body SHALL 富化 `ownerName="Alice"` / `ownerLoginName="alice"` / `requirementCode` / `requirementTitle` / `projectName` / `projectCode`
+- **AND** body.projectId SHALL 为 1（从 Sprint.Requirement.projectId 二段继承）
+- **AND** body SHALL 富化 `sprintId=10` / `sprintCode` / `sprintName` / `sprintStatus` / `requirementCode` / `requirementTitle` / `ownerName="Alice"` / `ownerLoginName="alice"` / `projectName` / `projectCode`
 
 #### Scenario: code 重复被拒（service 级唯一）
 
@@ -31,12 +39,12 @@
 - **THEN** SHALL 返回 409
 - **AND** body.message SHALL 含 "code already exists"
 
-#### Scenario: requirementId 不存在被拒
+#### Scenario: sprintId 不存在被拒 (v0.0.10 — 替换 v0.0.9 requirementId 校验)
 
-- **GIVEN** 数据库无 Requirement id=999
-- **WHEN** `POST /api/stories` body 含 `requirementId=999`
+- **GIVEN** 数据库无 Sprint id=999
+- **WHEN** `POST /api/stories` body 含 `sprintId=999`
 - **THEN** SHALL 返回 400
-- **AND** body.message SHALL 含 "requirement not found"
+- **AND** body.message SHALL 含 "sprint not found"
 
 #### Scenario: ownerUserId 不存在被拒
 
@@ -66,12 +74,12 @@
 - **THEN** SHALL 返回 400
 - **AND** body.message SHALL 含 "invalid complexity"
 
-#### Scenario: 缺必填字段被拒
+#### Scenario: 缺必填字段被拒 (v0.0.10 — sprintId 替换 requirementId)
 
 - **GIVEN** 后端已启动
-- **WHEN** `POST /api/stories` body `{"code":"STR-X"}`（缺 title / requirementId / ownerUserId）
+- **WHEN** `POST /api/stories` body `{"code":"STR-X"}`（缺 title / sprintId / ownerUserId）
 - **THEN** SHALL 返回 400
-- **AND** body.fieldErrors[*].field SHALL 同时含 `"title"` / `"requirementId"` / `"ownerUserId"`
+- **AND** body.fieldErrors[*].field SHALL 同时含 `"title"` / `"sprintId"` / `"ownerUserId"`
 
 #### Scenario: createBy 自动注入登录 username
 
@@ -80,25 +88,25 @@
 - **THEN** SHALL 返回 201
 - **AND** body.createBy SHALL 为 "alice"（由 AuditorAwareImpl 自动注入）
 
-### Requirement: 查询 Story
+### Requirement: 查询 Story (v0.0.10 — sprint-based filter)
 
-后端 SHALL 通过 `GET /api/stories/{id}` 返回单 Story 详情（含富化）；通过 `GET /api/stories?requirementId=&status=&priority=&search=&page=&size=` 返回 PageResponse。
+后端 SHALL 通过 `GET /api/stories/{id}` 返回单 Story 详情（含 2-stage 富化）；通过 `GET /api/stories?sprintId=&status=&priority=&search=&page=&size=` 返回 PageResponse。`requirementId` query 参数在 v0.0.10 起不再支持（Sprint 是直接父）。
 
-#### Scenario: GET 详情完整字段集 + 富化
+#### Scenario: GET 详情完整字段集 + 富化 (v0.0.10)
 
-- **GIVEN** Story id=1 存在，关联 Requirement id=1（code=REQ-1, title="登录流程"）/ Project id=1 / User id=1
+- **GIVEN** Story id=1 存在，关联 Sprint id=10（code=SPR-1, name="Phase 1", status="ACTIVE", requirementId=1）/ Requirement id=1（code=REQ-1, title="登录流程"）/ Project id=1 / User id=1
 - **WHEN** `GET /api/stories/1`
 - **THEN** SHALL 返回 200
-- **AND** body 字段集 SHALL 等于 `[id, code, title, description, acceptanceCriteria, status, priority, complexity, requirementId, requirementCode, requirementTitle, projectId, projectName, projectCode, ownerUserId, ownerName, ownerLoginName, closeReason, createTime, updateTime, createBy, updateBy]`
-- **AND** body.requirementCode SHALL 为 "REQ-1"
-- **AND** body.requirementTitle SHALL 为 "登录流程"
+- **AND** body 字段集 SHALL 等于 `[id, code, title, description, acceptanceCriteria, status, priority, complexity, sprintId, sprintCode, sprintName, sprintStatus, requirementId, requirementCode, requirementTitle, projectId, projectName, projectCode, ownerUserId, ownerName, ownerLoginName, closeReason, createTime, updateTime, createBy, updateBy]`
+- **AND** body.sprintCode SHALL 为 "SPR-1"
+- **AND** body.requirementCode SHALL 为 "REQ-1"（来自 sprint→requirement 2-stage join）
 
-#### Scenario: 按 requirementId 过滤列表
+#### Scenario: 按 sprintId 过滤列表 (v0.0.10 — 替换 v0.0.9 requirementId 过滤)
 
-- **GIVEN** Requirement id=1 下有 3 个 Story；Requirement id=2 下有 2 个
-- **WHEN** `GET /api/stories?requirementId=1`
+- **GIVEN** Sprint id=10 下有 3 个 Story；Sprint id=20 下有 2 个
+- **WHEN** `GET /api/stories?sprintId=10`
 - **THEN** body.total SHALL 为 3
-- **AND** body.content[*].requirementId SHALL 全为 1
+- **AND** body.content[*].sprintId SHALL 全为 10
 
 #### Scenario: 按 status 过滤列表
 
