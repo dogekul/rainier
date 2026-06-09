@@ -17,6 +17,9 @@ import com.rainier.requirement.domain.RequirementStatus;
 import com.rainier.requirement.repository.RequirementRepository;
 import com.rainier.role.domain.Role;
 import com.rainier.role.repository.RoleRepository;
+import com.rainier.task.domain.Task;
+import com.rainier.task.domain.TaskStatus;
+import com.rainier.task.repository.TaskRepository;
 import com.rainier.user.domain.User;
 import com.rainier.user.repository.UserRepository;
 import com.rainier.userrole.domain.UserRole;
@@ -41,17 +44,29 @@ class ProjectControllerDeleteTest {
   @Autowired private ProjectRepository projectRepo;
   @Autowired private RequirementRepository requirementRepo;
   @Autowired private UserRoleRepository userRoleRepo;
+  @Autowired private TaskRepository taskRepo;
   @Autowired private UserRepository userRepo;
   @Autowired private RoleRepository roleRepo;
   @Autowired private ObjectMapper json;
 
   @BeforeEach
   void cleanDb() {
+    taskRepo.deleteAll();
     userRoleRepo.deleteAll();
     requirementRepo.deleteAll();
     projectRepo.deleteAll();
     userRepo.deleteAll();
     roleRepo.deleteAll();
+  }
+
+  private void createTaskUnderProject(Long projectId, Long ownerId, String code) {
+    Task t = new Task();
+    t.setCode(code);
+    t.setTitle("x");
+    t.setStatus(TaskStatus.TODO);
+    t.setPriority(Priority.MEDIUM);
+    t.setProjectId(projectId);
+    taskRepo.saveAndFlush(t);
   }
 
   private Long createUser() {
@@ -133,5 +148,37 @@ class ProjectControllerDeleteTest {
         .perform(delete("/api/projects/" + pid))
         .andExpect(status().isConflict())
         .andExpect(jsonPath("$.message", startsWith("project has assigned user-roles")));
+  }
+
+  /** TC-PRJ-DEL-TSK-001 (v0.0.11): 有 Task 引用 → 409 "project has linked tasks". */
+  @Test
+  void delete_withTaskRef_returns409() throws Exception {
+    Long userId = createUser();
+    Long pid = createProject(userId);
+    createTaskUnderProject(pid, userId, "TASK-PRJ-DEL-1");
+    mockMvc
+        .perform(delete("/api/projects/" + pid))
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.message", startsWith("project has linked tasks")));
+  }
+
+  /** TC-PRJ-DEL-TSK-002 (v0.0.11): Requirement + Task 双引用时优先返 requirement 错误. */
+  @Test
+  void delete_withRequirementAndTaskRefs_returnsRequirementFirst() throws Exception {
+    Long userId = createUser();
+    Long pid = createProject(userId);
+    Requirement r = new Requirement();
+    r.setCode("REQ-PRJ-DEL-1");
+    r.setTitle("x");
+    r.setOwnerUserId(userId);
+    r.setProjectId(pid);
+    r.setStatus(RequirementStatus.DRAFT);
+    r.setPriority(Priority.MEDIUM);
+    requirementRepo.saveAndFlush(r);
+    createTaskUnderProject(pid, userId, "TASK-PRJ-DEL-2");
+    mockMvc
+        .perform(delete("/api/projects/" + pid))
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.message", startsWith("project has linked requirements")));
   }
 }

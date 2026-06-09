@@ -1,0 +1,137 @@
+change:
+  id: 2026-06-09-task
+  title: v0.0.11-task — introduce Task entity as Project execution unit
+  baseline:
+    commit: 901eea7
+    tag: v0.0.10.1-cleanup
+  type: domain-entity
+  parent_change: null  # no direct ancestor change
+
+phase:
+  current: archived
+  archived_at: '2026-06-09'
+  understand:
+    status: completed
+    confirmed_at: '2026-06-09'
+    artifact: proposal.md
+  spec:
+    status: completed
+    confirmed_at: '2026-06-09'
+    artifacts:
+      - design.md
+      - specs/entity-task/spec.md
+      - specs/entity-project/spec.md
+      - specs/frontend-scaffold/spec.md
+      - test-plan.md
+    metrics:
+      capabilities: 3
+      requirements: 9
+      scenarios: 24
+      tc_cases: 24
+      p0: 24
+      p1: 0
+      p2: 0
+  slice:
+    status: completed
+    completed_at: '2026-06-09'
+    artifacts:
+      - slices.md
+      - tasks.md
+    metrics:
+      slices: 13
+      p0_slices: 13
+      backend_slices: 11   # M01-M11
+      frontend_slices: 1   # M12
+      e2e_slices: 1        # M13
+  build:
+    status: completed
+    completed_at: '2026-06-09'
+    metrics:
+      backend_tests: 212    # 191 baseline + 12 create + 6 query/update/delete + 1 perf + 2 PRJ-DEL-TSK
+      frontend_tests: 43    # 41 baseline + 1 TasksPage + 1 TaskEditDrawer 联动
+      e2e_status: green
+    notable_adjustments:
+      - 'PA-1: SQL count budget 7 → 6 — Requirement is not surfaced in TaskDetail, only 4 batch enrich needed (user/sprint/story/project). spec / design / test-plan to reconcile in design-adjustments.'
+      - 'Frontend Priority enum is URGENT/HIGH/MEDIUM/LOW (not CRITICAL as design.md assumed) — used URGENT to match backend Priority.java.'
+  verify:
+    status: completed
+    completed_at: '2026-06-09'
+    artifacts:
+      - test-report.md
+      - design-adjustments.md
+      - pending-adjustments.md
+    metrics:
+      backend_tests_total: 212
+      frontend_tests_total: 44
+      review_round0_aggregate_initial:
+        critical: 2
+        high: 4
+        medium: 7
+      review_round0_aggregate_post_fix:
+        critical: 0
+        high: 1   # Test-H2 (sparse-task TC) recorded for v0.0.12
+        medium: 6
+      scenario_coverage_percent: 100   # 24 / 24
+      e2e_status: green
+  deliver:
+    status: completed
+    completed_at: '2026-06-09'
+    artifacts:
+      - archive/2026-06-09-task/
+      - specs/entity-task/spec.md       # NEW
+      - specs/entity-project/spec.md    # MOD — Task FK guard
+      - specs/frontend-scaffold/spec.md # MOD — Sider 6 / /pm/tasks / TaskEditDrawer
+    tag: v0.0.11-task
+
+long_range:
+  enabled: true
+  mode: full_auto
+  pre_auth_completed: true
+  pre_auth_timestamp: '2026-06-09'
+  pre_auth:
+    decisions:
+      design_deviation:
+        minor: auto_record
+        major: auto_record_continue
+      technical_blocker: workaround
+      iteration:
+        max_rounds: 10
+      git_ops: allow_up_to_commit_and_tag  # no push
+    operations:
+      directory: allow
+      file_write: allow
+      command: allow
+      script: allow
+      network: allow
+      file_read: allow
+      git_readonly: allow
+    gates:
+      gate_3: require_user_confirmation
+
+scope:
+  type: domain-entity
+  entities:
+    - rainier_task   # NEW (soft-delete)
+  capabilities_new:
+    - entity-task
+  capabilities_modified:
+    - entity-project       # DELETE FK 加 Task 引用守护
+    - frontend-scaffold    # Sider 6 项 + /pm/tasks + TasksPage
+  design_decisions_pre_locked:
+    parent_shape: project_NN_sprint_optional_story_optional
+    parent_consistency: cross_layer_must_match_project_chain
+    task_status_states: [TODO, IN_PROGRESS, DONE, BLOCKED, CANCELLED]
+    assignee_nullable: true   # Task allows unassigned (Decision 6b sibling, but with NULL allowed)
+    code_required_and_user_supplied: true
+    sider_position: third_in_pm_group   # 项目 → Sprint → 任务 → 诉求 → 需求 → 关联
+  explicitly_excluded:
+    - task_comments
+    - task_activity_stream
+    - task_estimation
+    - task_subtask_tree
+    - task_demand_direct_link
+    - ai_auto_create_endpoint
+    - data_migration            # new entity, no legacy
+    - sprintspage_task_drilldown
+    - storiespage_task_drilldown
+    - push_to_remote

@@ -100,7 +100,7 @@
 
 ### Requirement: 软删项目（FK 保护）
 
-后端 SHALL 通过 `DELETE /api/projects/{id}` 标记 `del_flag=1`；若有 Requirement.project_id 或 UserRole.project_id 引用 → 409，错误 message 指明哪个表。
+后端 SHALL 通过 `DELETE /api/projects/{id}` 标记 `del_flag=1`；若有 Requirement.project_id 或 UserRole.project_id 或 **Task.project_id**（v0.0.11 加）引用 → 409，错误 message 指明哪个表。家族 chain 顺序（由先到后）：Requirement → UserRole → **Task**。
 
 #### Scenario: 无引用软删成功
 
@@ -122,3 +122,17 @@
 - **WHEN** `DELETE /api/projects/1`
 - **THEN** SHALL 返回 409
 - **AND** body.message SHALL 含 "project has assigned user-roles"
+
+#### Scenario: v0.0.11 — 被 Task 引用 → 409
+
+- **GIVEN** 项目 id=1 在 `rainier_task` 表中有 ≥ 1 行 `project_id=1 AND del_flag=0`；无 Requirement / UserRole 引用
+- **WHEN** `DELETE /api/projects/1`
+- **THEN** SHALL 返回 409
+- **AND** body.message SHALL 含 "project has linked tasks"
+
+#### Scenario: v0.0.11 — 同时有 Requirement + Task 引用时优先返 requirement 错误
+
+- **GIVEN** 项目 id=1 同时有 ≥ 1 Requirement 行 AND ≥ 1 Task 行
+- **WHEN** `DELETE /api/projects/1`
+- **THEN** SHALL 返回 409
+- **AND** body.message SHALL 含 "project has linked requirements"（家族 chain 顺序：Requirement → UserRole → Task）

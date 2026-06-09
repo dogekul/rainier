@@ -6,6 +6,7 @@
 > - 2026-06-07 (v0.0.8-project) — added 项目 menu item (first position in 需求管理) + `/pm/projects` route + ProjectsPage; converted projectId numeric input → Project dropdown in RequirementEditDrawer and UserRolesPage; added 项目 column to Requirement / UserRole lists; `/pm` redirect now points at `/pm/projects` (was `/pm/demands`).
 > - 2026-06-08 (v0.0.9-story) — RequirementsPage row drilldown: per-Requirement expand button reveals a StoryListPanel (sub-table + new Story button + edit/delete); added `"Story 数"` column showing `storyCount` enrichment; introduced `StoryEditDrawer` for Story create/edit (default owner = current logged-in user, Requirement field locked; sibling of v0.0.8 default-owner pattern); added shared Table primitive `isExpanded` / `renderExpanded` props to support drilldown without bespoke per-page expand state.
 > - 2026-06-09 (v0.0.10-sprint) — Sider 「需求管理」 grows to 5 items: 项目 / **Sprint** / 诉求 / 需求 / 诉求-需求关联; added `/pm/sprints` route → SprintsPage (read-only browser with row-expand revealing StoryListPanel keyed by sprintId); RequirementsPage drilldown swapped: StoryListPanel → SprintListPanel (CRUD for Sprint, with row Sprint count column renamed 'Story 数' → 'Sprint 数' sourced from `sprintCount`); SprintEditDrawer mirrors StoryEditDrawer pattern (default owner = current logged-in user, parent Requirement field locked at creation, owner mutable on edit); StoryEditDrawer locked-display swap: shows parent Sprint + grandparent Requirement (was Requirement-only); StoryListPanel prop change: requirementId → sprintId; new `api/sprint.ts` for Sprint CRUD.
+> - 2026-06-09 (v0.0.11-task) — Sider 「需求管理」 grows to 6 items: 项目 / Sprint / **任务** / 诉求 / 需求 / 诉求-需求关联; 「任务」 排第三 (执行靠近); added `/pm/tasks` route → `TasksPage` (full CRUD list + filter projectId/status/priority/assigneeUserId/sprintId/storyId + pagination); `TaskEditDrawer` with Project/Sprint/Story/Assignee 联动级联 selects (size=100 client-side filter, sprint/story options narrow when Project chosen; sprint/story selects clear when Project changes); new `api/task.ts` for Task CRUD.
 
 ## Requirements
 
@@ -139,23 +140,42 @@
 
 ## MODIFIED Requirements (from change 2026-06-05-demand-requirement)
 
-### Requirement: Sider 含「需求管理」菜单组（v0.0.10 起 5 项，Sprint 排第二）
+### Requirement: Sider 含「需求管理」菜单组（v0.0.11 起 6 项，任务 排第三）
 
-前端 SHALL 在登录后页面（AppLayout 下）的左侧 Sider 中渲染菜单组「需求管理」（位于「组织」之后）；展开后含 5 项（v0.0.10 起）：项目 / **Sprint** / 诉求 / 需求 / 诉求-需求关联，Sprint 项位于项目与诉求之间。
+前端 SHALL 在登录后页面（AppLayout 下）的左侧 Sider 中渲染菜单组「需求管理」（位于「组织」之后）；展开后含 6 项（v0.0.11 起）：项目 / Sprint / **任务** / 诉求 / 需求 / 诉求-需求关联，任务项位于 Sprint 与 诉求 之间。
 
-#### Scenario: Sider 含「需求管理」5 路由（v0.0.10）
+#### Scenario: Sider 含「需求管理」6 路由（v0.0.11）
 
 - **GIVEN** 用户已登录访问 `/`
 - **WHEN** 页面渲染完成
 - **THEN** 左侧 Sider SHALL 渲染
 - **AND** Sider SHALL 含菜单组 `"需求管理"`
-- **AND** 该组展开后 SHALL 含 5 项：`"项目"`、`"Sprint"`、`"诉求"`、`"需求"`、`"诉求-需求关联"`
-- **AND** Sprint 项 SHALL 位于项目项之后、诉求项之前
-- **AND** 点击 `"Sprint"` SHALL 跳转 `/pm/sprints`
+- **AND** 该组展开后 SHALL 含 6 项：`"项目"`、`"Sprint"`、`"任务"`、`"诉求"`、`"需求"`、`"诉求-需求关联"`
+- **AND** 任务 项 SHALL 位于 Sprint 项之后、诉求项之前
+- **AND** 点击 `"任务"` SHALL 跳转 `/pm/tasks`
 
-### Requirement: /pm/* 路由全部注册（v0.0.10 加 /pm/sprints）
+### Requirement: /pm/* 路由全部注册（v0.0.11 加 /pm/tasks）
 
-前端 SHALL 在 router 中注册 `/pm/projects`、**`/pm/sprints`（v0.0.10）**、`/pm/demands`、`/pm/requirements`、`/pm/demand-requirements` 五条路由；`/pm` 重定向至 `/pm/projects` 保持不变。
+前端 SHALL 在 router 中注册 `/pm/projects`、`/pm/sprints`（v0.0.10）、**`/pm/tasks`（v0.0.11）**、`/pm/demands`、`/pm/requirements`、`/pm/demand-requirements` 六条路由；`/pm` 重定向至 `/pm/projects` 保持不变。
+
+#### Scenario: /pm/tasks 路由直接访问（v0.0.11）
+
+- **GIVEN** 用户已登录
+- **WHEN** 浏览器直接访问 `/pm/tasks`
+- **THEN** SHALL 渲染 `TasksPage` 组件
+- **AND** `grep -c "/pm/tasks" frontend/src/AppRoutes.tsx` SHALL ≥ 1（防止 linter 静默回退）
+
+### Requirement: TaskEditDrawer Project/Sprint/Story 联动级联（v0.0.11）
+
+前端 SHALL 提供 `TaskEditDrawer` 组件用于新增 / 编辑 Task；Project 下拉必选；Sprint 下拉可选，其选项 SHALL 按客户端 filter `s.projectId === selectedProject.id` 过滤显示；Story 下拉可选，其选项 SHALL 按 `s.projectId === selectedProject.id && (sprintId 未选 || s.sprintId === selectedSprintId)` 过滤显示；切换 Project 时 Sprint / Story 当前选中 SHALL 被清空；Assignee 下拉含「待分配」空选项（提交 null 合法 — 与 Story owner 不同）。
+
+#### Scenario: Project 切换后 Sprint/Story 清空
+
+- **GIVEN** TaskEditDrawer 打开为新建模式；mock listProjects/listSprints/listStories 返回若干数据；初始 Sprint id=20 (projectId=1) 已选
+- **WHEN** 用户从 Project A (id=1) 切换到 Project B (id=2)
+- **THEN** Sprint 下拉的当前选中值 SHALL 为空
+- **AND** Story 下拉的当前选中值 SHALL 为空
+- **AND** Sprint 下拉的可选项 SHALL 只含 `s.projectId === 2` 的 Sprint
 
 #### Scenario: /pm/sprints 路由直接访问（v0.0.10）
 

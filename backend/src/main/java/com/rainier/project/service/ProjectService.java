@@ -13,6 +13,7 @@ import com.rainier.project.dto.ProjectDetail;
 import com.rainier.project.dto.ProjectUpdateRequest;
 import com.rainier.project.repository.ProjectRepository;
 import com.rainier.requirement.repository.RequirementRepository;
+import com.rainier.task.repository.TaskRepository;
 import com.rainier.user.domain.User;
 import com.rainier.user.repository.UserRepository;
 import com.rainier.userrole.repository.UserRoleRepository;
@@ -41,16 +42,19 @@ public class ProjectService {
   private final UserRepository userRepo;
   private final RequirementRepository requirementRepo;
   private final UserRoleRepository userRoleRepo;
+  private final TaskRepository taskRepo;
 
   public ProjectService(
       ProjectRepository repo,
       UserRepository userRepo,
       RequirementRepository requirementRepo,
-      UserRoleRepository userRoleRepo) {
+      UserRoleRepository userRoleRepo,
+      TaskRepository taskRepo) {
     this.repo = repo;
     this.userRepo = userRepo;
     this.requirementRepo = requirementRepo;
     this.userRoleRepo = userRoleRepo;
+    this.taskRepo = taskRepo;
   }
 
   @Transactional
@@ -151,6 +155,11 @@ public class ProjectService {
     long urCount = userRoleRepo.countByProjectId(id);
     if (urCount > 0) {
       throw new ConflictException("project has assigned user-roles");
+    }
+    // v0.0.11 Decision 7: append Task to FK chain. Order: Requirement → UserRole → Task.
+    long taskCount = taskRepo.countByProjectId(id);
+    if (taskCount > 0) {
+      throw new ConflictException("project has linked tasks");
     }
     repo.delete(p);
   }

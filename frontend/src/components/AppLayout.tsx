@@ -29,6 +29,7 @@ const navGroups: NavGroup[] = [
     items: [
       { to: '/pm/projects', label: '项目' },
       { to: '/pm/sprints', label: 'Sprint' },
+      { to: '/pm/tasks', label: '任务' },
       { to: '/pm/demands', label: '诉求' },
       { to: '/pm/requirements', label: '需求' },
       { to: '/pm/demand-requirements', label: '诉求-需求关联' },
