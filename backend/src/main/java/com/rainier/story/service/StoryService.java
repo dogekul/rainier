@@ -20,7 +20,15 @@ import com.rainier.story.dto.StoryCreateRequest;
 import com.rainier.story.dto.StoryDetail;
 import com.rainier.story.dto.StoryUpdateRequest;
 import com.rainier.story.repository.StoryRepository;
+import com.rainier.user.domain.User;
 import com.rainier.user.repository.UserRepository;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -140,11 +148,95 @@ public class StoryService {
     PageRequest pr =
         PageRequest.of(page.getPage(), page.getSize(), Sort.by(Sort.Direction.DESC, "createTime"));
     Page<Story> result = repo.findAll(spec, pr);
+    List<Story> stories = result.getContent();
+    if (stories.isEmpty()) {
+      return PageResponse.of(
+          Collections.emptyList(), page.getPage(), page.getSize(), result.getTotalElements());
+    }
+    // v0.0.10.1 Code-M1 fix: batch enrich — 4 SELECTs total (user, sprint, requirement, project)
+    // replacing v0.0.10's ~80 per-row queries on a size=20 page.
+    // Code-M2 defense: filter null defensively even though FK columns are NN at the entity layer
+    // — a single legacy row with NULL would otherwise blow up the whole list with
+    // InvalidDataAccessApiUsageException("ids must not contain null").
+    Set<Long> userIds =
+        stories.stream()
+            .map(Story::getOwnerUserId)
+            .filter(Objects::nonNull)
+            .collect(Collectors.toCollection(HashSet::new));
+    Set<Long> sprintIds =
+        stories.stream()
+            .map(Story::getSprintId)
+            .filter(Objects::nonNull)
+            .collect(Collectors.toCollection(HashSet::new));
+    Map<Long, User> userMap = batchById(userRepo.findAllById(userIds), User::getId);
+    Map<Long, Sprint> sprintMap = batchById(sprintRepo.findAllById(sprintIds), Sprint::getId);
+    Set<Long> requirementIds =
+        sprintMap.values().stream()
+            .map(Sprint::getRequirementId)
+            .filter(Objects::nonNull)
+            .collect(Collectors.toCollection(HashSet::new));
+    Map<Long, Requirement> requirementMap =
+        requirementIds.isEmpty()
+            ? Collections.emptyMap()
+            : batchById(requirementRepo.findAllById(requirementIds), Requirement::getId);
+    Set<Long> projectIds =
+        stories.stream()
+            .map(Story::getProjectId)
+            .filter(Objects::nonNull)
+            .collect(Collectors.toCollection(HashSet::new));
+    Map<Long, Project> projectMap =
+        projectIds.isEmpty()
+            ? Collections.emptyMap()
+            : batchById(projectRepo.findAllById(projectIds), Project::getId);
     return PageResponse.of(
-        result.stream().map(this::enrich).collect(Collectors.toList()),
+        stories.stream()
+            .map(s -> enrichBatch(s, userMap, sprintMap, requirementMap, projectMap))
+            .collect(Collectors.toList()),
         page.getPage(),
         page.getSize(),
         result.getTotalElements());
+  }
+
+  private static <T> Map<Long, T> batchById(Iterable<T> entities, Function<T, Long> idExtractor) {
+    Map<Long, T> map = new java.util.HashMap<>();
+    for (T entity : entities) {
+      map.put(idExtractor.apply(entity), entity);
+    }
+    return map;
+  }
+
+  private StoryDetail enrichBatch(
+      Story s,
+      Map<Long, User> userMap,
+      Map<Long, Sprint> sprintMap,
+      Map<Long, Requirement> requirementMap,
+      Map<Long, Project> projectMap) {
+    StoryDetail dto = StoryDetail.from(s);
+    User u = userMap.get(s.getOwnerUserId());
+    if (u != null) {
+      dto.setOwnerName(u.getName());
+      dto.setOwnerLoginName(u.getLoginName());
+    }
+    Sprint sprint = sprintMap.get(s.getSprintId());
+    if (sprint != null) {
+      dto.setSprintCode(sprint.getCode());
+      dto.setSprintName(sprint.getName());
+      dto.setSprintStatus(sprint.getStatus());
+      dto.setRequirementId(sprint.getRequirementId());
+      Requirement r = requirementMap.get(sprint.getRequirementId());
+      if (r != null) {
+        dto.setRequirementCode(r.getCode());
+        dto.setRequirementTitle(r.getTitle());
+      }
+    }
+    if (s.getProjectId() != null) {
+      Project p = projectMap.get(s.getProjectId());
+      if (p != null) {
+        dto.setProjectName(p.getName());
+        dto.setProjectCode(p.getCode());
+      }
+    }
+    return dto;
   }
 
   @Transactional

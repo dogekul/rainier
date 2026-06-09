@@ -17,8 +17,19 @@ import com.rainier.sprint.dto.SprintDetail;
 import com.rainier.sprint.dto.SprintUpdateRequest;
 import com.rainier.sprint.repository.SprintRepository;
 import com.rainier.story.repository.StoryRepository;
+import com.rainier.user.domain.User;
 import com.rainier.user.repository.UserRepository;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -46,6 +57,7 @@ public class SprintService {
   private final UserRepository userRepo;
   private final ProjectRepository projectRepo;
   private final StoryRepository storyRepo;
+  @PersistenceContext private EntityManager em;
 
   public SprintService(
       SprintRepository repo,
@@ -118,11 +130,106 @@ public class SprintService {
     PageRequest pr =
         PageRequest.of(page.getPage(), page.getSize(), Sort.by(Sort.Direction.DESC, "createTime"));
     Page<Sprint> result = repo.findAll(spec, pr);
+    List<Sprint> sprints = result.getContent();
+    if (sprints.isEmpty()) {
+      return PageResponse.of(
+          Collections.emptyList(), page.getPage(), page.getSize(), result.getTotalElements());
+    }
+    // v0.0.10.1 Code-M2 fix: batch enrich — 3 SELECTs (user, requirement, project) + 1 storyCount
+    // aggregate replacing v0.0.10's per-row enrich loop.
+    // Code-M2 defense: filter null on FK ids in case a legacy row violates NN invariant.
+    Set<Long> userIds =
+        sprints.stream()
+            .map(Sprint::getOwnerUserId)
+            .filter(Objects::nonNull)
+            .collect(Collectors.toCollection(HashSet::new));
+    Set<Long> requirementIds =
+        sprints.stream()
+            .map(Sprint::getRequirementId)
+            .filter(Objects::nonNull)
+            .collect(Collectors.toCollection(HashSet::new));
+    Set<Long> sprintIds =
+        sprints.stream().map(Sprint::getId).collect(Collectors.toCollection(HashSet::new));
+    Map<Long, User> userMap = batchById(userRepo.findAllById(userIds), User::getId);
+    Map<Long, Requirement> requirementMap =
+        batchById(requirementRepo.findAllById(requirementIds), Requirement::getId);
+    Set<Long> projectIds =
+        requirementMap.values().stream()
+            .map(Requirement::getProjectId)
+            .filter(Objects::nonNull)
+            .collect(Collectors.toCollection(HashSet::new));
+    Map<Long, Project> projectMap =
+        projectIds.isEmpty()
+            ? Collections.emptyMap()
+            : batchById(projectRepo.findAllById(projectIds), Project::getId);
+    Map<Long, Long> storyCountMap = batchStoryCount(sprintIds);
     return PageResponse.of(
-        result.stream().map(this::enrich).collect(Collectors.toList()),
+        sprints.stream()
+            .map(s -> enrichBatch(s, userMap, requirementMap, projectMap, storyCountMap))
+            .collect(Collectors.toList()),
         page.getPage(),
         page.getSize(),
         result.getTotalElements());
+  }
+
+  private static <T> Map<Long, T> batchById(Iterable<T> entities, Function<T, Long> idExtractor) {
+    Map<Long, T> map = new HashMap<>();
+    for (T entity : entities) {
+      map.put(idExtractor.apply(entity), entity);
+    }
+    return map;
+  }
+
+  /**
+   * v0.0.10.1 Decision 4: single GROUP BY query instead of per-row {@code countBySprintId}. Returns
+   * map sprintId → count. Sprints with zero stories are absent (caller defaults to 0).
+   */
+  @SuppressWarnings("unchecked")
+  private Map<Long, Long> batchStoryCount(Set<Long> sprintIds) {
+    if (sprintIds.isEmpty()) {
+      return Collections.emptyMap();
+    }
+    List<Object[]> rows =
+        em.createNativeQuery(
+                "SELECT sprint_id, COUNT(*) FROM rainier_story"
+                    + " WHERE del_flag = 0 AND sprint_id IN (:ids)"
+                    + " GROUP BY sprint_id")
+            .setParameter("ids", sprintIds)
+            .getResultList();
+    Map<Long, Long> map = new HashMap<>();
+    for (Object[] row : rows) {
+      map.put(((Number) row[0]).longValue(), ((Number) row[1]).longValue());
+    }
+    return map;
+  }
+
+  private SprintDetail enrichBatch(
+      Sprint s,
+      Map<Long, User> userMap,
+      Map<Long, Requirement> requirementMap,
+      Map<Long, Project> projectMap,
+      Map<Long, Long> storyCountMap) {
+    SprintDetail dto = SprintDetail.from(s);
+    User u = userMap.get(s.getOwnerUserId());
+    if (u != null) {
+      dto.setOwnerName(u.getName());
+      dto.setOwnerLoginName(u.getLoginName());
+    }
+    Requirement r = requirementMap.get(s.getRequirementId());
+    if (r != null) {
+      dto.setRequirementCode(r.getCode());
+      dto.setRequirementTitle(r.getTitle());
+      if (r.getProjectId() != null) {
+        dto.setProjectId(r.getProjectId());
+        Project p = projectMap.get(r.getProjectId());
+        if (p != null) {
+          dto.setProjectName(p.getName());
+          dto.setProjectCode(p.getCode());
+        }
+      }
+    }
+    dto.setStoryCount(storyCountMap.getOrDefault(s.getId(), 0L));
+    return dto;
   }
 
   @Transactional

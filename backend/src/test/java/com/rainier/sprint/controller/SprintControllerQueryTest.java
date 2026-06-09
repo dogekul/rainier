@@ -103,20 +103,53 @@ class SprintControllerQueryTest {
     return json.readTree(res.getResponse().getContentAsString()).get("id").asLong();
   }
 
-  /** TC-SPR-009: GET 详情完整字段集 + 富化. */
+  /** TC-SPR-009 / v0.0.10.1 TC-SPR-009-FULL: GET 详情完整字段集 (22) + 富化. */
   @Test
   void get_existingId_returnsFullDetailAndEnriched() throws Exception {
     Long userId = createUser("alice", "Alice");
     Long projectId = createProject(userId, "PROJ-Q1");
     Long reqId = createRequirement(userId, projectId, "REQ-1");
     Long id = createSprint(userId, reqId, "SPR-Q1", null);
-    mockMvc
-        .perform(get("/api/sprints/" + id))
-        .andExpect(status().isOk())
-        .andExpect(jsonPath("$.id").value(id))
-        .andExpect(jsonPath("$.requirementCode").value("REQ-1"))
-        .andExpect(jsonPath("$.ownerName").value("Alice"))
-        .andExpect(jsonPath("$.storyCount").value(0));
+    com.fasterxml.jackson.databind.JsonNode body =
+        json.readTree(
+            mockMvc
+                .perform(get("/api/sprints/" + id))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(id))
+                .andExpect(jsonPath("$.requirementCode").value("REQ-1"))
+                .andExpect(jsonPath("$.ownerName").value("Alice"))
+                .andExpect(jsonPath("$.storyCount").value(0))
+                .andReturn()
+                .getResponse()
+                .getContentAsString());
+    // v0.0.10.1 Test-M1 fix: assert 22-field contract loop (mirror TC-STR-010).
+    String[] expected = {
+      "id",
+      "code",
+      "name",
+      "description",
+      "goal",
+      "status",
+      "requirementId",
+      "requirementCode",
+      "requirementTitle",
+      "projectId",
+      "projectName",
+      "projectCode",
+      "ownerUserId",
+      "ownerName",
+      "ownerLoginName",
+      "startDate",
+      "endDate",
+      "storyCount",
+      "createTime",
+      "updateTime",
+      "createBy",
+      "updateBy"
+    };
+    for (String f : expected) {
+      org.junit.jupiter.api.Assertions.assertTrue(body.has(f), "expected field: " + f);
+    }
   }
 
   /** TC-SPR-010: 按 requirementId 过滤. */

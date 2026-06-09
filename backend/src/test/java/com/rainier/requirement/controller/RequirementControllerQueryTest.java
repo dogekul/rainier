@@ -218,10 +218,19 @@ class RequirementControllerQueryTest {
       sprintRepo.saveAndFlush(sp);
     }
     // GET single
-    mockMvc
-        .perform(get("/api/requirements/" + reqId))
-        .andExpect(status().isOk())
-        .andExpect(jsonPath("$.sprintCount").value(3));
+    JsonNode singleBody =
+        json.readTree(
+            mockMvc
+                .perform(get("/api/requirements/" + reqId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.sprintCount").value(3))
+                .andReturn()
+                .getResponse()
+                .getContentAsString());
+    // v0.0.10.1 Test-M5 fix: v0.0.10 dropped storyCount — guard against silent regression.
+    org.junit.jupiter.api.Assertions.assertFalse(
+        singleBody.has("storyCount"),
+        "RequirementDetail must NOT contain storyCount field (v0.0.10 dropped it for sprintCount)");
     // GET list — find this Requirement and assert its sprintCount
     MvcResult res =
         mockMvc
@@ -233,6 +242,8 @@ class RequirementControllerQueryTest {
     for (JsonNode item : content) {
       if (item.get("id").asLong() == reqId) {
         org.junit.jupiter.api.Assertions.assertEquals(3L, item.get("sprintCount").asLong());
+        org.junit.jupiter.api.Assertions.assertFalse(
+            item.has("storyCount"), "Requirement list item must NOT contain storyCount field");
         found = true;
       }
     }

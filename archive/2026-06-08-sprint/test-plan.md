@@ -55,7 +55,7 @@
 | TC-SPR-015 | P0 | 无引用软删 + GET 404 | 204 + DB del_flag=1 | SprintControllerDeleteTest |
 | TC-SPR-016 | P0 | 有 Story 引用 → 409 | "sprint has linked stories" | SprintControllerDeleteTest |
 | TC-SPR-017 | P0 | (备用 — 与 016 不同 status 的 Story) 多 Story 仍 409 | "sprint has linked stories" | SprintControllerDeleteTest |
-| TC-SPR-MIG-001 | P0 | 首次启动迁移旧 Story + ALTER 升级 NN | 创默认 Sprint + Story.sprint_id 更新 + INFO 日志 + DESCRIBE rainier_story sprint_id Null="NO" | LegacyStoryToSprintMigrationTest |
+| TC-SPR-MIG-001 | P0 | 首次启动迁移旧 Story + ALTER 升级 NN（**Phase 5 修正**：orphan 不仅是 `sprint_id IS NULL`，也包括 `= 0`（MySQL 自动填）和 `NOT IN (live sprints)`） | 创默认 Sprint + Story.sprint_id 更新 + INFO 日志 + DESCRIBE rainier_story sprint_id Null="NO" | LegacyStoryToSprintMigrationTest |
 | TC-SPR-MIG-002 | P0 | 二次启动 no-op + 不重复 ALTER | 无新 Sprint 创建 + 无 summary 日志 + DB 列保持 NN 不变 | LegacyStoryToSprintMigrationTest |
 
 ### 功能 2：entity-requirement — DELETE FK + sprintCount（2 TCs）

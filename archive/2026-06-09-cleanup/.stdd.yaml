@@ -1,0 +1,122 @@
+change:
+  id: 2026-06-09-cleanup
+  title: v0.0.10.1-cleanup — sweep v0.0.10-sprint review residues
+  baseline:
+    commit: c806f04
+    tag: v0.0.10-sprint
+  type: cleanup
+  parent_change: 2026-06-08-sprint
+
+phase:
+  current: archived
+  archived_at: '2026-06-09'
+  understand:
+    status: completed
+    confirmed_at: '2026-06-09'
+    artifact: proposal.md
+  spec:
+    status: completed
+    confirmed_at: '2026-06-09'
+    artifacts:
+      - design.md
+      - specs/entity-story/spec.md
+      - specs/entity-sprint/spec.md
+      - specs/entity-requirement/spec.md
+      - test-plan.md
+    metrics:
+      capabilities: 3
+      requirements: 5
+      scenarios: 8
+      tc_cases: 8
+      p0: 8
+      p1: 0
+      p2: 0
+  slice:
+    status: completed
+    completed_at: '2026-06-09'
+    artifacts:
+      - slices.md
+      - tasks.md
+    metrics:
+      slices: 8
+      p0_slices: 8
+      runner_slices: 2     # S01 + S02
+      perf_slices: 4       # S03-S06
+      hardening_slices: 1  # S07
+      e2e_slices: 1        # S08
+  build:
+    status: completed
+    completed_at: '2026-06-09'
+    metrics:
+      backend_tests: 191    # 186 baseline + 3 CLN + 1 perf-story + 1 perf-sprint
+      frontend_tests: 41    # baseline unchanged
+      e2e_status: green
+    notable_adjustments:
+      - 'PA-1: SQL count budget revised 5 → 6 (Spring Data findAll(spec, pageable) issues 2 statements: data + count). See pending-adjustments.md.'
+      - 'BuildKit fetch error on dockerfile:1.6 syntax — worked around with DOCKER_BUILDKIT=0; not a code issue.'
+  verify:
+    status: completed
+    completed_at: '2026-06-09'
+    artifacts:
+      - test-report.md
+      - design-adjustments.md
+      - pending-adjustments.md
+    metrics:
+      backend_tests_total: 191
+      frontend_tests_total: 41
+      review_round0_aggregate_initial:
+        critical: 0
+        high: 1
+        medium: 8
+      review_round0_aggregate_post_fix:
+        critical: 0
+        high: 0
+        medium: 6
+      scenario_coverage_percent: 100   # 8 / 8
+      e2e_status: green
+  deliver:
+    status: completed
+    completed_at: '2026-06-09'
+    artifacts:
+      - archive/2026-06-09-cleanup/
+    tag: v0.0.10.1-cleanup
+    specs_merged: false  # cleanup only — no new capability; v0.0.10 canonical specs already cover the surface
+
+long_range:
+  enabled: true
+  mode: full_auto
+  pre_auth_completed: true
+  pre_auth_timestamp: '2026-06-09'
+  pre_auth:
+    decisions:
+      design_deviation:
+        minor: auto_record
+        major: auto_record_continue
+      technical_blocker: workaround
+      iteration:
+        max_rounds: 10
+      git_ops: allow_up_to_commit_and_tag  # no push
+    operations:
+      directory: allow
+      file_write: allow
+      command: allow
+      script: allow
+      network: allow
+      file_read: allow
+      git_readonly: allow
+    gates:
+      gate_3: require_user_confirmation
+
+scope:
+  type: cleanup
+  capabilities_modified:
+    - entity-story        # DB DROP requirement_id column + enrich batch
+    - entity-sprint       # enrich batch + storyCount GROUP BY + test asserts
+    - entity-requirement  # TC storyCount 缺席守护
+  capabilities_new: []
+  explicitly_excluded:
+    - sprintspage_full_crud   # user 已确认只读是有意的
+    - low_priority_polish     # typo / ASCII 图
+    - push_to_remote          # user 后续决定
+  column_drops:
+    - rainier_story.requirement_id  # 幂等 ALTER DROP COLUMN

@@ -39,6 +39,20 @@ v0.0.10 引入 `Story.sprint_id BIGINT NN`，但**已有 v0.0.9 Story 数据没�
 
 ## Decisions
 
+> **Proposal → Design Mapping addendum (v0.0.10.1-cleanup, 2026-06-09)**
+> The v0.0.10 proposal locked 8 decisions; this design enumerates 14 (1..14, with 12.1/12.2 sub-points). Mapping for traceability:
+>
+> | Proposal # | Design § | Note |
+> |---|---|---|
+> | 1 (Sprint 引入 + 三段层级) | §1 (Sprint NN FK to Requirement) | 1:1 |
+> | 2 (Sprint 状态 4 项 PLANNING/ACTIVE/COMPLETED/CANCELLED) | §3 | 1:1 |
+> | 3 (Sprint 字段集) | §4 | 1:1 |
+> | 4 (RequirementService.delete FK 改 Sprint) | §7 + §8 | 1:N — §7 changes the FK check; §8 swaps enrichment storyCount→sprintCount |
+> | 5 (Story.requirementId 代码层移除；DB 列遗留为死列) | §5 + §9 + §13 | 1:N — §5 declares the strategy; §9 implements 2-stage enrich; §13 frontend type |
+> | 6 (前端 RequirementsPage drilldown → SprintListPanel) | §11 + §12 + §12.1 + §12.2 + §14 | 1:N — drilldown reshape touches 5 frontend axes |
+> | 7 (Sprint 不强制 time coherence — 层级语义) | §4 (字段集说明) | 1:1 — embedded in §4 prose |
+> | 8 (LegacyStoryToSprintMigration on first boot) | §2 + §6 + §10 | 1:N — §2 = DB-NN strategy; §6 = migration impl; §10 = Sprint.delete Story-ref check |
+
 ### 1. Sprint 必须挂 Requirement（NN FK）
 
 **方案**：`Sprint.requirement_id BIGINT NOT NULL`；Service create 时校验 `requirementRepo.existsById(req.getRequirementId())`，不存在 → 400 "requirement not found"。
@@ -72,6 +86,36 @@ v0.0.10 引入 `Story.sprint_id BIGINT NN`，但**已有 v0.0.9 Story 数据没�
 - 等到 v0.0.11+ 单独 cleanup ALTER：DB 层不一致窗口期太长，与 Gate 2 修订意图相悖
 
 **Hibernate `columnDefinition` 行为说明**：`columnDefinition="BIGINT"` 让 Hibernate 把列定义为 `BIGINT`（默认 NULL），无视 `nullable=false`。这是 JPA 规范允许的覆盖。在 Step 2 ALTER 后，DB 是 `BIGINT NOT NULL`，与 entity 的 `nullable=false` 一致。后续 ddl-auto=update 不会修改已存在列。
+
+#### Build addendum (2026-06-09, recorded by v0.0.10.1-cleanup)
+
+> Phase 4 BUILD 和 M13 E2E 实际验证发现，前文 "columnDefinition 行为说明" 的假设**不成立**。下面记录修正后的事实，并保留原文以呈现"当时怎么想 → 后来发现什么"的演进轨迹。
+
+实际观察到的行为：
+
+1. **Hibernate 5.6 不遵守 `columnDefinition="BIGINT"` 的隐含 NULL**。Hibernate 仍按 `nullable=false` 生成 `ADD COLUMN sprint_id BIGINT NOT NULL`。
+2. **MySQL 8 在有数据的表上执行 `ADD COLUMN ... NOT NULL`** 时不会失败 — 它**默认填充 `0`** 到所有既存行（数值类型隐式默认 0），DDL 成功完成。
+3. 由此 v0.0.10 启动序列里，Step 1 的 `sprint_id IS NULL` 探测 **没有命中任何行**，迁移看似 no-op；但实际所有遗留 Story 都被 MySQL 静默置为 `sprint_id = 0`，**指向不存在的 Sprint id=0**，造成数据孤儿。
+
+修正后的真实 orphan 过滤逻辑（Phase 4 Code-H2 fix）：
+
+```sql
+SELECT s.id, s.requirement_id FROM rainier_story s
+ WHERE s.del_flag = 0
+   AND (s.sprint_id IS NULL
+        OR s.sprint_id = 0
+        OR s.sprint_id NOT IN (SELECT id FROM rainier_sprint WHERE del_flag = 0))
+```
+
+即 "三种孤儿都补"：真正的 NULL（其他方言可能出现）、MySQL ADD COLUMN 自动填的 0、以及指向已删 Sprint 的悬空引用。
+
+附带其他 Phase 4 发现：
+
+- **`INFORMATION_SCHEMA` 区分大小写**：MySQL 在 Linux 上的 `TABLE_NAME` 列实际是小写 `rainier_story`，所以 `WHERE TABLE_NAME = 'RAINIER_STORY'` 永远 0 行。所有此类查询必须用 `WHERE LOWER(TABLE_NAME) = 'rainier_story'` / `LOWER(COLUMN_NAME) = '...'`。
+- **H2 vs MySQL ALTER 语法**：MySQL 用 `ALTER TABLE ... MODIFY COLUMN ... NOT NULL`；H2 用 `ALTER TABLE ... ALTER COLUMN ... SET NOT NULL`。migration 用 try / catch 双语法适配 + `addSuppressed` 保留原始 stack。
+- **Step 2 ALTER 必须解耦于 `storiesMigrated > 0`**（Phase 5 Code-H2 fix）：原方案下若第一次启动 JVM 在 Step 1 后崩溃，第二次启动 Step 1 早退 → Step 2 永不执行 → DB 列永远停在 nullable。修正后 Step 2 单独探测 `IS_NULLABLE`，无条件 fix。
+
+v0.0.10.1-cleanup（本变更）追加一条 cleanup runner `LegacyRequirementIdColumnCleanup` 在 migration 之后 DROP `requirement_id` 死列，完成 Decision 5 的 "DB 列遗留 → v0.0.11+ DROP" 收尾。
 
 ### 3. Sprint 状态机 4 项（PLANNING / ACTIVE / COMPLETED / CANCELLED）
 

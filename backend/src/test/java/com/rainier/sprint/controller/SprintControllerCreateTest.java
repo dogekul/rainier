@@ -96,6 +96,11 @@ class SprintControllerCreateTest {
             post("/api/sprints").contentType(MediaType.APPLICATION_JSON).content(body.toString()))
         .andExpect(status().isCreated())
         .andExpect(header().string("Location", matchesPattern("/api/sprints/\\d+")))
+        // v0.0.10.1 Test-M2 fix: echo asserts (id / code / requirementId / ownerUserId).
+        .andExpect(jsonPath("$.id").isNumber())
+        .andExpect(jsonPath("$.code").value("SPR-001"))
+        .andExpect(jsonPath("$.requirementId").value(reqId))
+        .andExpect(jsonPath("$.ownerUserId").value(userId))
         .andExpect(jsonPath("$.status").value("PLANNING"))
         .andExpect(jsonPath("$.requirementCode").value("REQ-1"))
         .andExpect(jsonPath("$.requirementTitle").value("登录"))

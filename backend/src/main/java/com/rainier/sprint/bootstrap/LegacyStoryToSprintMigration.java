@@ -39,7 +39,7 @@ import org.springframework.transaction.annotation.Transactional;
  * <p>Subsequent boots find no NULL sprint_id rows and exit early without ALTER — no-op.
  */
 @Component
-@Order(Ordered.HIGHEST_PRECEDENCE)
+@Order(Ordered.HIGHEST_PRECEDENCE + 1)
 public class LegacyStoryToSprintMigration implements CommandLineRunner {
 
   private static final Logger log = LoggerFactory.getLogger(LegacyStoryToSprintMigration.class);
