@@ -52,6 +52,7 @@ export interface SprintUpdate {
 }
 
 export interface SprintListParams {
+  projectId?: number;
   requirementId?: number;
   status?: SprintStatus;
   search?: string;

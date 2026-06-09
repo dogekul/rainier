@@ -120,12 +120,16 @@ public class StoryService {
   }
 
   public PageResponse<StoryDetail> list(
-      Long sprintId, String status, String priority, PageParams page) {
+      Long projectId, Long sprintId, String status, String priority, PageParams page) {
     Specification<Story> spec =
         (root, query, cb) -> {
           javax.persistence.criteria.Predicate p = cb.conjunction();
           if (sprintId != null) {
             p = cb.and(p, cb.equal(root.get("sprintId"), sprintId));
+          }
+          if (projectId != null) {
+            // v0.0.12.1 A2: Story.projectId is auto-copied from Sprint's Requirement at create.
+            p = cb.and(p, cb.equal(root.get("projectId"), projectId));
           }
           if (status != null) {
             p = cb.and(p, cb.equal(root.get("status"), status));

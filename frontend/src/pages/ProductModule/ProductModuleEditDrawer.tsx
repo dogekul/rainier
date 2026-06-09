@@ -3,7 +3,7 @@ import { Button } from '../../components/ui/Button';
 import { Drawer } from '../../components/ui/Drawer';
 import { Input } from '../../components/ui/Input';
 import { listProductCategories, type ProductCategory } from '../../api/productCategory';
-import { listProducts, type Product } from '../../api/product';
+import { getProduct, listProducts, type Product } from '../../api/product';
 import { listUsers, type User } from '../../api/user';
 import { useAuthStore } from '../../store/auth';
 import {
@@ -50,6 +50,7 @@ export function ProductModuleEditDrawer({
       setFormError(null);
       return;
     }
+    // v0.0.12.1 A2: server-side filter — open() loads Categories + Users + initial unfiltered Products.
     void Promise.all([
       listProductCategories({ size: 100 }),
       listProducts({ size: 100 }),
@@ -60,6 +61,10 @@ export function ProductModuleEditDrawer({
       setUsers(us.content);
       if (editing) {
         setOwnerUserId(editing.ownerUserId);
+        // Resolve categoryId from editing product so Category filter shows the right value.
+        void getProduct(editing.productId).then((p) => {
+          setCategoryId(p.categoryId);
+        });
       } else {
         const me = currentLoginName
           ? us.content.find((u) => u.loginName === currentLoginName)
@@ -73,7 +78,6 @@ export function ProductModuleEditDrawer({
       setDescription(editing.description ?? '');
       setStatus(editing.status);
       setProductId(editing.productId);
-      setCategoryId('');
     } else {
       setCode('');
       setName('');
@@ -84,15 +88,20 @@ export function ProductModuleEditDrawer({
     }
   }, [open, editing, currentLoginName]);
 
+  // v0.0.12.1 A2: refetch Products whenever Category filter changes (server-side filter).
+  useEffect(() => {
+    if (!open) return;
+    const params: { categoryId?: number; size: number } = { size: 100 };
+    if (categoryId !== '') params.categoryId = categoryId;
+    void listProducts(params).then((res) => setProducts(res.content));
+  }, [open, categoryId]);
+
   // Category is a filter helper; switching it should clear selected Product.
   const handleCategoryChange = (next: number | '') => {
     setCategoryId(next);
     setProductId('');
     setFormError(null);
   };
-
-  const filteredProducts =
-    categoryId === '' ? products : products.filter((p) => p.categoryId === categoryId);
 
   return (
     <Drawer
@@ -148,7 +157,7 @@ export function ProductModuleEditDrawer({
           data-testid="product-module-product-select"
         >
           <option value="">请选择产品</option>
-          {filteredProducts.map((p) => (
+          {products.map((p) => (
             <option key={p.id} value={p.id}>
               {p.name}（{p.code}）
             </option>

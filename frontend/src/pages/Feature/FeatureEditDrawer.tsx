@@ -3,7 +3,11 @@ import { Button } from '../../components/ui/Button';
 import { Drawer } from '../../components/ui/Drawer';
 import { Input } from '../../components/ui/Input';
 import { listProducts, type Product } from '../../api/product';
-import { listProductModules, type ProductModule } from '../../api/productModule';
+import {
+  getProductModule,
+  listProductModules,
+  type ProductModule,
+} from '../../api/productModule';
 import { listUsers, type User } from '../../api/user';
 import { useAuthStore } from '../../store/auth';
 import {
@@ -50,26 +54,26 @@ export function FeatureEditDrawer({
       setFormError(null);
       return;
     }
-    void Promise.all([
-      listProducts({ size: 100 }),
-      listProductModules({ size: 100 }),
-      listUsers({ size: 100 }),
-    ]).then(([prods, mods, us]) => {
-      setProducts(prods.content);
-      setModules(mods.content);
-      setUsers(us.content);
-      if (editing) {
-        setOwnerUserId(editing.ownerUserId);
-        // Pre-fill productId from editing module's productId so filter shows module.
-        const editingModule = mods.content.find((m) => m.id === editing.moduleId);
-        if (editingModule) setProductId(editingModule.productId);
-      } else {
-        const me = currentLoginName
-          ? us.content.find((u) => u.loginName === currentLoginName)
-          : undefined;
-        setOwnerUserId(me ? me.id : '');
-      }
-    });
+    // v0.0.12.1 A2: server-side filter — open() loads only Products + Users.
+    // Modules fetched lazily when Product changes (or on edit, derived from editing module).
+    void Promise.all([listProducts({ size: 100 }), listUsers({ size: 100 })]).then(
+      ([prods, us]) => {
+        setProducts(prods.content);
+        setUsers(us.content);
+        if (editing) {
+          setOwnerUserId(editing.ownerUserId);
+          // Edit mode: resolve productId via the editing module, then load that product's modules.
+          void getProductModule(editing.moduleId).then((m) => {
+            setProductId(m.productId);
+          });
+        } else {
+          const me = currentLoginName
+            ? us.content.find((u) => u.loginName === currentLoginName)
+            : undefined;
+          setOwnerUserId(me ? me.id : '');
+        }
+      },
+    );
     if (editing) {
       setCode(editing.code);
       setName(editing.name);
@@ -83,18 +87,27 @@ export function FeatureEditDrawer({
       setStatus('PLANNING');
       setProductId('');
       setModuleId('');
+      setModules([]);
     }
   }, [open, editing, currentLoginName]);
 
-  // When Product changes, clear selected Module.
+  // v0.0.12.1 A2: whenever productId is set (user pick OR derived from editing), fetch its modules.
+  useEffect(() => {
+    if (!open || productId === '') {
+      return;
+    }
+    void listProductModules({ productId, size: 100 }).then((res) => {
+      setModules(res.content);
+    });
+  }, [open, productId]);
+
+  // When Product changes via user pick, clear selected Module (effect above will refetch).
   const handleProductChange = (next: number | '') => {
     setProductId(next);
     setModuleId('');
+    setModules([]);
     setFormError(null);
   };
-
-  const filteredModules =
-    productId === '' ? modules : modules.filter((m) => m.productId === productId);
 
   return (
     <Drawer
@@ -150,7 +163,7 @@ export function FeatureEditDrawer({
           data-testid="feature-module-select"
         >
           <option value="">请选择模块</option>
-          {filteredModules.map((m) => (
+          {modules.map((m) => (
             <option key={m.id} value={m.id}>
               {m.name}（{m.code}）
             </option>

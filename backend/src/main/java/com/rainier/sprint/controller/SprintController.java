@@ -44,10 +44,11 @@ public class SprintController {
 
   @GetMapping
   public PageResponse<SprintDetail> list(
+      @RequestParam(required = false) Long projectId,
       @RequestParam(required = false) Long requirementId,
       @RequestParam(required = false) String status,
       @Valid PageParams page) {
-    return service.list(requirementId, status, page);
+    return service.list(projectId, requirementId, status, page);
   }
 
   @PutMapping("/{id}")

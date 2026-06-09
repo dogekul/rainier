@@ -169,6 +169,24 @@ class SprintControllerQueryTest {
         .andExpect(jsonPath("$.content[*].requirementId", everyItem(is(reqA.intValue()))));
   }
 
+  /** TC-SPR-010b (v0.0.12.1 A2): 按 projectId 过滤 — 通过 Requirement 子查询. */
+  @Test
+  void getList_filterByProjectId_returnsOnlyMatching() throws Exception {
+    Long userId = createUser("alice", "Alice");
+    Long projA = createProject(userId, "PROJ-PA1");
+    Long projB = createProject(userId, "PROJ-PA2");
+    Long reqA = createRequirement(userId, projA, "REQ-PA");
+    Long reqB = createRequirement(userId, projB, "REQ-PB");
+    createSprint(userId, reqA, "SPR-PA1", null);
+    createSprint(userId, reqA, "SPR-PA2", null);
+    createSprint(userId, reqB, "SPR-PB1", null);
+    mockMvc
+        .perform(get("/api/sprints?projectId=" + projA))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.total").value(2))
+        .andExpect(jsonPath("$.content[*].projectId", everyItem(is(projA.intValue()))));
+  }
+
   /** TC-SPR-011: 按 status 过滤. */
   @Test
   void getList_filterByStatus_returnsOnlyMatching() throws Exception {

@@ -44,11 +44,12 @@ public class StoryController {
 
   @GetMapping
   public PageResponse<StoryDetail> list(
+      @RequestParam(required = false) Long projectId,
       @RequestParam(required = false) Long sprintId,
       @RequestParam(required = false) String status,
       @RequestParam(required = false) String priority,
       @Valid PageParams page) {
-    return service.list(sprintId, status, priority, page);
+    return service.list(projectId, sprintId, status, priority, page);
   }
 
   @PutMapping("/{id}")

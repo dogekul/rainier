@@ -53,17 +53,14 @@ export function TaskEditDrawer({
       setFormError(null);
       return;
     }
-    void Promise.all([
-      listProjects({ size: 100 }),
-      listSprints({ size: 100 }),
-      listStories({ size: 100 }),
-      listUsers({ size: 100 }),
-    ]).then(([pr, sp, st, us]) => {
-      setProjects(pr.content);
-      setSprints(sp.content);
-      setStories(st.content);
-      setUsers(us.content);
-    });
+    // v0.0.12.1 A2: server-side filter — open() loads only Projects + Users.
+    // Sprints/Stories fetched lazily when Project/Sprint changes.
+    void Promise.all([listProjects({ size: 100 }), listUsers({ size: 100 })]).then(
+      ([pr, us]) => {
+        setProjects(pr.content);
+        setUsers(us.content);
+      },
+    );
     if (editing) {
       setCode(editing.code);
       setTitle(editing.title);
@@ -84,24 +81,44 @@ export function TaskEditDrawer({
       setProjectId('');
       setSprintId('');
       setStoryId('');
+      setSprints([]);
+      setStories([]);
       setAssigneeUserId('');
       setDueDate('');
     }
   }, [open, editing]);
 
-  // Decision 9: Sprint/Story 联动 — when project changes, clear sprint/story.
+  // v0.0.12.1 A2: refetch Sprints whenever projectId changes (server-side filter).
+  useEffect(() => {
+    if (!open || projectId === '') {
+      return;
+    }
+    void listSprints({ projectId, size: 100 }).then((res) => setSprints(res.content));
+  }, [open, projectId]);
+
+  // v0.0.12.1 A2: refetch Stories — narrower by sprintId if present, else by projectId.
+  useEffect(() => {
+    if (!open || projectId === '') {
+      return;
+    }
+    const params: { projectId?: number; sprintId?: number; size: number } = { size: 100 };
+    if (sprintId !== '') {
+      params.sprintId = sprintId;
+    } else {
+      params.projectId = projectId;
+    }
+    void listStories(params).then((res) => setStories(res.content));
+  }, [open, projectId, sprintId]);
+
+  // Decision 9: Sprint/Story 联动 — when project changes, clear sprint/story (effects refetch).
   const handleProjectChange = (next: number | '') => {
     setProjectId(next);
     setSprintId('');
     setStoryId('');
+    setSprints([]);
+    setStories([]);
     setFormError(null);
   };
-
-  const filteredSprints = sprints.filter((s) => s.projectId === projectId);
-  const filteredStories = stories.filter(
-    (s) =>
-      s.projectId === projectId && (sprintId === '' || s.sprintId === sprintId),
-  );
 
   return (
     <Drawer
@@ -156,7 +173,7 @@ export function TaskEditDrawer({
           data-testid="task-sprint-select"
         >
           <option value="">未选 Sprint</option>
-          {filteredSprints.map((s) => (
+          {sprints.map((s) => (
             <option key={s.id} value={s.id}>
               {s.name}（{s.code}）
             </option>
@@ -177,7 +194,7 @@ export function TaskEditDrawer({
           data-testid="task-story-select"
         >
           <option value="">未选 Story</option>
-          {filteredStories.map((s) => (
+          {stories.map((s) => (
             <option key={s.id} value={s.id}>
               {s.title}（{s.code}）
             </option>

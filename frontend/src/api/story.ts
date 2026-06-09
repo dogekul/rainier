@@ -72,6 +72,7 @@ export interface StoryUpdate {
 }
 
 export interface StoryListParams {
+  projectId?: number;
   sprintId?: number;
   status?: StoryStatus;
   priority?: Priority;

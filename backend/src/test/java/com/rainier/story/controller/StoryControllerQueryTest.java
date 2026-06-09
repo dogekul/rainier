@@ -197,6 +197,26 @@ class StoryControllerQueryTest {
         .andExpect(jsonPath("$.content[*].sprintId", everyItem(is(sprA.intValue()))));
   }
 
+  /** TC-STR-SPR-004b (v0.0.12.1 A2): 按 projectId 过滤列表 — auto-copied 列直接相等. */
+  @Test
+  void getList_filterByProjectId_returnsOnlyMatching() throws Exception {
+    Long userId = createUser("alice", "Alice");
+    Long projA = createProject(userId, "PROJ-PSA");
+    Long projB = createProject(userId, "PROJ-PSB");
+    Long reqA = createRequirement(userId, projA, "REQ-PSA", "x");
+    Long reqB = createRequirement(userId, projB, "REQ-PSB", "x");
+    Long sprA = createSprint(reqA, userId, "SPR-PSA");
+    Long sprB = createSprint(reqB, userId, "SPR-PSB");
+    createStory(userId, sprA, "STR-PSA1", null);
+    createStory(userId, sprA, "STR-PSA2", null);
+    createStory(userId, sprB, "STR-PSB1", null);
+    mockMvc
+        .perform(get("/api/stories?projectId=" + projA))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.total").value(2))
+        .andExpect(jsonPath("$.content[*].projectId", everyItem(is(projA.intValue()))));
+  }
+
   /** TC-STR-012: 按 status 过滤列表. */
   @Test
   void getList_filterByStatus_returnsOnlyMatching() throws Exception {

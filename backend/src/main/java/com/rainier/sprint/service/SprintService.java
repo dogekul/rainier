@@ -105,12 +105,22 @@ public class SprintService {
     return enrich(getOrThrow(id));
   }
 
-  public PageResponse<SprintDetail> list(Long requirementId, String status, PageParams page) {
+  public PageResponse<SprintDetail> list(
+      Long projectId, Long requirementId, String status, PageParams page) {
     Specification<Sprint> spec =
         (root, query, cb) -> {
           javax.persistence.criteria.Predicate p = cb.conjunction();
           if (requirementId != null) {
             p = cb.and(p, cb.equal(root.get("requirementId"), requirementId));
+          }
+          if (projectId != null) {
+            // v0.0.12.1 A2: Sprint has no projectId column — filter via Requirement subquery.
+            javax.persistence.criteria.Subquery<Long> sub =
+                query.subquery(Long.class);
+            javax.persistence.criteria.Root<Requirement> reqRoot = sub.from(Requirement.class);
+            sub.select(reqRoot.get("id"))
+                .where(cb.equal(reqRoot.get("projectId"), projectId));
+            p = cb.and(p, root.get("requirementId").in(sub));
           }
           if (status != null) {
             p = cb.and(p, cb.equal(root.get("status"), status));
