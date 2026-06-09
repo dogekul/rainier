@@ -90,6 +90,51 @@ describe('AppLayout Sider (TC-FES-201)', () => {
     expect(html.indexOf('/pm/tasks')).toBeLessThan(html.indexOf('/pm/demands'));
   });
 
+  /** TC-FES-PROD-001 (v0.0.12): Sider 顶级 4 组 + 「产品」组 4 项 + 顺序 (产品组在需求管理组之前). */
+  it('renders the 产品 menu group with 4 items between 组织 and 需求管理 (TC-FES-PROD-001)', () => {
+    render(
+      <MemoryRouter initialEntries={['/']}>
+        <Routes>
+          <Route element={<AppLayout />}>
+            <Route path="/" element={<div>home</div>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>,
+    );
+    // 4 top-level groups present (组织 / 产品 / 需求管理 / 人事配置).
+    expect(screen.getByText('组织')).toBeInTheDocument();
+    // "产品" matches both the group title and the 产品 item — getAllByText finds both.
+    expect(screen.getAllByText('产品').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText('需求管理')).toBeInTheDocument();
+    expect(screen.getByText('人事配置')).toBeInTheDocument();
+    // 产品 group has 4 items.
+    expect(screen.getByText('产品分类')).toBeInTheDocument();
+    expect(screen.getByText('产品模块')).toBeInTheDocument();
+    expect(screen.getByText('功能')).toBeInTheDocument();
+    // Use testid to disambiguate 「产品」 item from 「产品」 group title.
+    expect(screen.getByTestId('appshell-nav-/pm/products')).toHaveAttribute(
+      'href',
+      '/pm/products',
+    );
+    // 点击 产品分类 → /pm/product-categories.
+    expect(screen.getByTestId('appshell-nav-/pm/product-categories')).toHaveAttribute(
+      'href',
+      '/pm/product-categories',
+    );
+    expect(screen.getByTestId('appshell-nav-/pm/features')).toHaveAttribute(
+      'href',
+      '/pm/features',
+    );
+    // Order: 产品组 (/pm/product-categories) 位于 需求管理组 (/pm/projects) 之前.
+    const sider = screen.getByTestId('appshell-sider');
+    const html = sider.innerHTML;
+    expect(html.indexOf('/pm/product-categories')).toBeLessThan(html.indexOf('/pm/projects'));
+    // 产品组 4 项内部顺序: 产品分类 → 产品 → 产品模块 → 功能.
+    expect(html.indexOf('/pm/product-categories')).toBeLessThan(html.indexOf('/pm/products'));
+    expect(html.indexOf('/pm/products')).toBeLessThan(html.indexOf('/pm/product-modules'));
+    expect(html.indexOf('/pm/product-modules')).toBeLessThan(html.indexOf('/pm/features'));
+  });
+
   /** TC-FES-H01: Sider 含「人事配置」菜单组 + 3 子项 + /hr/positions 链接。 */
   it('renders the 人事配置 menu group with 3 items (TC-FES-H01)', () => {
     render(

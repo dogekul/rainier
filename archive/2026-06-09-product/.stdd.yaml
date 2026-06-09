@@ -1,0 +1,156 @@
+change:
+  id: 2026-06-09-product
+  title: v0.0.12-product — introduce Product architecture (4 entities)
+  baseline:
+    commit: 31c9721
+    tag: v0.0.11-task
+  type: domain-architecture
+  parent_change: null
+
+phase:
+  current: archived
+  archived_at: '2026-06-09'
+  understand:
+    status: completed
+    confirmed_at: '2026-06-09'
+    artifact: proposal.md
+  spec:
+    status: completed
+    confirmed_at: '2026-06-09'
+    artifacts:
+      - design.md
+      - specs/entity-product-category/spec.md
+      - specs/entity-product/spec.md
+      - specs/entity-product-module/spec.md
+      - specs/entity-feature/spec.md
+      - specs/frontend-scaffold/spec.md
+      - test-plan.md
+    metrics:
+      capabilities: 5
+      requirements: 18
+      scenarios: 44   # PA-3: recount, was 46
+      tc_cases: 55
+      p0: 55
+      p1: 0
+      p2: 0
+  slice:
+    status: completed
+    completed_at: '2026-06-09'
+    artifacts:
+      - slices.md
+      - tasks.md
+    metrics:
+      slices: 16
+      p0_slices: 16
+      backend_entity_slices: 8   # M01-M08 (impl + test for 4 entities)
+      backend_fk_chain_slice: 1  # M09
+      backend_perf_slice: 1      # M10
+      frontend_slices: 5         # M11-M15
+      e2e_slices: 1              # M16
+  build:
+    status: completed
+    completed_at: '2026-06-09'
+    metrics:
+      backend_tests: 263    # 212 baseline + 51 new (44 CRUD + 3 FK retrofit + 4 perf)
+      frontend_tests: 47    # 44 baseline + 3 new (Sider TC-FES-PROD-001 + Cat smoke 002 + Feat cascading 004)
+      e2e_status: green
+    notable_adjustments:
+      - 'Initial agent used Java 10+ orElseThrow() no-arg form across 3 Update tests; fixed to orElseThrow(IllegalStateException::new) for Java 8.'
+      - 'TC-FES-PROD-003 (ProductEditDrawer Category select) deferred — only 3 of 4 frontend TCs implemented.'
+  verify:
+    status: completed
+    completed_at: '2026-06-09'
+    artifacts:
+      - test-report.md
+      - design-adjustments.md
+      - pending-adjustments.md
+    metrics:
+      backend_tests_total: 263
+      frontend_tests_total: 47
+      review_round0_aggregate_initial:
+        critical: 1
+        high: 4
+        medium: 8
+      review_round0_aggregate_post_fix:
+        critical: 0
+        high: 0
+        medium: 6
+      scenario_coverage_percent: 98   # 54/55 (TC-FES-PROD-003 deferred to v0.0.13+)
+      e2e_status: green
+  deliver:
+    status: completed
+    completed_at: '2026-06-09'
+    artifacts:
+      - archive/2026-06-09-product/
+      - specs/entity-product-category/spec.md       # NEW
+      - specs/entity-product/spec.md                # NEW
+      - specs/entity-product-module/spec.md         # NEW
+      - specs/entity-feature/spec.md                # NEW
+      - specs/frontend-scaffold/spec.md             # MOD — 「产品」 Sider 顶级组 + 4 /pm/product-* 路由
+    tag: v0.0.12-product
+
+long_range:
+  enabled: true
+  mode: full_auto
+  pre_auth_completed: true
+  pre_auth_timestamp: '2026-06-09'
+  pre_auth:
+    decisions:
+      design_deviation:
+        minor: auto_record
+        major: auto_record_continue
+      technical_blocker: workaround
+      iteration:
+        max_rounds: 10
+      git_ops: allow_up_to_commit_and_tag
+    operations:
+      directory: allow
+      file_write: allow
+      command: allow
+      script: allow
+      network: allow
+      file_read: allow
+      git_readonly: allow
+    gates:
+      gate_3: require_user_confirmation
+
+scope:
+  type: domain-architecture
+  entities:
+    - rainier_product_category   # NEW (flat, 2-state)
+    - rainier_product            # NEW (4-state, FK to category)
+    - rainier_product_module     # NEW (3-state, FK to product)
+    - rainier_feature            # NEW (3-state, FK to module)
+  capabilities_new:
+    - entity-product-category
+    - entity-product
+    - entity-product-module
+    - entity-feature
+  capabilities_modified:
+    - frontend-scaffold          # Sider top-level group 4 → 5
+  design_decisions_pre_locked:
+    category_structure: flat_no_tree
+    status_machines:
+      product_category: [ACTIVE, ARCHIVED]
+      product: [PLANNING, ACTIVE, SUNSET, ARCHIVED]
+      product_module: [PLANNING, ACTIVE, DEPRECATED]
+      feature: [PLANNING, ACTIVE, DEPRECATED]
+    feature_linkage_to_demand_req: deferred_to_v0_0_13
+    delivery_strategy: single_change_4_entities
+    sider_position: new_top_level_group_between_org_and_pm
+  explicitly_excluded:
+    - feature_to_demand_link
+    - feature_to_requirement_link
+    - feature_to_story_link
+    - feature_to_task_link
+    - category_tree_hierarchy
+    - product_roadmap_view
+    - product_kanban
+    - product_burndown
+    - product_membership
+    - feature_priority
+    - feature_estimation
+    - feature_dependencies
+    - module_dependency_graph
+    - ai_auto_product_creation
+    - push_to_remote

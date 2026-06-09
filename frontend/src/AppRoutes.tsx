@@ -3,10 +3,14 @@ import { AppLayout } from './components/AppLayout';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import DemandsPage from './pages/Demand';
 import DemandRequirementsPage from './pages/DemandRequirement';
+import FeaturesPage from './pages/Feature';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import OrganizationsPage from './pages/Organization';
 import PositionsPage from './pages/Position';
+import ProductCategoriesPage from './pages/ProductCategory';
+import ProductModulesPage from './pages/ProductModule';
+import ProductsPage from './pages/Product';
 import ProjectsPage from './pages/Project';
 import RequirementsPage from './pages/Requirement';
 import SprintsPage from './pages/Sprint';
@@ -29,6 +33,10 @@ export function AppRoutes() {
           <Route path="/org/users" element={<UsersPage />} />
           <Route path="/org/user-organizations" element={<UserOrganizationsPage />} />
           <Route path="/pm" element={<Navigate to="/pm/projects" replace />} />
+          <Route path="/pm/product-categories" element={<ProductCategoriesPage />} />
+          <Route path="/pm/products" element={<ProductsPage />} />
+          <Route path="/pm/product-modules" element={<ProductModulesPage />} />
+          <Route path="/pm/features" element={<FeaturesPage />} />
           <Route path="/pm/projects" element={<ProjectsPage />} />
           <Route path="/pm/sprints" element={<SprintsPage />} />
           <Route path="/pm/tasks" element={<TasksPage />} />

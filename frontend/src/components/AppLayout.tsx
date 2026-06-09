@@ -24,6 +24,16 @@ const navGroups: NavGroup[] = [
     ],
   },
   {
+    key: 'product',
+    title: '产品',
+    items: [
+      { to: '/pm/product-categories', label: '产品分类' },
+      { to: '/pm/products', label: '产品' },
+      { to: '/pm/product-modules', label: '产品模块' },
+      { to: '/pm/features', label: '功能' },
+    ],
+  },
+  {
     key: 'pm',
     title: '需求管理',
     items: [
