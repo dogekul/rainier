@@ -113,6 +113,21 @@ describe('AppRoutes /pm/*', () => {
     expect(src.includes('ProductCategoriesPage')).toBe(false);
   });
 
+  /** TC-FES-AUD-004 (v0.0.15): /sys/audit-logs route registered + mounts AuditLogsPage. */
+  it('registers /sys/audit-logs → AuditLogsPage (TC-FES-AUD-004)', async () => {
+    const path = resolve(__dirname, 'AppRoutes.tsx');
+    const src = readFileSync(path, 'utf-8');
+    expect(src.split('/sys/audit-logs').length - 1).toBeGreaterThanOrEqual(1);
+    render(
+      <MemoryRouter initialEntries={['/sys/audit-logs']}>
+        <AppRoutes />
+      </MemoryRouter>,
+    );
+    await waitFor(() => {
+      expect(screen.getByTestId('audit-query-btn')).toBeInTheDocument();
+    });
+  });
+
   /** TC-FES-P02 (v0.0.8): /pm/projects mounts ProjectsPage. */
   it('mounts ProjectsPage at /pm/projects (TC-FES-P02)', async () => {
     render(

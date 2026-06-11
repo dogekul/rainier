@@ -9,6 +9,8 @@
 > - 2026-06-09 (v0.0.11-task) — Sider 「需求管理」 grows to 6 items: 项目 / Sprint / **任务** / 诉求 / 需求 / 诉求-需求关联; 「任务」 排第三 (执行靠近); added `/pm/tasks` route → `TasksPage` (full CRUD list + filter projectId/status/priority/assigneeUserId/sprintId/storyId + pagination); `TaskEditDrawer` with Project/Sprint/Story/Assignee 联动级联 selects (size=100 client-side filter, sprint/story options narrow when Project chosen; sprint/story selects clear when Project changes); new `api/task.ts` for Task CRUD.
 > - 2026-06-09 (v0.0.12-product) — NEW Sider 顶级菜单组「产品」, 位于「组织」与「需求管理」之间. Sider 顶级组保持 4 组: 组织 → 产品 → 需求管理 → 人事配置. 「产品」展开后含 4 项: 产品分类 / 产品 / 产品模块 / 功能, 对应 4 条新路由 (`/pm/product-categories` / `/pm/products` / `/pm/product-modules` / `/pm/features`). 4 个 EditDrawer 用 v0.0.11 同款 cascading-select (size=100 客户端 filter): Product 选 Category 必选; Module 选 Product 必选 (可加 Category filter); Feature 选 Product + Module 必选. 新 `api/{productCategory,product,productModule,feature}.ts` 4 个 api 文件.
 > - 2026-06-10 (v0.0.13-product-restructure) — 「产品」组 4 项 → **3 项** (删「产品分类」入口 + `/pm/product-categories` 路由 + `ProductCategoriesPage` + `api/productCategory.ts`). ProductsPage 去 Category 列; ProductEditDrawer 去 Category select. ProductModulesPage 改 **树形列表** (嵌套 UL/LI + depth 缩进, 完全替换 Table); ProductModuleEditDrawer 改 **Product → 可选 parentModule** 二级 cascade (服务器侧 `listProductModules({productId})` 过滤, 支持 reparent). FeatureEditDrawer 模块下拉用后端 `pathName` 显示父链 ("钱包 / 余额"). `api/productModule.ts` + `api/product.ts` 字段调整 (加 parentId/pathName/pathCodes, 去 categoryId).
+> - 2026-06-11 (v0.0.14-sprint-feature-link) — SprintListPanel 每 sprint 行加「功能」按钮 → SprintFeaturePanel (挂载/解绑 feature, 下拉按 sprint 产品过滤); FeaturesPage 每 feature 行加「所在迭代」→ FeatureSprintsPanel; 新 `api/sprintFeature.ts`, `api/sprint.ts` 加 productId/productName.
+> - 2026-06-11 (v0.0.15-audit-log) — NEW Sider **第 5 顶级组「系统」**(末位, 位于「人事配置」之后), 含 1 项「审计日志」→ `/sys/audit-logs`. 新只读 `AuditLogsPage` (表格 actor/entityType/entityId/action/时间 + 过滤 + 分页, **无新建/编辑/删除**); 新 `api/auditLog.ts`. Sider 顶级组 4 → **5**.
 
 ## Requirements
 
@@ -446,3 +448,46 @@
 - **WHEN** 用户在 Feature 页查看 F 的「所在迭代」
 - **THEN** SHALL 调用 `GET /api/features/{F}/sprints`
 - **AND** SHALL 显示 S1 的 code 与 name
+
+## ADDED Requirements (from change 2026-06-11-audit-log / v0.0.15)
+
+### Requirement: Sider 顶级菜单组「系统」（v0.0.15 起加，5 顶级组）
+
+前端 SHALL 在 Sider 渲染 5 个顶级菜单组 — **组织 → 产品 → 需求管理 → 人事配置 → 系统**。「系统」组为第 5 位（末位），展开后含 1 项：**审计日志**，对应 `/sys/audit-logs` 路由。
+
+#### Scenario: Sider 含「系统」组 + 审计日志入口
+
+- **GIVEN** 用户已登录访问 `/`
+- **WHEN** 页面渲染完成
+- **THEN** 左侧 Sider SHALL 含 5 个顶级菜单组，末位为「系统」
+- **AND** 「系统」组展开后 SHALL 含「审计日志」项
+- **AND** 点击「审计日志」SHALL 跳转 `/sys/audit-logs`
+
+### Requirement: AuditLogsPage 只读查询页
+
+前端 SHALL 在 `/sys/audit-logs` 渲染 `AuditLogsPage`：表格展示 actor / entityType / entityId / action / 时间，提供 actor / entityType / entityId / action 过滤 + 分页。页面 SHALL **只读** —— 无新建 / 编辑 / 删除按钮、无 EditDrawer。
+
+#### Scenario: 渲染审计表格
+
+- **GIVEN** 后端 `GET /api/audit-logs` 返回 2 条审计行
+- **WHEN** `/sys/audit-logs` 渲染完成
+- **THEN** SHALL 渲染表格含这 2 行
+- **AND** 表头 SHALL 含 `操作人` / `实体类型` / `实体ID` / `动作` 列
+- **AND** 页面 SHALL **不**含「新建」按钮
+
+#### Scenario: 按 entityType 过滤触发查询
+
+- **GIVEN** `/sys/audit-logs` 已渲染
+- **WHEN** 用户在 entityType 过滤输入 "REQUIREMENT" 并触发查询
+- **THEN** SHALL 调用 `listAuditLogs` 且 params 含 `entityType: "REQUIREMENT"`
+
+### Requirement: /sys/audit-logs 路由注册
+
+前端 SHALL 在 router 注册 `/sys/audit-logs` → `AuditLogsPage`。
+
+#### Scenario: 路由直接访问
+
+- **GIVEN** 用户已登录
+- **WHEN** 浏览器直接访问 `/sys/audit-logs`
+- **THEN** SHALL 渲染 `AuditLogsPage` 组件
+- **AND** `grep -c "/sys/audit-logs" frontend/src/AppRoutes.tsx` SHALL ≥ 1

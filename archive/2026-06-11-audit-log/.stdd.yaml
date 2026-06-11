@@ -1,0 +1,144 @@
+change:
+  id: 2026-06-11-audit-log
+  title: v0.0.15-audit-log — Spring AOP aspect auto-audits entity writes + audit query page
+  baseline:
+    commit: 717ae99
+    tag: v0.0.14-sprint-feature-link
+  type: cross-cutting-infra
+  parent_change: 2026-06-11-sprint-feature-link
+
+phase:
+  current: archived
+  archived_at: '2026-06-11'
+  understand:
+    status: completed
+    confirmed_at: '2026-06-11'
+    artifact: proposal.md
+  spec:
+    status: completed
+    confirmed_at: '2026-06-11'
+    artifacts:
+      - design.md
+      - specs/entity-audit-log/spec.md
+      - specs/frontend-scaffold/spec.md
+      - test-plan.md
+    metrics:
+      capabilities: 2
+      requirements: 10
+      scenarios: 17
+      tc_cases: 22
+      p0: 22
+      p1: 0
+      p2: 0
+  slice:
+    status: completed
+    completed_at: '2026-06-11'
+    artifacts:
+      - slices.md
+      - tasks.md
+    metrics:
+      slices: 9
+      p0_slices: 9
+      backend_slices: 6   # M01-M06
+      frontend_slices: 2  # M07-M08
+      e2e_slices: 1       # M09
+  build:
+    status: completed
+    completed_at: '2026-06-11'
+    metrics:
+      backend_tests: 309    # 293 baseline + 16 new (aspect 9 + query 5 + perf 2)
+      frontend_tests: 58    # 54 baseline + 4 new (AppLayout sys-group + AuditLogsPage 2 + AppRoutes grep)
+      e2e_status: green     # 18 tables, full audit lifecycle, failed-write excluded, existing data intact
+    notable_adjustments:
+      - 'PA-1: append-only POST → 500 (pre-existing catch-all) not 405; test asserts no-write-mapping + zero rows instead.'
+      - 'PA-2: LegacyProductCategoryCleanupTest table count 17→18.'
+      - 'PA-3: controller javadoc reworded to avoid literal @PostMapping matched by source-grep test.'
+      - 'PA-4: 16 new backend tests (est. ~18) → 309 total.'
+      - 'AOP weaving over all 17 services clean — 293 regression unbroken; same-tx rollback + failed-write-not-audited verified.'
+  verify:
+    status: completed
+    completed_at: '2026-06-11'
+    artifacts:
+      - test-report.md
+      - design-adjustments.md
+      - pending-adjustments.md
+    metrics:
+      backend_tests_total: 309
+      frontend_tests_total: 58
+      review_round0_aggregate_initial:
+        critical: 1
+        high: 1
+        medium: 7
+      review_round0_aggregate_post_fix:
+        critical: 0
+        high: 0
+        medium: 3
+      scenario_coverage_percent: 100   # 22/22 P0
+      e2e_status: green
+  deliver:
+    status: completed
+    completed_at: '2026-06-11'
+    tag: v0.0.15-audit-log
+    artifacts:
+      - archive/2026-06-11-audit-log/        # full change record archived
+      - specs/entity-audit-log/spec.md        # NEW canonical capability spec (copied)
+      - specs/frontend-scaffold/spec.md       # MOD — 3 v0.0.15 Requirements appended + changelog
+    spec_merge:
+      new_capabilities: 1     # entity-audit-log
+      modified_capabilities: 1 # frontend-scaffold
+    metrics:
+      backend_tests_total: 309
+      frontend_tests_total: 58
+      tables: 18              # +rainier_audit_log
+      e2e_status: green
+    deferred_to_next:
+      - 'audit-write defensive truncation (summary length cap) — v0.0.16'
+      - 'audit read API/page permission gating (admin-only) — v0.0.16'
+
+long_range:
+  enabled: true
+  mode: full_auto
+  pre_auth_completed: true
+  pre_auth_timestamp: '2026-06-11'
+  pre_auth:
+    decisions:
+      design_deviation:
+        minor: auto_record
+        major: auto_record_continue
+      technical_blocker: workaround
+      iteration:
+        max_rounds: 10
+      git_ops: allow_up_to_commit_and_tag   # no push
+    operations:
+      directory: allow
+      file_write: allow
+      command: allow
+      script: allow
+      network: allow
+      file_read: allow
+      git_readonly: allow
+    gates:
+      gate_3: require_user_confirmation
+
+scope:
+  type: cross-cutting-infra
+  capabilities_new:
+    - entity-audit-log
+  capabilities_modified:
+    - frontend-scaffold        # AuditLogsPage (read-only) + route + Sider entry
+  design_decisions_pre_locked:
+    capture_mechanism: spring_aop_aspect           # A (not explicit-service / not Envers / not controller-filter)
+    pointcut_style: convention_zero_annotation     # A1 — execution(*Service.create/update/delete), entityType from classname, entityId via reflection
+    store_snapshot_diff: false                     # A2 — summary text only, no field-level before/after
+    audit_scope: all_entity_services               # A3 — every *Service create/update/delete; reads not audited
+    audit_log_immutable: true                      # append-only, no update/delete API
+    transaction: same_tx_after_returning           # rolls back with business op; failures not logged
+    actor_source: AuditorAware_getCurrentAuditor   # reuse existing
+    frontend_page: in_scope                         # user added read-only AuditLogsPage
+  explicitly_excluded:
+    - field_level_diff_snapshot
+    - ai_error_board
+    - cross_layer_consistency_audit
+    - retention_archival_purge
+    - permission_gating_admin_only
+    - async_audit_write

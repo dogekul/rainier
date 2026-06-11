@@ -53,6 +53,11 @@ const navGroups: NavGroup[] = [
       { to: '/hr/user-roles', label: '用户角色' },
     ],
   },
+  {
+    key: 'sys',
+    title: '系统',
+    items: [{ to: '/sys/audit-logs', label: '审计日志' }],
+  },
 ];
 
 /**

@@ -101,7 +101,7 @@ describe('AppLayout Sider (TC-FES-201)', () => {
         </Routes>
       </MemoryRouter>,
     );
-    // 4 top-level groups present (组织 / 产品 / 需求管理 / 人事配置).
+    // Top-level groups present (组织 / 产品 / 需求管理 / 人事配置 / 系统 since v0.0.15).
     expect(screen.getByText('组织')).toBeInTheDocument();
     // "产品" matches both the group title and the 产品 item — getAllByText finds both.
     expect(screen.getAllByText('产品').length).toBeGreaterThanOrEqual(1);
@@ -149,5 +149,28 @@ describe('AppLayout Sider (TC-FES-201)', () => {
       'href',
       '/hr/positions',
     );
+  });
+
+  /** TC-FES-AUD-001 (v0.0.15): Sider 第 5 顶级组「系统」末位 + 审计日志 → /sys/audit-logs. */
+  it('renders the 系统 menu group last with 审计日志 (TC-FES-AUD-001)', () => {
+    render(
+      <MemoryRouter initialEntries={['/']}>
+        <Routes>
+          <Route element={<AppLayout />}>
+            <Route path="/" element={<div>home</div>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>,
+    );
+    // 5 top-level groups; 系统 present and last.
+    expect(screen.getByText('系统')).toBeInTheDocument();
+    expect(screen.getByText('审计日志')).toBeInTheDocument();
+    expect(screen.getByTestId('appshell-nav-/sys/audit-logs')).toHaveAttribute(
+      'href',
+      '/sys/audit-logs',
+    );
+    const html = screen.getByTestId('appshell-sider').innerHTML;
+    // 系统组 (/sys/audit-logs) 位于 人事配置组 (/hr/positions) 之后（末位）.
+    expect(html.indexOf('/hr/positions')).toBeLessThan(html.indexOf('/sys/audit-logs'));
   });
 });

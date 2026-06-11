@@ -35,6 +35,11 @@
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-validation</artifactId>
     </dependency>
+    <!-- AOP for the audit aspect (added in change 2026-06-11-audit-log) -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-aop</artifactId>
+    </dependency>
 
     <!-- Persistence (added in change 2026-06-04-org-tree-and-employee SLICE-B01) -->
     <dependency>
