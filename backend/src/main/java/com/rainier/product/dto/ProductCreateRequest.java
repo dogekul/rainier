@@ -21,8 +21,6 @@ public class ProductCreateRequest {
   @Size(max = 16)
   private String status;
 
-  @NotNull private Long categoryId;
-
   @NotNull private Long ownerUserId;
 
   public String getCode() {
@@ -55,14 +53,6 @@ public class ProductCreateRequest {
 
   public void setStatus(String status) {
     this.status = status;
-  }
-
-  public Long getCategoryId() {
-    return categoryId;
-  }
-
-  public void setCategoryId(Long categoryId) {
-    this.categoryId = categoryId;
   }
 
   public Long getOwnerUserId() {

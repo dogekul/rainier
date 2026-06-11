@@ -2,18 +2,18 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { ProductModuleEditDrawer } from './ProductModuleEditDrawer';
 import { useAuthStore } from '../../store/auth';
-import * as productApi from '../../api/product';
+import * as productModuleApi from '../../api/productModule';
 
-vi.mock('../../api/productCategory', async () => {
-  const actual = await vi.importActual<typeof import('../../api/productCategory')>(
-    '../../api/productCategory',
+vi.mock('../../api/product', async () => {
+  const actual = await vi.importActual<typeof import('../../api/product')>(
+    '../../api/product',
   );
   return {
     ...actual,
-    listProductCategories: vi.fn().mockResolvedValue({
+    listProducts: vi.fn().mockResolvedValue({
       content: [
-        { id: 11, code: 'CAT-A', name: '研发工具', status: 'ACTIVE', ownerUserId: 1 },
-        { id: 22, code: 'CAT-B', name: '基础设施', status: 'ACTIVE', ownerUserId: 1 },
+        { id: 1, code: 'PROD-A', name: 'Apollo', status: 'ACTIVE', ownerUserId: 1 },
+        { id: 2, code: 'PROD-B', name: 'Beta', status: 'ACTIVE', ownerUserId: 1 },
       ],
       total: 2,
       page: 0,
@@ -22,46 +22,51 @@ vi.mock('../../api/productCategory', async () => {
   };
 });
 
-// v0.0.12.1 A2: listProducts called with categoryId — mock filters accordingly.
-vi.mock('../../api/product', async () => {
-  const actual = await vi.importActual<typeof import('../../api/product')>(
-    '../../api/product',
+// v0.0.13: parent candidates fetched server-filtered by productId (A2 pattern).
+vi.mock('../../api/productModule', async () => {
+  const actual = await vi.importActual<typeof import('../../api/productModule')>(
+    '../../api/productModule',
   );
-  const ALL_PRODUCTS = [
+  const ALL_MODULES = [
     {
-      id: 100,
-      code: 'PROD-A1',
-      name: 'Apollo',
+      id: 10,
+      code: 'MOD-A1',
+      name: '钱包',
+      pathName: '钱包',
       status: 'ACTIVE',
-      categoryId: 11,
+      productId: 1,
+      parentId: null,
       ownerUserId: 1,
     },
     {
-      id: 101,
-      code: 'PROD-A2',
-      name: 'Aurora',
+      id: 20,
+      code: 'MOD-A2',
+      name: '余额',
+      pathName: '钱包 / 余额',
       status: 'ACTIVE',
-      categoryId: 11,
+      productId: 1,
+      parentId: 10,
       ownerUserId: 1,
     },
     {
-      id: 200,
-      code: 'PROD-B1',
-      name: 'Beta',
+      id: 30,
+      code: 'MOD-B1',
+      name: '风控',
+      pathName: '风控',
       status: 'ACTIVE',
-      categoryId: 22,
+      productId: 2,
+      parentId: null,
       ownerUserId: 1,
     },
   ];
   return {
     ...actual,
-    listProducts: vi.fn().mockImplementation((params: { categoryId?: number } = {}) => {
-      const filtered = params.categoryId
-        ? ALL_PRODUCTS.filter((p) => p.categoryId === params.categoryId)
-        : ALL_PRODUCTS;
+    listProductModules: vi.fn().mockImplementation((params: { productId?: number } = {}) => {
+      const filtered = params.productId
+        ? ALL_MODULES.filter((m) => m.productId === params.productId)
+        : ALL_MODULES;
       return Promise.resolve({ content: filtered, total: filtered.length, page: 0, size: 100 });
     }),
-    getProduct: vi.fn(),
   };
 });
 
@@ -85,69 +90,81 @@ describe('ProductModuleEditDrawer', () => {
   });
 
   /**
-   * TC-FES-PMOD-001 (v0.0.12.1 A2): Category 切换 → listProducts 服务器侧 categoryId 过滤 + Product 清空.
+   * TC-FES-PMOD-002 (v0.0.13): Product 切换 → parentModule 候选服务器侧 productId 过滤 + 清空；
+   * 留空 parent → onCreate 不带 parentId（顶层）。
    */
-  it('fetches Products server-filtered by categoryId when Category changes (TC-FES-PMOD-001)', async () => {
+  it('refreshes parent candidates per product and posts top-level without parentId', async () => {
+    const onCreate = vi.fn();
     render(
       <ProductModuleEditDrawer
         open={true}
         editing={null}
         onClose={vi.fn()}
-        onCreate={vi.fn()}
+        onCreate={onCreate}
         onUpdate={vi.fn()}
       />,
     );
     await waitFor(() => {
-      expect(screen.getByTestId('product-module-category-select')).toBeInTheDocument();
+      expect(screen.getByTestId('product-module-product-select')).toBeInTheDocument();
     });
 
-    // Initial open: listProducts called once with no categoryId (size only).
-    await waitFor(() => {
-      expect(productApi.listProducts).toHaveBeenCalledWith({ size: 100 });
-    });
+    // No product picked yet → no parent fetch.
+    expect(productModuleApi.listProductModules).not.toHaveBeenCalled();
 
-    // Pick Category 11 → listProducts re-called with categoryId=11.
-    fireEvent.change(screen.getByTestId('product-module-category-select'), {
-      target: { value: '11' },
+    // Pick Product A → parent candidates fetched with productId=1.
+    fireEvent.change(screen.getByTestId('product-module-product-select'), {
+      target: { value: '1' },
     });
     await waitFor(() => {
-      expect(productApi.listProducts).toHaveBeenLastCalledWith({
-        categoryId: 11,
+      expect(productModuleApi.listProductModules).toHaveBeenCalledWith({
+        productId: 1,
         size: 100,
       });
     });
     await waitFor(() => {
-      const productSelect = screen.getByTestId(
-        'product-module-product-select',
+      const parentSelect = screen.getByTestId(
+        'product-module-parent-select',
       ) as HTMLSelectElement;
-      const options = Array.from(productSelect.options).map((o) => o.value);
-      expect(options).toContain('100');
-      expect(options).toContain('101');
-      expect(options).not.toContain('200');
+      const options = Array.from(parentSelect.options).map((o) => o.value);
+      expect(options).toContain('10');
+      expect(options).toContain('20');
+      expect(options).not.toContain('30');
     });
 
-    // Pick Product 100.
+    // Parent option labels render pathName ("钱包 / 余额"), not just name.
+    const parentSelect = screen.getByTestId('product-module-parent-select') as HTMLSelectElement;
+    const labels = Array.from(parentSelect.options).map((o) => o.textContent ?? '');
+    expect(labels.some((l) => l.includes('钱包 / 余额'))).toBe(true);
+
+    // Pick parent 10, then switch Product A → B: parent cleared + refetched for B.
+    fireEvent.change(parentSelect, { target: { value: '10' } });
+    expect(parentSelect.value).toBe('10');
     fireEvent.change(screen.getByTestId('product-module-product-select'), {
-      target: { value: '100' },
-    });
-    expect(
-      (screen.getByTestId('product-module-product-select') as HTMLSelectElement).value,
-    ).toBe('100');
-
-    // Switch Category 11 → 22: Product cleared, listProducts re-fetched with categoryId=22.
-    fireEvent.change(screen.getByTestId('product-module-category-select'), {
-      target: { value: '22' },
+      target: { value: '2' },
     });
     await waitFor(() => {
       expect(
-        (screen.getByTestId('product-module-product-select') as HTMLSelectElement).value,
+        (screen.getByTestId('product-module-parent-select') as HTMLSelectElement).value,
       ).toBe('');
     });
     await waitFor(() => {
-      expect(productApi.listProducts).toHaveBeenLastCalledWith({
-        categoryId: 22,
+      expect(productModuleApi.listProductModules).toHaveBeenLastCalledWith({
+        productId: 2,
         size: 100,
       });
     });
+
+    // Leave parent empty → onCreate without parentId (top-level).
+    fireEvent.change(screen.getByLabelText('编码 (MOD-...)'), {
+      target: { value: 'MOD-NEW' },
+    });
+    fireEvent.change(screen.getByLabelText('名称'), { target: { value: '新模块' } });
+    fireEvent.click(screen.getByRole('button', { name: '保存' }));
+    await waitFor(() => {
+      expect(onCreate).toHaveBeenCalledTimes(1);
+    });
+    const body = onCreate.mock.calls[0][0];
+    expect(body.productId).toBe(2);
+    expect(body.parentId).toBeUndefined();
   });
 });

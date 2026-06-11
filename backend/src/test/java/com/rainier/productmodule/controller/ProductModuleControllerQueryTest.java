@@ -1,6 +1,8 @@
 /* (C) 2026 Rainier — internal use only. */
 package com.rainier.productmodule.controller;
 
+import static org.hamcrest.Matchers.everyItem;
+import static org.hamcrest.Matchers.is;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -12,9 +14,6 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.rainier.product.domain.Product;
 import com.rainier.product.domain.ProductStatus;
 import com.rainier.product.repository.ProductRepository;
-import com.rainier.productcategory.domain.ProductCategory;
-import com.rainier.productcategory.domain.ProductCategoryStatus;
-import com.rainier.productcategory.repository.ProductCategoryRepository;
 import com.rainier.productmodule.repository.ProductModuleRepository;
 import com.rainier.user.domain.User;
 import com.rainier.user.repository.UserRepository;
@@ -28,7 +27,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
-/** TC-PMOD-007 (15-field detail loop) + TC-PMOD-008 (filter by productId). */
+/** TC-PMOD-019..021 — detail field set (parent + path) and parentId / productId filters. */
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
@@ -37,51 +36,44 @@ class ProductModuleControllerQueryTest {
   @Autowired private MockMvc mockMvc;
   @Autowired private ProductModuleRepository repo;
   @Autowired private ProductRepository productRepo;
-  @Autowired private ProductCategoryRepository categoryRepo;
   @Autowired private UserRepository userRepo;
   @Autowired private ObjectMapper json;
 
+  private Long uid;
+  private Long pid;
+
   @BeforeEach
-  void cleanDb() {
+  void seed() {
     repo.deleteAll();
     productRepo.deleteAll();
-    categoryRepo.deleteAll();
     userRepo.deleteAll();
-  }
-
-  private Long createUser() {
     User u = new User();
     u.setLoginName("alice");
     u.setName("Alice");
     u.setIsInternal(true);
     u.setEnabled(true);
-    return userRepo.saveAndFlush(u).getId();
+    uid = userRepo.saveAndFlush(u).getId();
+    pid = createProduct("PROD-PAY", "支付平台");
   }
 
-  private Long createCategory(String code, Long ownerUserId) {
-    ProductCategory c = new ProductCategory();
-    c.setCode(code);
-    c.setName(code);
-    c.setStatus(ProductCategoryStatus.ACTIVE);
-    c.setOwnerUserId(ownerUserId);
-    return categoryRepo.saveAndFlush(c).getId();
-  }
-
-  private Long createProduct(String code, Long categoryId, Long ownerUserId) {
+  private Long createProduct(String code, String name) {
     Product p = new Product();
     p.setCode(code);
-    p.setName(code);
+    p.setName(name);
     p.setStatus(ProductStatus.ACTIVE);
-    p.setCategoryId(categoryId);
-    p.setOwnerUserId(ownerUserId);
+    p.setOwnerUserId(uid);
     return productRepo.saveAndFlush(p).getId();
   }
 
-  private Long createModule(Long uid, Long pid, String code) throws Exception {
+  private Long postModule(String code, String name, Long productId, Long parentId)
+      throws Exception {
     ObjectNode body = json.createObjectNode();
     body.put("code", code);
-    body.put("name", "x");
-    body.put("productId", pid);
+    body.put("name", name);
+    body.put("productId", productId);
+    if (parentId != null) {
+      body.put("parentId", parentId);
+    }
     body.put("ownerUserId", uid);
     MvcResult res =
         mockMvc
@@ -94,47 +86,59 @@ class ProductModuleControllerQueryTest {
     return json.readTree(res.getResponse().getContentAsString()).get("id").asLong();
   }
 
-  /** TC-PMOD-007: GET detail returns all 15 fields including productCode/productName. */
+  /** TC-PMOD-019: GET 详情字段集含 parent + path 字段，pathName 两段. */
   @Test
-  void get_existingId_returnsFullDetailWithAllEnrichment() throws Exception {
-    Long uid = createUser();
-    Long cid = createCategory("CAT-Q", uid);
-    Long pid = createProduct("PROD-Q", cid, uid);
-    Long id = createModule(uid, pid, "MOD-Q1");
+  void get_childModule_returnsParentAndPathFields() throws Exception {
+    Long parent = postModule("MOD-WALLET", "钱包", pid, null);
+    Long id = postModule("MOD-BALANCE", "余额", pid, parent);
     MvcResult res =
         mockMvc.perform(get("/api/product-modules/" + id)).andExpect(status().isOk()).andReturn();
-    JsonNode body = json.readTree(res.getResponse().getContentAsString());
+    JsonNode body =
+        json.readTree(
+            res.getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8));
     String[] expected = {
       "id", "code", "name", "description", "status",
       "productId", "productCode", "productName",
+      "parentId", "parentCode", "parentName", "pathName", "pathCodes",
       "ownerUserId", "ownerName", "ownerLoginName",
       "createTime", "updateTime", "createBy", "updateBy"
     };
     for (String f : expected) {
       org.junit.jupiter.api.Assertions.assertTrue(body.has(f), "expected field: " + f);
     }
+    org.junit.jupiter.api.Assertions.assertEquals("钱包 / 余额", body.get("pathName").asText());
+    org.junit.jupiter.api.Assertions.assertEquals(
+        "MOD-WALLET / MOD-BALANCE", body.get("pathCodes").asText());
   }
 
-  /** TC-PMOD-008: list filtered by productId returns only matching. */
+  /** TC-PMOD-020: 按 parentId 过滤列表. */
   @Test
-  void getList_filterByProductId_returnsOnlyMatching() throws Exception {
-    Long uid = createUser();
-    Long cid = createCategory("CAT-F", uid);
-    Long prodA = createProduct("PROD-A", cid, uid);
-    Long prodB = createProduct("PROD-B", cid, uid);
-    createModule(uid, prodA, "MOD-A1");
-    createModule(uid, prodA, "MOD-A2");
-    createModule(uid, prodB, "MOD-B1");
-    MvcResult res =
-        mockMvc
-            .perform(get("/api/product-modules?productId=" + prodA))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.total").value(2))
-            .andReturn();
-    JsonNode list = json.readTree(res.getResponse().getContentAsString()).get("content");
-    for (JsonNode item : list) {
-      org.junit.jupiter.api.Assertions.assertEquals(
-          prodA.longValue(), item.get("productId").asLong());
-    }
+  void getList_filterByParentId_returnsOnlyChildren() throws Exception {
+    Long m1 = postModule("MOD-M1", "根一", pid, null);
+    postModule("MOD-M2", "子一", pid, m1);
+    postModule("MOD-M3", "子二", pid, m1);
+    postModule("MOD-M4", "根二", pid, null);
+    mockMvc
+        .perform(get("/api/product-modules?parentId=" + m1))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.total").value(2))
+        .andExpect(jsonPath("$.content[*].parentId", everyItem(is(m1.intValue()))));
+  }
+
+  /** TC-PMOD-021: 按 productId 过滤（返回全树 5 个，含子孙）. */
+  @Test
+  void getList_filterByProductId_returnsWholeTree() throws Exception {
+    Long otherPid = createProduct("PROD-OTHER", "另一产品");
+    Long root = postModule("MOD-R", "根", pid, null);
+    Long mid = postModule("MOD-M", "中", pid, root);
+    postModule("MOD-L", "叶", pid, mid);
+    postModule("MOD-R2", "根二", pid, null);
+    postModule("MOD-R3", "根三", pid, null);
+    postModule("MOD-FOREIGN", "异", otherPid, null);
+    mockMvc
+        .perform(get("/api/product-modules?productId=" + pid + "&size=50"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.total").value(5))
+        .andExpect(jsonPath("$.content[*].productId", everyItem(is(pid.intValue()))));
   }
 }

@@ -21,6 +21,12 @@ spring:
   flyway:
     enabled: false
 
+rainier:
+  product-module:
+    depth:
+      # Keep in sync with application.yml — tests assert the "4 > 3" boundary message.
+      max: 3
+
 logging:
   level:
     root: WARN

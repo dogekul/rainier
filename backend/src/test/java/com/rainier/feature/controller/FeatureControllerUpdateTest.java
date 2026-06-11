@@ -13,9 +13,6 @@ import com.rainier.feature.repository.FeatureRepository;
 import com.rainier.product.domain.Product;
 import com.rainier.product.domain.ProductStatus;
 import com.rainier.product.repository.ProductRepository;
-import com.rainier.productcategory.domain.ProductCategory;
-import com.rainier.productcategory.domain.ProductCategoryStatus;
-import com.rainier.productcategory.repository.ProductCategoryRepository;
 import com.rainier.productmodule.domain.ProductModule;
 import com.rainier.productmodule.domain.ProductModuleStatus;
 import com.rainier.productmodule.repository.ProductModuleRepository;
@@ -41,7 +38,6 @@ class FeatureControllerUpdateTest {
   @Autowired private FeatureRepository repo;
   @Autowired private ProductModuleRepository moduleRepo;
   @Autowired private ProductRepository productRepo;
-  @Autowired private ProductCategoryRepository categoryRepo;
   @Autowired private UserRepository userRepo;
   @Autowired private ObjectMapper json;
 
@@ -50,7 +46,6 @@ class FeatureControllerUpdateTest {
     repo.deleteAll();
     moduleRepo.deleteAll();
     productRepo.deleteAll();
-    categoryRepo.deleteAll();
     userRepo.deleteAll();
   }
 
@@ -63,21 +58,11 @@ class FeatureControllerUpdateTest {
     return userRepo.saveAndFlush(u).getId();
   }
 
-  private Long createCategory(String code, Long ownerUserId) {
-    ProductCategory c = new ProductCategory();
-    c.setCode(code);
-    c.setName(code);
-    c.setStatus(ProductCategoryStatus.ACTIVE);
-    c.setOwnerUserId(ownerUserId);
-    return categoryRepo.saveAndFlush(c).getId();
-  }
-
-  private Long createProduct(String code, Long categoryId, Long ownerUserId) {
+  private Long createProduct(String code, Long ownerUserId) {
     Product p = new Product();
     p.setCode(code);
     p.setName(code);
     p.setStatus(ProductStatus.ACTIVE);
-    p.setCategoryId(categoryId);
     p.setOwnerUserId(ownerUserId);
     return productRepo.saveAndFlush(p).getId();
   }
@@ -114,8 +99,7 @@ class FeatureControllerUpdateTest {
   void put_updateStatusAndOwner_returns200() throws Exception {
     Long alice = createUser("alice", "Alice");
     Long lili = createUser("lili", "黎立");
-    Long cid = createCategory("CAT-U", alice);
-    Long pid = createProduct("PROD-U", cid, alice);
+    Long pid = createProduct("PROD-U", alice);
     Long mid = createModule("MOD-U", pid, alice);
     Long id = create(alice, mid, "FEAT-U1");
     ObjectNode body = json.createObjectNode();
@@ -138,8 +122,7 @@ class FeatureControllerUpdateTest {
   @Test
   void put_payloadWithModuleId_silentlyDropped_moduleIdUnchanged() throws Exception {
     Long alice = createUser("alice", "Alice");
-    Long cid = createCategory("CAT-IMM", alice);
-    Long pid = createProduct("PROD-IMM", cid, alice);
+    Long pid = createProduct("PROD-IMM", alice);
     Long modA = createModule("MOD-IMM-A", pid, alice);
     Long modB = createModule("MOD-IMM-B", pid, alice);
     Long id = create(alice, modA, "FEAT-IMM");

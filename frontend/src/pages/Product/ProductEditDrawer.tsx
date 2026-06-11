@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { Button } from '../../components/ui/Button';
 import { Drawer } from '../../components/ui/Drawer';
 import { Input } from '../../components/ui/Input';
-import { listProductCategories, type ProductCategory } from '../../api/productCategory';
 import { listUsers, type User } from '../../api/user';
 import { useAuthStore } from '../../store/auth';
 import {
@@ -31,13 +30,11 @@ export function ProductEditDrawer({
 }: ProductEditDrawerProps) {
   const currentLoginName = useAuthStore((s) => s.user?.username ?? null);
 
-  const [categories, setCategories] = useState<ProductCategory[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [code, setCode] = useState('');
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [status, setStatus] = useState<ProductStatus>('PLANNING');
-  const [categoryId, setCategoryId] = useState<number | ''>('');
   const [ownerUserId, setOwnerUserId] = useState<number | ''>('');
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -46,11 +43,7 @@ export function ProductEditDrawer({
       setFormError(null);
       return;
     }
-    void Promise.all([
-      listProductCategories({ size: 100 }),
-      listUsers({ size: 100 }),
-    ]).then(([cats, us]) => {
-      setCategories(cats.content);
+    void listUsers({ size: 100 }).then((us) => {
       setUsers(us.content);
       if (editing) {
         setOwnerUserId(editing.ownerUserId);
@@ -66,13 +59,11 @@ export function ProductEditDrawer({
       setName(editing.name);
       setDescription(editing.description ?? '');
       setStatus(editing.status);
-      setCategoryId(editing.categoryId);
     } else {
       setCode('');
       setName('');
       setDescription('');
       setStatus('PLANNING');
-      setCategoryId('');
     }
   }, [open, editing, currentLoginName]);
 
@@ -94,28 +85,6 @@ export function ProductEditDrawer({
         value={description}
         onChange={(e) => setDescription(e.target.value)}
       />
-      <div style={{ marginBottom: 12 }}>
-        <label style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }}>
-          所属分类（创建时锁定）
-        </label>
-        <select
-          className="rainier-treeselect-trigger"
-          value={categoryId}
-          onChange={(e) => {
-            setCategoryId(e.target.value === '' ? '' : Number(e.target.value));
-            setFormError(null);
-          }}
-          disabled={editing !== null}
-          data-testid="product-category-select"
-        >
-          <option value="">请选择产品分类</option>
-          {categories.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name}（{c.code}）
-            </option>
-          ))}
-        </select>
-      </div>
       <div style={{ marginBottom: 12 }}>
         <label style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }}>状态</label>
         <select
@@ -178,10 +147,6 @@ export function ProductEditDrawer({
               setFormError('请选择负责人');
               return;
             }
-            if (!editing && (categoryId === '' || categoryId === null)) {
-              setFormError('请选择产品分类');
-              return;
-            }
             setFormError(null);
             if (editing) {
               await onUpdate(editing.id, {
@@ -197,7 +162,6 @@ export function ProductEditDrawer({
                 name,
                 description: description || undefined,
                 status,
-                categoryId: categoryId as number,
                 ownerUserId,
               });
             }

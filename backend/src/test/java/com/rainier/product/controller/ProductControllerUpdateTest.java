@@ -8,11 +8,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.rainier.product.domain.Product;
 import com.rainier.product.repository.ProductRepository;
-import com.rainier.productcategory.domain.ProductCategory;
-import com.rainier.productcategory.domain.ProductCategoryStatus;
-import com.rainier.productcategory.repository.ProductCategoryRepository;
 import com.rainier.user.domain.User;
 import com.rainier.user.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -25,7 +21,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
-/** TC-PROD-009 (status+owner) + TC-PROD-010 (categoryId immutable). */
+/** TC-PROD-008 (status + owner transfer; v0.0.13 — category gone from the contract). */
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
@@ -33,14 +29,12 @@ class ProductControllerUpdateTest {
 
   @Autowired private MockMvc mockMvc;
   @Autowired private ProductRepository repo;
-  @Autowired private ProductCategoryRepository categoryRepo;
   @Autowired private UserRepository userRepo;
   @Autowired private ObjectMapper json;
 
   @BeforeEach
   void cleanDb() {
     repo.deleteAll();
-    categoryRepo.deleteAll();
     userRepo.deleteAll();
   }
 
@@ -53,20 +47,10 @@ class ProductControllerUpdateTest {
     return userRepo.saveAndFlush(u).getId();
   }
 
-  private Long createCategory(String code, String name, Long ownerUserId) {
-    ProductCategory c = new ProductCategory();
-    c.setCode(code);
-    c.setName(name);
-    c.setStatus(ProductCategoryStatus.ACTIVE);
-    c.setOwnerUserId(ownerUserId);
-    return categoryRepo.saveAndFlush(c).getId();
-  }
-
-  private Long create(Long uid, Long cid, String code) throws Exception {
+  private Long create(Long uid, String code) throws Exception {
     ObjectNode body = json.createObjectNode();
     body.put("code", code);
     body.put("name", "x");
-    body.put("categoryId", cid);
     body.put("ownerUserId", uid);
     MvcResult res =
         mockMvc
@@ -79,13 +63,12 @@ class ProductControllerUpdateTest {
     return json.readTree(res.getResponse().getContentAsString()).get("id").asLong();
   }
 
-  /** TC-PROD-009: PUT updates status + owner transfer + enrichment follows. */
+  /** TC-PROD-008: PUT updates status + owner transfer + enrichment follows. */
   @Test
   void put_updateStatusAndOwner_returns200() throws Exception {
     Long alice = createUser("alice", "Alice");
     Long lili = createUser("lili", "黎立");
-    Long cid = createCategory("CAT-U", "U", alice);
-    Long id = create(alice, cid, "PROD-U1");
+    Long id = create(alice, "PROD-U1");
     ObjectNode body = json.createObjectNode();
     body.put("code", "PROD-U1");
     body.put("name", "X");
@@ -102,29 +85,23 @@ class ProductControllerUpdateTest {
         .andExpect(jsonPath("$.ownerLoginName").value("lili"));
   }
 
-  /**
-   * TC-PROD-010: PUT body containing categoryId is silently dropped — Update DTO has no
-   * categoryId setter so Jackson ignores it. DB categoryId stays unchanged.
-   */
+  /** PUT 携带废弃 categoryId 字段 → Jackson 静默丢弃, 200 正常更新. */
   @Test
-  void put_payloadWithCategoryId_silentlyDropped_categoryIdUnchanged() throws Exception {
+  void put_payloadWithObsoleteCategoryId_silentlyDropped() throws Exception {
     Long alice = createUser("alice", "Alice");
-    Long catA = createCategory("CAT-IMM-A", "A", alice);
-    Long catB = createCategory("CAT-IMM-B", "B", alice);
-    Long id = create(alice, catA, "PROD-IMM");
+    Long id = create(alice, "PROD-LEG");
     ObjectNode body = json.createObjectNode();
-    body.put("code", "PROD-IMM");
+    body.put("code", "PROD-LEG");
     body.put("name", "X");
     body.put("status", "ACTIVE");
     body.put("ownerUserId", alice);
-    body.put("categoryId", catB); // attempt to switch category — must be ignored
+    body.put("categoryId", 42L); // obsolete field — must be ignored, not 400
     mockMvc
         .perform(
             put("/api/products/" + id)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(body.toString()))
-        .andExpect(status().isOk());
-    Product fromDb = repo.findById(id).orElseThrow(IllegalStateException::new);
-    org.junit.jupiter.api.Assertions.assertEquals(catA, fromDb.getCategoryId());
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.categoryId").doesNotExist());
   }
 }

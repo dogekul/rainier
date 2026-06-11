@@ -14,9 +14,6 @@ import com.rainier.feature.repository.FeatureRepository;
 import com.rainier.product.domain.Product;
 import com.rainier.product.domain.ProductStatus;
 import com.rainier.product.repository.ProductRepository;
-import com.rainier.productcategory.domain.ProductCategory;
-import com.rainier.productcategory.domain.ProductCategoryStatus;
-import com.rainier.productcategory.repository.ProductCategoryRepository;
 import com.rainier.productmodule.domain.ProductModule;
 import com.rainier.productmodule.domain.ProductModuleStatus;
 import com.rainier.productmodule.repository.ProductModuleRepository;
@@ -41,7 +38,6 @@ class FeatureControllerCreateTest {
   @Autowired private FeatureRepository repo;
   @Autowired private ProductModuleRepository moduleRepo;
   @Autowired private ProductRepository productRepo;
-  @Autowired private ProductCategoryRepository categoryRepo;
   @Autowired private UserRepository userRepo;
   @Autowired private ObjectMapper json;
 
@@ -50,7 +46,6 @@ class FeatureControllerCreateTest {
     repo.deleteAll();
     moduleRepo.deleteAll();
     productRepo.deleteAll();
-    categoryRepo.deleteAll();
     userRepo.deleteAll();
   }
 
@@ -63,21 +58,11 @@ class FeatureControllerCreateTest {
     return userRepo.saveAndFlush(u).getId();
   }
 
-  private Long createCategory(String code, Long ownerUserId) {
-    ProductCategory c = new ProductCategory();
-    c.setCode(code);
-    c.setName(code);
-    c.setStatus(ProductCategoryStatus.ACTIVE);
-    c.setOwnerUserId(ownerUserId);
-    return categoryRepo.saveAndFlush(c).getId();
-  }
-
-  private Long createProduct(String code, Long categoryId, Long ownerUserId) {
+  private Long createProduct(String code, Long ownerUserId) {
     Product p = new Product();
     p.setCode(code);
     p.setName(code);
     p.setStatus(ProductStatus.ACTIVE);
-    p.setCategoryId(categoryId);
     p.setOwnerUserId(ownerUserId);
     return productRepo.saveAndFlush(p).getId();
   }
@@ -96,8 +81,7 @@ class FeatureControllerCreateTest {
   @Test
   void post_minimalPayload_returns201WithDefaultsAndEnrichment() throws Exception {
     Long uid = createUser("alice", "Alice");
-    Long cid = createCategory("CAT-FIN", uid);
-    Long pid = createProduct("PROD-PAY", cid, uid);
+    Long pid = createProduct("PROD-PAY", uid);
     Long mid = createModule("MOD-WALLET", "钱包", pid, uid);
     ObjectNode body = json.createObjectNode();
     body.put("code", "FEAT-RECHARGE");
@@ -140,8 +124,7 @@ class FeatureControllerCreateTest {
   @Test
   void post_duplicateCode_returns409() throws Exception {
     Long uid = createUser("alice", "Alice");
-    Long cid = createCategory("CAT-A", uid);
-    Long pid = createProduct("PROD-A", cid, uid);
+    Long pid = createProduct("PROD-A", uid);
     Long mid = createModule("MOD-A", "A", pid, uid);
     ObjectNode body = json.createObjectNode();
     body.put("code", "FEAT-DUP");
@@ -167,8 +150,7 @@ class FeatureControllerCreateTest {
   @Test
   void post_invalidStatus_returns400() throws Exception {
     Long uid = createUser("alice", "Alice");
-    Long cid = createCategory("CAT-Z", uid);
-    Long pid = createProduct("PROD-Z", cid, uid);
+    Long pid = createProduct("PROD-Z", uid);
     Long mid = createModule("MOD-Z", "Z", pid, uid);
     ObjectNode body = json.createObjectNode();
     body.put("code", "FEAT-Z");
@@ -205,8 +187,7 @@ class FeatureControllerCreateTest {
   @Test
   void post_createBy_autoInjected() throws Exception {
     Long uid = createUser("alice", "Alice");
-    Long cid = createCategory("CAT-CB", uid);
-    Long pid = createProduct("PROD-CB", cid, uid);
+    Long pid = createProduct("PROD-CB", uid);
     Long mid = createModule("MOD-CB", "CB", pid, uid);
     ObjectNode body = json.createObjectNode();
     body.put("code", "FEAT-CB");

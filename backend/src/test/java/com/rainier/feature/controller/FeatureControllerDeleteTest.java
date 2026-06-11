@@ -12,9 +12,6 @@ import com.rainier.feature.repository.FeatureRepository;
 import com.rainier.product.domain.Product;
 import com.rainier.product.domain.ProductStatus;
 import com.rainier.product.repository.ProductRepository;
-import com.rainier.productcategory.domain.ProductCategory;
-import com.rainier.productcategory.domain.ProductCategoryStatus;
-import com.rainier.productcategory.repository.ProductCategoryRepository;
 import com.rainier.productmodule.domain.ProductModule;
 import com.rainier.productmodule.domain.ProductModuleStatus;
 import com.rainier.productmodule.repository.ProductModuleRepository;
@@ -40,7 +37,6 @@ class FeatureControllerDeleteTest {
   @Autowired private FeatureRepository repo;
   @Autowired private ProductModuleRepository moduleRepo;
   @Autowired private ProductRepository productRepo;
-  @Autowired private ProductCategoryRepository categoryRepo;
   @Autowired private UserRepository userRepo;
   @Autowired private ObjectMapper json;
 
@@ -49,7 +45,6 @@ class FeatureControllerDeleteTest {
     repo.deleteAll();
     moduleRepo.deleteAll();
     productRepo.deleteAll();
-    categoryRepo.deleteAll();
     userRepo.deleteAll();
   }
 
@@ -63,18 +58,10 @@ class FeatureControllerDeleteTest {
     u.setEnabled(true);
     Long uid = userRepo.saveAndFlush(u).getId();
 
-    ProductCategory c = new ProductCategory();
-    c.setCode("CAT-D");
-    c.setName("D");
-    c.setStatus(ProductCategoryStatus.ACTIVE);
-    c.setOwnerUserId(uid);
-    Long cid = categoryRepo.saveAndFlush(c).getId();
-
     Product p = new Product();
     p.setCode("PROD-D");
     p.setName("D");
     p.setStatus(ProductStatus.ACTIVE);
-    p.setCategoryId(cid);
     p.setOwnerUserId(uid);
     Long pid = productRepo.saveAndFlush(p).getId();
 

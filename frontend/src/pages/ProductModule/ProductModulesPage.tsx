@@ -3,7 +3,6 @@ import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import { Pagination } from '../../components/ui/Pagination';
-import { Table, type TableColumn } from '../../components/ui/Table';
 import {
   createProductModule,
   deleteProductModule,
@@ -13,6 +12,7 @@ import {
 } from '../../api/productModule';
 import { usePaginated } from '../../hooks/usePaginated';
 import { ProductModuleEditDrawer } from './ProductModuleEditDrawer';
+import { ProductModuleTreeView } from './ProductModuleTreeView';
 
 export function ProductModulesPage() {
   const fetcher = useCallback(
@@ -20,50 +20,13 @@ export function ProductModulesPage() {
       listProductModules({ page, size, search: search || undefined }),
     [],
   );
-  const list = usePaginated<ProductModule>(fetcher, { initialSize: 20 });
+  // v0.0.13: size=100 keeps whole trees on one page in the common case; the tree view
+  // degrades orphaned children to roots when a parent falls outside the page.
+  const list = usePaginated<ProductModule>(fetcher, { initialSize: 100 });
 
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [editing, setEditing] = useState<ProductModule | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<ProductModule | null>(null);
-
-  const columns: TableColumn<ProductModule>[] = [
-    { key: 'code', title: '编码', render: (m) => m.code },
-    { key: 'name', title: '名称', render: (m) => m.name },
-    {
-      key: 'product',
-      title: '所属产品',
-      render: (m) =>
-        m.productName ? `${m.productName}（${m.productCode ?? ''}）` : '—',
-    },
-    { key: 'status', title: '状态', render: (m) => m.status },
-    {
-      key: 'owner',
-      title: '负责人',
-      render: (m) =>
-        m.ownerName ? `${m.ownerName}（${m.ownerLoginName ?? ''}）` : '—',
-    },
-    {
-      key: 'actions',
-      title: '操作',
-      render: (m) => (
-        <>
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={() => {
-              setEditing(m);
-              setDrawerOpen(true);
-            }}
-          >
-            编辑
-          </Button>{' '}
-          <Button type="button" variant="secondary" onClick={() => setConfirmDelete(m)}>
-            删除
-          </Button>
-        </>
-      ),
-    },
-  ];
 
   return (
     <Card>
@@ -79,7 +42,14 @@ export function ProductModulesPage() {
           新建产品模块
         </Button>
       </div>
-      <Table<ProductModule> columns={columns} dataSource={list.items} rowKey="id" />
+      <ProductModuleTreeView
+        modules={list.items}
+        onEdit={(m) => {
+          setEditing(m);
+          setDrawerOpen(true);
+        }}
+        onDelete={(m) => setConfirmDelete(m)}
+      />
       <Pagination
         page={list.page}
         size={list.size}

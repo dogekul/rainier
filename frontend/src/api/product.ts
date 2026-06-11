@@ -9,9 +9,6 @@ export interface Product {
   name: string;
   description?: string | null;
   status: ProductStatus;
-  categoryId: number;
-  categoryCode?: string | null;
-  categoryName?: string | null;
   ownerUserId: number;
   ownerName?: string | null;
   ownerLoginName?: string | null;
@@ -26,7 +23,6 @@ export interface ProductCreate {
   name: string;
   description?: string;
   status?: ProductStatus;
-  categoryId: number;
   ownerUserId: number;
 }
 
@@ -39,7 +35,6 @@ export interface ProductUpdate {
 }
 
 export interface ProductListParams {
-  categoryId?: number;
   status?: ProductStatus;
   search?: string;
   page?: number;

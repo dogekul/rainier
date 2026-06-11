@@ -5,12 +5,7 @@ import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 
-/**
- * Product update payload.
- *
- * <p>{@code categoryId} is intentionally absent — it is immutable after creation (spec Decision
- * 11 sibling). Any incoming {@code categoryId} field in the JSON is silently ignored by Jackson.
- */
+/** Product update payload. */
 public class ProductUpdateRequest {
 
   @NotBlank

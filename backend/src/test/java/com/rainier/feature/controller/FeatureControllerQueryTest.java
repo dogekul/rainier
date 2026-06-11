@@ -13,9 +13,6 @@ import com.rainier.feature.repository.FeatureRepository;
 import com.rainier.product.domain.Product;
 import com.rainier.product.domain.ProductStatus;
 import com.rainier.product.repository.ProductRepository;
-import com.rainier.productcategory.domain.ProductCategory;
-import com.rainier.productcategory.domain.ProductCategoryStatus;
-import com.rainier.productcategory.repository.ProductCategoryRepository;
 import com.rainier.productmodule.domain.ProductModule;
 import com.rainier.productmodule.domain.ProductModuleStatus;
 import com.rainier.productmodule.repository.ProductModuleRepository;
@@ -41,7 +38,6 @@ class FeatureControllerQueryTest {
   @Autowired private FeatureRepository repo;
   @Autowired private ProductModuleRepository moduleRepo;
   @Autowired private ProductRepository productRepo;
-  @Autowired private ProductCategoryRepository categoryRepo;
   @Autowired private UserRepository userRepo;
   @Autowired private ObjectMapper json;
 
@@ -50,7 +46,6 @@ class FeatureControllerQueryTest {
     repo.deleteAll();
     moduleRepo.deleteAll();
     productRepo.deleteAll();
-    categoryRepo.deleteAll();
     userRepo.deleteAll();
   }
 
@@ -63,21 +58,11 @@ class FeatureControllerQueryTest {
     return userRepo.saveAndFlush(u).getId();
   }
 
-  private Long createCategory(String code, Long ownerUserId) {
-    ProductCategory c = new ProductCategory();
-    c.setCode(code);
-    c.setName(code);
-    c.setStatus(ProductCategoryStatus.ACTIVE);
-    c.setOwnerUserId(ownerUserId);
-    return categoryRepo.saveAndFlush(c).getId();
-  }
-
-  private Long createProduct(String code, Long categoryId, Long ownerUserId) {
+  private Long createProduct(String code, Long ownerUserId) {
     Product p = new Product();
     p.setCode(code);
     p.setName(code);
     p.setStatus(ProductStatus.ACTIVE);
-    p.setCategoryId(categoryId);
     p.setOwnerUserId(ownerUserId);
     return productRepo.saveAndFlush(p).getId();
   }
@@ -113,8 +98,7 @@ class FeatureControllerQueryTest {
   @Test
   void get_existingId_returnsFullDetailWithAllEnrichment() throws Exception {
     Long uid = createUser();
-    Long cid = createCategory("CAT-Q", uid);
-    Long pid = createProduct("PROD-Q", cid, uid);
+    Long pid = createProduct("PROD-Q", uid);
     Long mid = createModule("MOD-Q", pid, uid);
     Long id = createFeature(uid, mid, "FEAT-Q1");
     MvcResult res =
@@ -135,8 +119,7 @@ class FeatureControllerQueryTest {
   @Test
   void getList_filterByModuleId_returnsOnlyMatching() throws Exception {
     Long uid = createUser();
-    Long cid = createCategory("CAT-F", uid);
-    Long pid = createProduct("PROD-F", cid, uid);
+    Long pid = createProduct("PROD-F", uid);
     Long modA = createModule("MOD-A", pid, uid);
     Long modB = createModule("MOD-B", pid, uid);
     createFeature(uid, modA, "FEAT-A1");

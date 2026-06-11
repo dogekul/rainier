@@ -13,8 +13,6 @@ import com.rainier.product.dto.ProductDetail;
 import com.rainier.product.dto.ProductUpdateRequest;
 import com.rainier.product.repository.ProductRepository;
 import com.rainier.productmodule.repository.ProductModuleRepository;
-import com.rainier.productcategory.domain.ProductCategory;
-import com.rainier.productcategory.repository.ProductCategoryRepository;
 import com.rainier.user.domain.User;
 import com.rainier.user.repository.UserRepository;
 import java.util.Collections;
@@ -33,13 +31,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Business operations for {@link Product}.
+ * Business operations for {@link Product}. Top-level product domain entity since v0.0.13 (the
+ * v0.0.12 ProductCategory layer was removed).
  *
  * <ul>
- *   <li>{@code categoryId} immutable after creation (spec Decision 11 sibling).
  *   <li>{@code code} service-level unique.
  *   <li>Owner mutable (family Decision 6b).
- *   <li>Soft-deleted; FK protection on delete (Module references) — wired in M09.
+ *   <li>Soft-deleted; FK protection on delete (Module references).
  * </ul>
  */
 @Service
@@ -47,26 +45,18 @@ import org.springframework.transaction.annotation.Transactional;
 public class ProductService {
 
   private final ProductRepository repo;
-  private final ProductCategoryRepository categoryRepo;
   private final UserRepository userRepo;
   private final ProductModuleRepository moduleRepo;
 
   public ProductService(
-      ProductRepository repo,
-      ProductCategoryRepository categoryRepo,
-      UserRepository userRepo,
-      ProductModuleRepository moduleRepo) {
+      ProductRepository repo, UserRepository userRepo, ProductModuleRepository moduleRepo) {
     this.repo = repo;
-    this.categoryRepo = categoryRepo;
     this.userRepo = userRepo;
     this.moduleRepo = moduleRepo;
   }
 
   @Transactional
   public ProductDetail create(ProductCreateRequest req) {
-    if (!categoryRepo.existsById(req.getCategoryId())) {
-      throw new BadRequestException("category not found: id=" + req.getCategoryId());
-    }
     if (!userRepo.existsById(req.getOwnerUserId())) {
       throw new BadRequestException("owner user not found: id=" + req.getOwnerUserId());
     }
@@ -82,7 +72,6 @@ public class ProductService {
     p.setName(req.getName());
     p.setDescription(req.getDescription());
     p.setStatus(status);
-    p.setCategoryId(req.getCategoryId());
     p.setOwnerUserId(req.getOwnerUserId());
     return enrich(repo.saveAndFlush(p));
   }
@@ -91,13 +80,10 @@ public class ProductService {
     return enrich(getOrThrow(id));
   }
 
-  public PageResponse<ProductDetail> list(Long categoryId, String status, PageParams page) {
+  public PageResponse<ProductDetail> list(String status, PageParams page) {
     Specification<Product> spec =
         (root, query, cb) -> {
           javax.persistence.criteria.Predicate p = cb.conjunction();
-          if (categoryId != null) {
-            p = cb.and(p, cb.equal(root.get("categoryId"), categoryId));
-          }
           if (status != null) {
             p = cb.and(p, cb.equal(root.get("status"), status));
           }
@@ -126,21 +112,10 @@ public class ProductService {
             .map(Product::getOwnerUserId)
             .filter(Objects::nonNull)
             .collect(Collectors.toCollection(HashSet::new));
-    Set<Long> categoryIds =
-        products.stream()
-            .map(Product::getCategoryId)
-            .filter(Objects::nonNull)
-            .collect(Collectors.toCollection(HashSet::new));
     Map<Long, User> userMap =
         userIds.isEmpty() ? Collections.emptyMap() : batchUserById(userRepo.findAllById(userIds));
-    Map<Long, ProductCategory> categoryMap =
-        categoryIds.isEmpty()
-            ? Collections.emptyMap()
-            : batchCategoryById(categoryRepo.findAllById(categoryIds));
     return PageResponse.of(
-        products.stream()
-            .map(p -> enrichBatch(p, userMap, categoryMap))
-            .collect(Collectors.toList()),
+        products.stream().map(p -> enrichBatch(p, userMap)).collect(Collectors.toList()),
         page.getPage(),
         page.getSize(),
         result.getTotalElements());
@@ -167,7 +142,6 @@ public class ProductService {
     p.setName(req.getName());
     p.setDescription(req.getDescription());
     p.setStatus(req.getStatus());
-    // categoryId intentionally NOT touched — immutable after creation.
     return enrich(repo.saveAndFlush(p));
   }
 
@@ -194,13 +168,6 @@ public class ProductService {
               dto.setOwnerName(u.getName());
               dto.setOwnerLoginName(u.getLoginName());
             });
-    categoryRepo
-        .findById(p.getCategoryId())
-        .ifPresent(
-            c -> {
-              dto.setCategoryCode(c.getCode());
-              dto.setCategoryName(c.getName());
-            });
     return dto;
   }
 
@@ -212,26 +179,12 @@ public class ProductService {
     return map;
   }
 
-  private static Map<Long, ProductCategory> batchCategoryById(Iterable<ProductCategory> cats) {
-    Map<Long, ProductCategory> map = new HashMap<>();
-    for (ProductCategory c : cats) {
-      map.put(c.getId(), c);
-    }
-    return map;
-  }
-
-  private ProductDetail enrichBatch(
-      Product p, Map<Long, User> userMap, Map<Long, ProductCategory> categoryMap) {
+  private ProductDetail enrichBatch(Product p, Map<Long, User> userMap) {
     ProductDetail dto = ProductDetail.from(p);
     User u = userMap.get(p.getOwnerUserId());
     if (u != null) {
       dto.setOwnerName(u.getName());
       dto.setOwnerLoginName(u.getLoginName());
-    }
-    ProductCategory c = categoryMap.get(p.getCategoryId());
-    if (c != null) {
-      dto.setCategoryCode(c.getCode());
-      dto.setCategoryName(c.getName());
     }
     return dto;
   }

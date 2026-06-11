@@ -14,6 +14,11 @@ public class ProductModuleDetail {
   private Long productId;
   private String productCode;
   private String productName;
+  private Long parentId;
+  private String parentCode;
+  private String parentName;
+  private String pathName;
+  private String pathCodes;
   private Long ownerUserId;
   private String ownerName;
   private String ownerLoginName;
@@ -30,6 +35,7 @@ public class ProductModuleDetail {
     dto.description = m.getDescription();
     dto.status = m.getStatus();
     dto.productId = m.getProductId();
+    dto.parentId = m.getParentId();
     dto.ownerUserId = m.getOwnerUserId();
     dto.createTime = m.getCreateTime();
     dto.updateTime = m.getUpdateTime();
@@ -54,6 +60,16 @@ public class ProductModuleDetail {
   public void setProductCode(String productCode) { this.productCode = productCode; }
   public String getProductName() { return productName; }
   public void setProductName(String productName) { this.productName = productName; }
+  public Long getParentId() { return parentId; }
+  public void setParentId(Long parentId) { this.parentId = parentId; }
+  public String getParentCode() { return parentCode; }
+  public void setParentCode(String parentCode) { this.parentCode = parentCode; }
+  public String getParentName() { return parentName; }
+  public void setParentName(String parentName) { this.parentName = parentName; }
+  public String getPathName() { return pathName; }
+  public void setPathName(String pathName) { this.pathName = pathName; }
+  public String getPathCodes() { return pathCodes; }
+  public void setPathCodes(String pathCodes) { this.pathCodes = pathCodes; }
   public Long getOwnerUserId() { return ownerUserId; }
   public void setOwnerUserId(Long ownerUserId) { this.ownerUserId = ownerUserId; }
   public String getOwnerName() { return ownerName; }

@@ -23,6 +23,9 @@ public class ProductModuleCreateRequest {
 
   @NotNull private Long productId;
 
+  /** Optional — null creates a top-level module; non-null must reference a same-product module. */
+  private Long parentId;
+
   @NotNull private Long ownerUserId;
 
   public String getCode() {
@@ -63,6 +66,14 @@ public class ProductModuleCreateRequest {
 
   public void setProductId(Long productId) {
     this.productId = productId;
+  }
+
+  public Long getParentId() {
+    return parentId;
+  }
+
+  public void setParentId(Long parentId) {
+    this.parentId = parentId;
   }
 
   public Long getOwnerUserId() {

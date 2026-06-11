@@ -9,9 +9,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.rainier.product.domain.Product;
 import com.rainier.product.domain.ProductStatus;
 import com.rainier.product.repository.ProductRepository;
-import com.rainier.productcategory.domain.ProductCategory;
-import com.rainier.productcategory.domain.ProductCategoryStatus;
-import com.rainier.productcategory.repository.ProductCategoryRepository;
 import com.rainier.productmodule.domain.ProductModule;
 import com.rainier.productmodule.domain.ProductModuleStatus;
 import com.rainier.productmodule.repository.ProductModuleRepository;
@@ -29,7 +26,11 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
-/** TC-PERF-PMOD-001: 2 page + 1 user + 1 product = 4. */
+/**
+ * TC-PERF-PMOD-001 (v0.0.13): page select + count + user batch + product batch + ≤2 ancestor
+ * batch rounds = 4..6. Seeds a mixed flat/2-level tree so the ancestor batch actually runs
+ * (陷阱 J: path enrich must be batched, never per-row walks).
+ */
 @SpringBootTest(properties = {"spring.jpa.properties.hibernate.generate_statistics=true"})
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
@@ -39,7 +40,6 @@ class ProductModuleListSqlCountTest {
   @Autowired private EntityManagerFactory emf;
   @Autowired private ProductModuleRepository repo;
   @Autowired private ProductRepository productRepo;
-  @Autowired private ProductCategoryRepository categoryRepo;
   @Autowired private UserRepository userRepo;
 
   @BeforeEach
@@ -47,7 +47,6 @@ class ProductModuleListSqlCountTest {
   void seed() {
     repo.deleteAll();
     productRepo.deleteAll();
-    categoryRepo.deleteAll();
     userRepo.deleteAll();
     Long[] uids = new Long[4];
     for (int i = 0; i < 4; i++) {
@@ -58,30 +57,29 @@ class ProductModuleListSqlCountTest {
       u.setEnabled(true);
       uids[i] = userRepo.saveAndFlush(u).getId();
     }
-    ProductCategory c = new ProductCategory();
-    c.setCode("CAT-MOD-PERF");
-    c.setName("x");
-    c.setStatus(ProductCategoryStatus.ACTIVE);
-    c.setOwnerUserId(uids[0]);
-    Long cid = categoryRepo.saveAndFlush(c).getId();
-    Long[] pids = new Long[4];
-    for (int i = 0; i < 4; i++) {
-      Product p = new Product();
-      p.setCode("PROD-MOD-PERF-" + i);
-      p.setName("x");
-      p.setStatus(ProductStatus.ACTIVE);
-      p.setCategoryId(cid);
-      p.setOwnerUserId(uids[i % 4]);
-      pids[i] = productRepo.saveAndFlush(p).getId();
-    }
-    for (int i = 0; i < 20; i++) {
-      ProductModule m = new ProductModule();
-      m.setCode("MOD-PERF-" + i);
-      m.setName("M " + i);
-      m.setStatus(ProductModuleStatus.PLANNING);
-      m.setProductId(pids[i % 4]);
-      m.setOwnerUserId(uids[i % 4]);
-      repo.saveAndFlush(m);
+    Product p = new Product();
+    p.setCode("PROD-PERF");
+    p.setName("Perf");
+    p.setStatus(ProductStatus.ACTIVE);
+    p.setOwnerUserId(uids[0]);
+    Long pid = productRepo.saveAndFlush(p).getId();
+    // 10 top-level roots; each root gets 1 child → 20 rows, 2-level tree.
+    for (int i = 0; i < 10; i++) {
+      ProductModule root = new ProductModule();
+      root.setCode("MOD-ROOT-" + i);
+      root.setName("Root " + i);
+      root.setStatus(ProductModuleStatus.PLANNING);
+      root.setProductId(pid);
+      root.setOwnerUserId(uids[i % 4]);
+      Long rootId = repo.saveAndFlush(root).getId();
+      ProductModule child = new ProductModule();
+      child.setCode("MOD-CHILD-" + i);
+      child.setName("Child " + i);
+      child.setStatus(ProductModuleStatus.PLANNING);
+      child.setProductId(pid);
+      child.setParentId(rootId);
+      child.setOwnerUserId(uids[i % 4]);
+      repo.saveAndFlush(child);
     }
   }
 
@@ -94,8 +92,9 @@ class ProductModuleListSqlCountTest {
         .perform(get("/api/product-modules?page=0&size=20"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.total").value(20))
-        .andExpect(jsonPath("$.content[0].productName").exists());
+        .andExpect(jsonPath("$.content[0].pathName").exists());
     long n = stats.getPrepareStatementCount();
-    assertTrue(n >= 4L && n <= 5L, "expected 4..5 statements, got " + n);
+    // ≥4 guards against stats-off false green; ≤6 caps the ancestor batching budget (陷阱 G/J).
+    assertTrue(n >= 4L && n <= 6L, "expected 4..6 statements, got " + n);
   }
 }

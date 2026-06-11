@@ -11,9 +11,6 @@ public class ProductDetail {
   private String name;
   private String description;
   private String status;
-  private Long categoryId;
-  private String categoryCode;
-  private String categoryName;
   private Long ownerUserId;
   private String ownerName;
   private String ownerLoginName;
@@ -29,7 +26,6 @@ public class ProductDetail {
     dto.name = p.getName();
     dto.description = p.getDescription();
     dto.status = p.getStatus();
-    dto.categoryId = p.getCategoryId();
     dto.ownerUserId = p.getOwnerUserId();
     dto.createTime = p.getCreateTime();
     dto.updateTime = p.getUpdateTime();
@@ -48,12 +44,6 @@ public class ProductDetail {
   public void setDescription(String description) { this.description = description; }
   public String getStatus() { return status; }
   public void setStatus(String status) { this.status = status; }
-  public Long getCategoryId() { return categoryId; }
-  public void setCategoryId(Long categoryId) { this.categoryId = categoryId; }
-  public String getCategoryCode() { return categoryCode; }
-  public void setCategoryCode(String categoryCode) { this.categoryCode = categoryCode; }
-  public String getCategoryName() { return categoryName; }
-  public void setCategoryName(String categoryName) { this.categoryName = categoryName; }
   public Long getOwnerUserId() { return ownerUserId; }
   public void setOwnerUserId(Long ownerUserId) { this.ownerUserId = ownerUserId; }
   public String getOwnerName() { return ownerName; }

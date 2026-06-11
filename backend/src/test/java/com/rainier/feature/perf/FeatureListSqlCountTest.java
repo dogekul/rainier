@@ -12,9 +12,6 @@ import com.rainier.feature.repository.FeatureRepository;
 import com.rainier.product.domain.Product;
 import com.rainier.product.domain.ProductStatus;
 import com.rainier.product.repository.ProductRepository;
-import com.rainier.productcategory.domain.ProductCategory;
-import com.rainier.productcategory.domain.ProductCategoryStatus;
-import com.rainier.productcategory.repository.ProductCategoryRepository;
 import com.rainier.productmodule.domain.ProductModule;
 import com.rainier.productmodule.domain.ProductModuleStatus;
 import com.rainier.productmodule.repository.ProductModuleRepository;
@@ -43,7 +40,6 @@ class FeatureListSqlCountTest {
   @Autowired private FeatureRepository repo;
   @Autowired private ProductModuleRepository moduleRepo;
   @Autowired private ProductRepository productRepo;
-  @Autowired private ProductCategoryRepository categoryRepo;
   @Autowired private UserRepository userRepo;
 
   @BeforeEach
@@ -52,7 +48,6 @@ class FeatureListSqlCountTest {
     repo.deleteAll();
     moduleRepo.deleteAll();
     productRepo.deleteAll();
-    categoryRepo.deleteAll();
     userRepo.deleteAll();
     Long[] uids = new Long[4];
     for (int i = 0; i < 4; i++) {
@@ -63,17 +58,10 @@ class FeatureListSqlCountTest {
       u.setEnabled(true);
       uids[i] = userRepo.saveAndFlush(u).getId();
     }
-    ProductCategory c = new ProductCategory();
-    c.setCode("CAT-F-PERF");
-    c.setName("x");
-    c.setStatus(ProductCategoryStatus.ACTIVE);
-    c.setOwnerUserId(uids[0]);
-    Long cid = categoryRepo.saveAndFlush(c).getId();
     Product p = new Product();
     p.setCode("PROD-F-PERF");
     p.setName("x");
     p.setStatus(ProductStatus.ACTIVE);
-    p.setCategoryId(cid);
     p.setOwnerUserId(uids[0]);
     Long pid = productRepo.saveAndFlush(p).getId();
     Long[] mids = new Long[4];

@@ -17,7 +17,6 @@ vi.mock('../../api/product', async () => {
           code: 'PROD-A',
           name: 'Apollo',
           status: 'ACTIVE',
-          categoryId: 1,
           ownerUserId: 1,
         },
         {
@@ -25,7 +24,6 @@ vi.mock('../../api/product', async () => {
           code: 'PROD-B',
           name: 'Beta',
           status: 'ACTIVE',
-          categoryId: 2,
           ownerUserId: 1,
         },
       ],
@@ -45,25 +43,31 @@ vi.mock('../../api/productModule', async () => {
     {
       id: 10,
       code: 'MOD-A1',
-      name: 'Module A1',
+      name: '钱包',
+      pathName: '钱包',
       status: 'ACTIVE',
       productId: 1,
+      parentId: null,
       ownerUserId: 1,
     },
     {
       id: 20,
       code: 'MOD-A2',
-      name: 'Module A2',
+      name: '余额',
+      pathName: '钱包 / 余额',
       status: 'ACTIVE',
       productId: 1,
+      parentId: 10,
       ownerUserId: 1,
     },
     {
       id: 30,
       code: 'MOD-B1',
       name: 'Module B1',
+      pathName: 'Module B1',
       status: 'ACTIVE',
       productId: 2,
+      parentId: null,
       ownerUserId: 1,
     },
   ];
@@ -160,4 +164,30 @@ describe('FeatureEditDrawer', () => {
       expect(optionsAfter).not.toContain('20');
     },
   );
+
+  /** TC-FES-FEAT-001 (v0.0.13): 模块下拉选项文本使用 pathName（多层显示 "钱包 / 余额"）. */
+  it('renders module options with pathName labels (TC-FES-FEAT-001)', async () => {
+    render(
+      <FeatureEditDrawer
+        open={true}
+        editing={null}
+        onClose={vi.fn()}
+        onCreate={vi.fn()}
+        onUpdate={vi.fn()}
+      />,
+    );
+    await waitFor(() => {
+      expect(screen.getByTestId('feature-product-select')).toBeInTheDocument();
+    });
+    fireEvent.change(screen.getByTestId('feature-product-select'), { target: { value: '1' } });
+    await waitFor(() => {
+      const moduleSelect = screen.getByTestId('feature-module-select') as HTMLSelectElement;
+      expect(moduleSelect.options.length).toBe(3); // placeholder + 2 modules
+    });
+    const labels = Array.from(
+      (screen.getByTestId('feature-module-select') as HTMLSelectElement).options,
+    ).map((o) => o.textContent ?? '');
+    expect(labels.some((l) => l.includes('钱包（MOD-A1）'))).toBe(true);
+    expect(labels.some((l) => l.includes('钱包 / 余额（MOD-A2）'))).toBe(true);
+  });
 });

@@ -164,8 +164,8 @@ export function FeatureEditDrawer({
         >
           <option value="">请选择模块</option>
           {modules.map((m) => (
-            <option key={m.id} value={m.id}>
-              {m.name}（{m.code}）
+            <option key={m.id} value={m.id} title={m.pathName ?? m.name}>
+              {m.pathName ?? m.name}（{m.code}）
             </option>
           ))}
         </select>

@@ -101,6 +101,18 @@ describe('AppRoutes /pm/*', () => {
     expect(occurrences).toBeGreaterThanOrEqual(1);
   });
 
+  /**
+   * TC-FES-PROD-002 (v0.0.13 沿用): /pm/products route literal still registered.
+   * TC-FES-PROD-003 (v0.0.13): /pm/product-categories route fully removed — grep = 0.
+   */
+  it('keeps /pm/products and drops /pm/product-categories route literals (TC-FES-PROD-002/003)', () => {
+    const path = resolve(__dirname, 'AppRoutes.tsx');
+    const src = readFileSync(path, 'utf-8');
+    expect(src.split('/pm/products').length - 1).toBeGreaterThanOrEqual(1);
+    expect(src.split('/pm/product-categories').length - 1).toBe(0);
+    expect(src.includes('ProductCategoriesPage')).toBe(false);
+  });
+
   /** TC-FES-P02 (v0.0.8): /pm/projects mounts ProjectsPage. */
   it('mounts ProjectsPage at /pm/projects (TC-FES-P02)', async () => {
     render(

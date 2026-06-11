@@ -11,6 +11,4 @@ public interface ProductRepository
     extends JpaRepository<Product, Long>, JpaSpecificationExecutor<Product> {
 
   boolean existsByCode(String code);
-
-  long countByCategoryId(Long categoryId);
 }

@@ -3,36 +3,6 @@ import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { ProductEditDrawer } from './ProductEditDrawer';
 import { useAuthStore } from '../../store/auth';
 
-vi.mock('../../api/productCategory', async () => {
-  const actual = await vi.importActual<typeof import('../../api/productCategory')>(
-    '../../api/productCategory',
-  );
-  return {
-    ...actual,
-    listProductCategories: vi.fn().mockResolvedValue({
-      content: [
-        {
-          id: 11,
-          code: 'CAT-A',
-          name: '研发工具',
-          status: 'ACTIVE',
-          ownerUserId: 1,
-        },
-        {
-          id: 22,
-          code: 'CAT-B',
-          name: '基础设施',
-          status: 'ACTIVE',
-          ownerUserId: 1,
-        },
-      ],
-      total: 2,
-      page: 0,
-      size: 100,
-    }),
-  };
-});
-
 vi.mock('../../api/user', async () => {
   const actual = await vi.importActual<typeof import('../../api/user')>('../../api/user');
   return {
@@ -51,8 +21,8 @@ describe('ProductEditDrawer', () => {
     useAuthStore.setState({ token: 'tk', user: { username: 'alice' } });
   });
 
-  /** TC-FES-PROD-003: Category select 设值正确 — onCreate body.categoryId == 所选 option. */
-  it('passes selected categoryId into onCreate payload (TC-FES-PROD-003)', async () => {
+  /** v0.0.13: Category select 已随 ProductCategory 删除 — onCreate payload 不含 categoryId. */
+  it('passes payload without categoryId into onCreate (v0.0.13)', async () => {
     const onCreate = vi.fn();
     render(
       <ProductEditDrawer
@@ -65,16 +35,12 @@ describe('ProductEditDrawer', () => {
     );
 
     await waitFor(() => {
-      const select = screen.getByTestId('product-category-select') as HTMLSelectElement;
-      expect(Array.from(select.options).map((o) => o.value)).toContain('22');
+      const owner = screen.getByTestId('product-owner-select') as HTMLSelectElement;
+      expect(owner.value).toBe('1'); // defaulted to current user
     });
 
-    fireEvent.change(screen.getByTestId('product-category-select'), {
-      target: { value: '22' },
-    });
-    expect(
-      (screen.getByTestId('product-category-select') as HTMLSelectElement).value,
-    ).toBe('22');
+    // The Category select must be gone entirely.
+    expect(screen.queryByTestId('product-category-select')).toBeNull();
 
     fireEvent.change(screen.getByLabelText('编码 (PROD-...)'), {
       target: { value: 'PROD-X' },
@@ -87,9 +53,9 @@ describe('ProductEditDrawer', () => {
       expect(onCreate).toHaveBeenCalledTimes(1);
     });
     const body = onCreate.mock.calls[0][0];
-    expect(body.categoryId).toBe(22);
     expect(body.code).toBe('PROD-X');
     expect(body.name).toBe('新产品');
     expect(body.ownerUserId).toBe(1);
+    expect('categoryId' in body).toBe(false);
   });
 });

@@ -10,9 +10,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.rainier.product.repository.ProductRepository;
-import com.rainier.productcategory.domain.ProductCategory;
-import com.rainier.productcategory.domain.ProductCategoryStatus;
-import com.rainier.productcategory.repository.ProductCategoryRepository;
 import com.rainier.user.domain.User;
 import com.rainier.user.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -25,7 +22,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
-/** TC-PROD-007 (15-field detail loop) + TC-PROD-008 (filter by categoryId). */
+/** TC-PROD-006 (detail field set, no category fields) + TC-PROD-007 (categoryId param ignored). */
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
@@ -33,14 +30,12 @@ class ProductControllerQueryTest {
 
   @Autowired private MockMvc mockMvc;
   @Autowired private ProductRepository repo;
-  @Autowired private ProductCategoryRepository categoryRepo;
   @Autowired private UserRepository userRepo;
   @Autowired private ObjectMapper json;
 
   @BeforeEach
   void cleanDb() {
     repo.deleteAll();
-    categoryRepo.deleteAll();
     userRepo.deleteAll();
   }
 
@@ -53,20 +48,10 @@ class ProductControllerQueryTest {
     return userRepo.saveAndFlush(u).getId();
   }
 
-  private Long createCategory(String code, String name, Long ownerUserId) {
-    ProductCategory c = new ProductCategory();
-    c.setCode(code);
-    c.setName(name);
-    c.setStatus(ProductCategoryStatus.ACTIVE);
-    c.setOwnerUserId(ownerUserId);
-    return categoryRepo.saveAndFlush(c).getId();
-  }
-
-  private Long createProduct(Long uid, Long cid, String code) throws Exception {
+  private Long createProduct(Long uid, String code) throws Exception {
     ObjectNode body = json.createObjectNode();
     body.put("code", code);
     body.put("name", "x");
-    body.put("categoryId", cid);
     body.put("ownerUserId", uid);
     MvcResult res =
         mockMvc
@@ -79,45 +64,53 @@ class ProductControllerQueryTest {
     return json.readTree(res.getResponse().getContentAsString()).get("id").asLong();
   }
 
-  /** TC-PROD-007: GET detail returns all 15 fields including categoryCode/categoryName. */
+  /** TC-PROD-006: GET detail 12 fields — category 富化字段已移除 (v0.0.13). */
   @Test
-  void get_existingId_returnsFullDetailWithAllEnrichment() throws Exception {
+  void get_existingId_returnsDetailWithoutCategoryFields() throws Exception {
     Long uid = createUser();
-    Long cid = createCategory("CAT-FIN", "金融产品", uid);
-    Long id = createProduct(uid, cid, "PROD-Q1");
+    Long id = createProduct(uid, "PROD-Q1");
     MvcResult res =
         mockMvc.perform(get("/api/products/" + id)).andExpect(status().isOk()).andReturn();
     JsonNode body = json.readTree(res.getResponse().getContentAsString());
     String[] expected = {
       "id", "code", "name", "description", "status",
-      "categoryId", "categoryCode", "categoryName",
       "ownerUserId", "ownerName", "ownerLoginName",
       "createTime", "updateTime", "createBy", "updateBy"
     };
     for (String f : expected) {
       org.junit.jupiter.api.Assertions.assertTrue(body.has(f), "expected field: " + f);
     }
+    String[] removed = {"categoryId", "categoryCode", "categoryName"};
+    for (String f : removed) {
+      org.junit.jupiter.api.Assertions.assertFalse(body.has(f), "removed field present: " + f);
+    }
   }
 
-  /** TC-PROD-008: list filtered by categoryId returns only matching. */
+  /** TC-PROD-007: 废弃 categoryId 查询参数静默忽略 — 不过滤不报错. */
   @Test
-  void getList_filterByCategoryId_returnsOnlyMatching() throws Exception {
+  void getList_obsoleteCategoryIdParam_silentlyIgnored() throws Exception {
     Long uid = createUser();
-    Long catA = createCategory("CAT-A", "A", uid);
-    Long catB = createCategory("CAT-B", "B", uid);
-    createProduct(uid, catA, "PROD-A1");
-    createProduct(uid, catA, "PROD-A2");
-    createProduct(uid, catB, "PROD-B1");
-    MvcResult res =
-        mockMvc
-            .perform(get("/api/products?categoryId=" + catA))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.total").value(2))
-            .andReturn();
-    JsonNode list = json.readTree(res.getResponse().getContentAsString()).get("content");
-    for (JsonNode item : list) {
-      org.junit.jupiter.api.Assertions.assertEquals(
-          catA.longValue(), item.get("categoryId").asLong());
-    }
+    createProduct(uid, "PROD-A1");
+    createProduct(uid, "PROD-A2");
+    createProduct(uid, "PROD-B1");
+    mockMvc
+        .perform(get("/api/products?categoryId=1"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.total").value(3));
+  }
+
+  /** status filter (v0.0.12 沿用). */
+  @Test
+  void getList_filterByStatus_returnsOnlyMatching() throws Exception {
+    Long uid = createUser();
+    createProduct(uid, "PROD-S1");
+    mockMvc
+        .perform(get("/api/products?status=PLANNING"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.total").value(1));
+    mockMvc
+        .perform(get("/api/products?status=ARCHIVED"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.total").value(0));
   }
 }

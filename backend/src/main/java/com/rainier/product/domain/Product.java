@@ -9,10 +9,9 @@ import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.Where;
 
 /**
- * Product is the second level of the product architecture (产品). Belongs to one {@link
- * com.rainier.productcategory.domain.ProductCategory} (NN FK). 4-state machine. {@code code}
- * service-unique. {@code categoryId} immutable after creation (v0.0.11 Decision 11 sibling).
- * Owner mutable. Soft-deleted; FK protection on delete (Module references) — wired in M09.
+ * Product is the top level of the product architecture (产品) since v0.0.13 (the v0.0.12
+ * ProductCategory layer was removed). 4-state machine. {@code code} service-unique. Owner mutable.
+ * Soft-deleted; FK protection on delete (Module references).
  */
 @Entity
 @Table(name = "rainier_product")
@@ -33,9 +32,6 @@ public class Product extends BaseEntity {
 
   @Column(nullable = false, length = 16)
   private String status;
-
-  @Column(name = "category_id", nullable = false)
-  private Long categoryId;
 
   @Column(name = "owner_user_id", nullable = false)
   private Long ownerUserId;
@@ -70,14 +66,6 @@ public class Product extends BaseEntity {
 
   public void setStatus(String status) {
     this.status = status;
-  }
-
-  public Long getCategoryId() {
-    return categoryId;
-  }
-
-  public void setCategoryId(Long categoryId) {
-    this.categoryId = categoryId;
   }
 
   public Long getOwnerUserId() {

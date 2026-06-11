@@ -8,6 +8,7 @@
 > - 2026-06-09 (v0.0.10-sprint) — Sider 「需求管理」 grows to 5 items: 项目 / **Sprint** / 诉求 / 需求 / 诉求-需求关联; added `/pm/sprints` route → SprintsPage (read-only browser with row-expand revealing StoryListPanel keyed by sprintId); RequirementsPage drilldown swapped: StoryListPanel → SprintListPanel (CRUD for Sprint, with row Sprint count column renamed 'Story 数' → 'Sprint 数' sourced from `sprintCount`); SprintEditDrawer mirrors StoryEditDrawer pattern (default owner = current logged-in user, parent Requirement field locked at creation, owner mutable on edit); StoryEditDrawer locked-display swap: shows parent Sprint + grandparent Requirement (was Requirement-only); StoryListPanel prop change: requirementId → sprintId; new `api/sprint.ts` for Sprint CRUD.
 > - 2026-06-09 (v0.0.11-task) — Sider 「需求管理」 grows to 6 items: 项目 / Sprint / **任务** / 诉求 / 需求 / 诉求-需求关联; 「任务」 排第三 (执行靠近); added `/pm/tasks` route → `TasksPage` (full CRUD list + filter projectId/status/priority/assigneeUserId/sprintId/storyId + pagination); `TaskEditDrawer` with Project/Sprint/Story/Assignee 联动级联 selects (size=100 client-side filter, sprint/story options narrow when Project chosen; sprint/story selects clear when Project changes); new `api/task.ts` for Task CRUD.
 > - 2026-06-09 (v0.0.12-product) — NEW Sider 顶级菜单组「产品」, 位于「组织」与「需求管理」之间. Sider 顶级组保持 4 组: 组织 → 产品 → 需求管理 → 人事配置. 「产品」展开后含 4 项: 产品分类 / 产品 / 产品模块 / 功能, 对应 4 条新路由 (`/pm/product-categories` / `/pm/products` / `/pm/product-modules` / `/pm/features`). 4 个 EditDrawer 用 v0.0.11 同款 cascading-select (size=100 客户端 filter): Product 选 Category 必选; Module 选 Product 必选 (可加 Category filter); Feature 选 Product + Module 必选. 新 `api/{productCategory,product,productModule,feature}.ts` 4 个 api 文件.
+> - 2026-06-10 (v0.0.13-product-restructure) — 「产品」组 4 项 → **3 项** (删「产品分类」入口 + `/pm/product-categories` 路由 + `ProductCategoriesPage` + `api/productCategory.ts`). ProductsPage 去 Category 列; ProductEditDrawer 去 Category select. ProductModulesPage 改 **树形列表** (嵌套 UL/LI + depth 缩进, 完全替换 Table); ProductModuleEditDrawer 改 **Product → 可选 parentModule** 二级 cascade (服务器侧 `listProductModules({productId})` 过滤, 支持 reparent). FeatureEditDrawer 模块下拉用后端 `pathName` 显示父链 ("钱包 / 余额"). `api/productModule.ts` + `api/product.ts` 字段调整 (加 parentId/pathName/pathCodes, 去 categoryId).
 
 ## Requirements
 
@@ -155,23 +156,26 @@
 - **AND** 任务 项 SHALL 位于 Sprint 项之后、诉求项之前
 - **AND** 点击 `"任务"` SHALL 跳转 `/pm/tasks`
 
-### Requirement: Sider 顶级菜单组「产品」（v0.0.12 起加，4 顶级组保持）
+### Requirement: Sider 顶级菜单组「产品」（v0.0.13 改为 3 项）
 
-前端 SHALL 在 Sider 渲染 4 个顶级菜单组 — **组织 → 产品 → 需求管理 → 人事配置**. 「产品」组在 v0.0.12 起作为第 2 位（位于「组织」之后、「需求管理」之前），展开后含 4 项：**产品分类 / 产品 / 产品模块 / 功能**, 对应 `/pm/product-categories` / `/pm/products` / `/pm/product-modules` / `/pm/features` 路由.
+> v0.0.13-product-restructure (2026-06-10) — 「产品分类」入口删除（ProductCategory capability 整层移除）。
 
-#### Scenario: Sider 顶级 4 组 + 产品组 4 路由（v0.0.12）
+前端 SHALL 在 Sider 渲染 4 个顶级菜单组 — **组织 → 产品 → 需求管理 → 人事配置**. 「产品」组保持第 2 位（v0.0.12 起加），展开后含 **3 项**：**产品 / 产品模块 / 功能**, 对应 `/pm/products` / `/pm/product-modules` / `/pm/features` 路由. 不再含 v0.0.12 的「产品分类」入口.
+
+#### Scenario: Sider 顶级 4 组 + 产品组 3 路由（v0.0.13）
 
 - **GIVEN** 用户已登录访问 `/`
 - **WHEN** 页面渲染完成
 - **THEN** 左侧 Sider SHALL 含 4 个顶级菜单组：「组织」/「产品」/「需求管理」/「人事配置」
 - **AND** 「产品」 组 SHALL 位于「组织」之后、「需求管理」之前
-- **AND** 「产品」 组展开后 SHALL 含 4 项：`"产品分类"` / `"产品"` / `"产品模块"` / `"功能"`
-- **AND** 点击 `"产品分类"` SHALL 跳转 `/pm/product-categories`
+- **AND** 「产品」 组展开后 SHALL 含 3 项：`"产品"` / `"产品模块"` / `"功能"`
+- **AND** 「产品」组 SHALL **不含**「产品分类」项
+- **AND** 点击 `"产品"` SHALL 跳转 `/pm/products`
 - **AND** 点击 `"功能"` SHALL 跳转 `/pm/features`
 
-### Requirement: /pm/product-* 4 路由注册（v0.0.12）
+### Requirement: /pm/product-* 3 路由注册（v0.0.13 去 categories）
 
-前端 SHALL 在 router 中注册 4 条新路由：`/pm/product-categories` → `ProductCategoriesPage`, `/pm/products` → `ProductsPage`, `/pm/product-modules` → `ProductModulesPage`, `/pm/features` → `FeaturesPage`. 每个页面 SHALL 提供 list（含 filter 与分页）+ 新建按钮 + 行编辑 / 删除. 4 个对应的 `*EditDrawer.tsx` SHALL 用 cascading parent select（size=100 客户端 filter）: 选 Category 后 Product 下拉过滤显示；选 Product 后 Module 下拉过滤；切换上级时清空下级.
+前端 SHALL 在 router 中注册 **3** 条路由：`/pm/products` → `ProductsPage`, `/pm/product-modules` → `ProductModulesPage`, `/pm/features` → `FeaturesPage`. `/pm/product-categories` 路由 SHALL 删除（访问回落到 `/`）.
 
 #### Scenario: /pm/products 路由直接访问 + grep guard
 
@@ -179,6 +183,51 @@
 - **WHEN** 浏览器直接访问 `/pm/products`
 - **THEN** SHALL 渲染 `ProductsPage` 组件
 - **AND** `grep -c "/pm/products" frontend/src/AppRoutes.tsx` SHALL ≥ 1
+
+#### Scenario: /pm/product-categories 路由已删除（v0.0.13）
+
+- **GIVEN** 用户已登录
+- **WHEN** 浏览器直接访问 `/pm/product-categories`
+- **THEN** SHALL **不**渲染 `ProductCategoriesPage`（页面已删）
+- **AND** `grep -c "/pm/product-categories" frontend/src/AppRoutes.tsx` SHALL 为 0
+
+### Requirement: ProductModulesPage 树形列表显示（v0.0.13）
+
+前端 SHALL 在 `/pm/product-modules` 页面将模块列表渲染为树形结构 — 顶层模块（parentId 为 null）作为根节点，子模块通过嵌套 UL 缩进显示；保留 search + status filter.
+
+#### Scenario: 树形渲染含 ≥ 2 层缩进
+
+- **GIVEN** 后端返回 Module 列表：M1 (id=1, parentId=null) → M2 (id=2, parentId=1) → M3 (id=3, parentId=2)
+- **WHEN** `/pm/product-modules` 页面渲染完成
+- **THEN** SHALL 渲染嵌套 UL/LI 结构
+- **AND** M2 SHALL 在 M1 的 `<ul>` 子元素内
+- **AND** M3 SHALL 在 M2 的 `<ul>` 子元素内
+- **AND** M2 SHALL 比 M1 多一级缩进（CSS padding-left）
+
+### Requirement: ProductModuleEditDrawer Product + parentModule 二级 cascade（v0.0.13）
+
+前端 SHALL 在 `ProductModuleEditDrawer` 中用 **Product → 可选 parentModule** 二级 cascade（替换 v0.0.12 的 Category→Product）. 选 Product 后通过服务器侧过滤 `listProductModules({productId})` 拉取候选父模块；切换 Product 时清空 parentModule. 创建时 parentModule 默认空（顶层）.
+
+#### Scenario: Product 切换触发 parentModule 候选刷新
+
+- **GIVEN** Product A 下有若干 Module, Product B 下有若干 Module
+- **WHEN** 用户在 EditDrawer 切换 Product A → Product B
+- **THEN** parentModule 下拉 SHALL 清空当前选项
+- **AND** SHALL 触发 `listProductModules({productId: B.id})` API 调用
+- **AND** parentModule 下拉 SHALL 显示 Product B 的 module 选项
+- **AND** parentModule 留空提交时 SHALL `POST` body 不含 parentId（创建顶层）
+
+### Requirement: FeatureEditDrawer 模块下拉显示父链 pathName（v0.0.13）
+
+前端 SHALL 在 `FeatureEditDrawer` 的模块下拉中使用后端 `pathName` 字段渲染选项标签（如 `"钱包 / 余额"`），让用户区分多层结构下同名子模块；仍单选，productId 切换时重拉.
+
+#### Scenario: 多层模块下拉显示完整 pathName
+
+- **GIVEN** Product 1 下 Module 树：根 M1 (name="钱包") → M2 (name="余额")
+- **WHEN** 用户在 FeatureEditDrawer 选 Product 1
+- **THEN** 模块下拉 SHALL 含 2 个选项
+- **AND** M1 选项可见文本 SHALL 含 `"钱包"`
+- **AND** M2 选项可见文本 SHALL 含 `"钱包 / 余额"`（pathName）
 
 ### Requirement: /pm/* 路由全部注册（v0.0.11 加 /pm/tasks）
 

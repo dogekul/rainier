@@ -29,12 +29,6 @@ export function ProductsPage() {
   const columns: TableColumn<Product>[] = [
     { key: 'code', title: '编码', render: (p) => p.code },
     { key: 'name', title: '名称', render: (p) => p.name },
-    {
-      key: 'category',
-      title: '所属分类',
-      render: (p) =>
-        p.categoryName ? `${p.categoryName}（${p.categoryCode ?? ''}）` : '—',
-    },
     { key: 'status', title: '状态', render: (p) => p.status },
     {
       key: 'owner',

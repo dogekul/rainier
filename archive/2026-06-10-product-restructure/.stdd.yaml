@@ -1,0 +1,142 @@
+change:
+  id: 2026-06-10-product-restructure
+  title: v0.0.13-product-restructure — drop ProductCategory + ProductModule self-FK tree
+  baseline:
+    commit: fdb82e0
+    tag: v0.0.12-product
+  type: domain-architecture
+  parent_change: 2026-06-09-product
+
+phase:
+  current: archived
+  archived_at: '2026-06-11'
+  understand:
+    status: completed
+    confirmed_at: '2026-06-10'
+    artifact: proposal.md
+  spec:
+    status: completed
+    confirmed_at: '2026-06-10'
+    artifacts:
+      - design.md
+      - specs/entity-product/spec.md
+      - specs/entity-product-module/spec.md
+      - specs/frontend-scaffold/spec.md
+      - test-plan.md
+    metrics:
+      capabilities: 3
+      requirements: 16
+      scenarios: 43
+      tc_cases: 64
+      p0: 64
+      p1: 0
+      p2: 0
+  slice:
+    status: completed
+    completed_at: '2026-06-11'
+    artifacts:
+      - slices.md
+      - tasks.md
+    metrics:
+      slices: 14
+      p0_slices: 14
+      backend_slices: 9    # M01-M09
+      frontend_slices: 4   # M10-M13
+      e2e_slices: 1        # M14
+  build:
+    status: completed
+    completed_at: '2026-06-11'
+    metrics:
+      backend_tests: 269   # 265 baseline - 22 category + 26 new (3 LCLN + PMOD/PROD rewrites)
+      frontend_tests: 51   # 49 baseline - 1 category + 3 new (tree + pathName + route guard)
+      e2e_status: green    # 16 tables / DESCRIBE×2 / build chain / 3×400 / 3×409 / cleanup 204
+    notable_adjustments:
+      - 'PA-1: LegacyCleanup placed in com.rainier.product.bootstrap (domain-following, not change-named pkg).'
+      - 'PA-2: UTF-8 charset fix for Chinese assertions via getContentAsString(UTF_8).'
+      - 'PA-5: ProductModulesPage tree view replaces Table entirely (nested UL/LI).'
+  verify:
+    status: completed
+    completed_at: '2026-06-11'
+    confirmed_at: '2026-06-11'
+    artifacts:
+      - test-report.md
+      - design-adjustments.md
+      - pending-adjustments.md
+    metrics:
+      backend_tests_total: 269
+      frontend_tests_total: 51
+      review_round0_aggregate_initial:
+        critical: 0
+        high: 3
+        medium: 4
+      review_round0_aggregate_post_fix:
+        critical: 0
+        high: 0
+        medium: 2
+      scenario_coverage_percent: 100   # 64/64
+      e2e_status: green
+  deliver:
+    status: completed
+    completed_at: '2026-06-11'
+    artifacts:
+      - archive/2026-06-10-product-restructure/
+      - specs/entity-product/spec.md               # MOD — drop categoryId
+      - specs/entity-product-module/spec.md         # MOD — parentId self-FK tree
+      - specs/frontend-scaffold/spec.md             # MOD — Sider 3 项 / tree view / cascade / pathName
+      - specs/entity-product-category/spec.md       # DELETED
+    tag: v0.0.13-product-restructure
+
+long_range:
+  enabled: true
+  mode: full_auto
+  pre_auth_completed: true
+  pre_auth_timestamp: '2026-06-11'
+  pre_auth:
+    decisions:
+      design_deviation:
+        minor: auto_record
+        major: auto_record_continue
+      technical_blocker: workaround
+      iteration:
+        max_rounds: 10
+      git_ops: allow_up_to_commit_and_tag   # no push
+    operations:
+      directory: allow
+      file_write: allow
+      command: allow
+      script: allow
+      network: allow
+      file_read: allow
+      git_readonly: allow
+    gates:
+      gate_3: require_user_confirmation
+
+scope:
+  type: domain-architecture
+  capabilities_deleted:
+    - entity-product-category
+  capabilities_modified:
+    - entity-product            # drop categoryId
+    - entity-product-module     # add parentId self-FK + depth cap + cycle check + reparent
+    - frontend-scaffold         # Sider 4 → 3 / routes 4 → 3 / tree view
+  capabilities_new: []
+  design_decisions_pre_locked:
+    depth_max:
+      configurable: true
+      default: 3
+      config_key: rainier.product-module.depth.max
+    parent_id_mutability: mutable_with_strict_validation
+    code_uniqueness_scope: parent_id_plus_code_composite_unique
+    data_migration: hard_drop_table_and_column
+    cross_product_reparent: disallowed
+    cycle_detection: dfs_subtree_scan
+  explicitly_excluded:
+    - cross_product_reparent
+    - drag_drop_reparent_ui
+    - module_dependency_graph
+    - feature_to_demand_link
+    - feature_to_requirement_link
+    - feature_direct_productId_field
+    - module_membership_permissions
+    - status_auto_propagation
+    - hierarchy_audit_log

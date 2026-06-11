@@ -2,11 +2,11 @@ import { useEffect, useState } from 'react';
 import { Button } from '../../components/ui/Button';
 import { Drawer } from '../../components/ui/Drawer';
 import { Input } from '../../components/ui/Input';
-import { listProductCategories, type ProductCategory } from '../../api/productCategory';
-import { getProduct, listProducts, type Product } from '../../api/product';
+import { listProducts, type Product } from '../../api/product';
 import { listUsers, type User } from '../../api/user';
 import { useAuthStore } from '../../store/auth';
 import {
+  listProductModules,
   type ProductModule,
   type ProductModuleCreate,
   type ProductModuleStatus,
@@ -23,6 +23,10 @@ export interface ProductModuleEditDrawerProps {
   onUpdate: (id: number, body: ProductModuleUpdate) => Promise<void> | void;
 }
 
+/**
+ * v0.0.13 cascade: Product → optional parentModule (server-side filter, A2 pattern).
+ * parentId mutable on edit (reparent); productId locked after creation.
+ */
 export function ProductModuleEditDrawer({
   open,
   editing,
@@ -32,16 +36,16 @@ export function ProductModuleEditDrawer({
 }: ProductModuleEditDrawerProps) {
   const currentLoginName = useAuthStore((s) => s.user?.username ?? null);
 
-  const [categories, setCategories] = useState<ProductCategory[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
+  const [parentOptions, setParentOptions] = useState<ProductModule[]>([]);
   const [users, setUsers] = useState<User[]>([]);
 
   const [code, setCode] = useState('');
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [status, setStatus] = useState<ProductModuleStatus>('PLANNING');
-  const [categoryId, setCategoryId] = useState<number | ''>('');
   const [productId, setProductId] = useState<number | ''>('');
+  const [parentId, setParentId] = useState<number | ''>('');
   const [ownerUserId, setOwnerUserId] = useState<number | ''>('');
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -50,56 +54,55 @@ export function ProductModuleEditDrawer({
       setFormError(null);
       return;
     }
-    // v0.0.12.1 A2: server-side filter — open() loads Categories + Users + initial unfiltered Products.
-    void Promise.all([
-      listProductCategories({ size: 100 }),
-      listProducts({ size: 100 }),
-      listUsers({ size: 100 }),
-    ]).then(([cats, prods, us]) => {
-      setCategories(cats.content);
-      setProducts(prods.content);
-      setUsers(us.content);
-      if (editing) {
-        setOwnerUserId(editing.ownerUserId);
-        // Resolve categoryId from editing product so Category filter shows the right value.
-        void getProduct(editing.productId).then((p) => {
-          setCategoryId(p.categoryId);
-        });
-      } else {
-        const me = currentLoginName
-          ? us.content.find((u) => u.loginName === currentLoginName)
-          : undefined;
-        setOwnerUserId(me ? me.id : '');
-      }
-    });
+    void Promise.all([listProducts({ size: 100 }), listUsers({ size: 100 })]).then(
+      ([prods, us]) => {
+        setProducts(prods.content);
+        setUsers(us.content);
+        if (editing) {
+          setOwnerUserId(editing.ownerUserId);
+        } else {
+          const me = currentLoginName
+            ? us.content.find((u) => u.loginName === currentLoginName)
+            : undefined;
+          setOwnerUserId(me ? me.id : '');
+        }
+      },
+    );
     if (editing) {
       setCode(editing.code);
       setName(editing.name);
       setDescription(editing.description ?? '');
       setStatus(editing.status);
       setProductId(editing.productId);
+      setParentId(editing.parentId ?? '');
     } else {
       setCode('');
       setName('');
       setDescription('');
       setStatus('PLANNING');
-      setCategoryId('');
       setProductId('');
+      setParentId('');
+      setParentOptions([]);
     }
   }, [open, editing, currentLoginName]);
 
-  // v0.0.12.1 A2: refetch Products whenever Category filter changes (server-side filter).
+  // Refetch parent candidates whenever the product changes (server-side filter).
   useEffect(() => {
-    if (!open) return;
-    const params: { categoryId?: number; size: number } = { size: 100 };
-    if (categoryId !== '') params.categoryId = categoryId;
-    void listProducts(params).then((res) => setProducts(res.content));
-  }, [open, categoryId]);
+    if (!open || productId === '') {
+      return;
+    }
+    void listProductModules({ productId, size: 100 }).then((res) => {
+      // A module cannot be its own parent — drop self from the candidate list on edit.
+      setParentOptions(
+        editing ? res.content.filter((m) => m.id !== editing.id) : res.content,
+      );
+    });
+  }, [open, productId, editing]);
 
-  // Category is a filter helper; switching it should clear selected Product.
-  const handleCategoryChange = (next: number | '') => {
-    setCategoryId(next);
-    setProductId('');
+  const handleProductChange = (next: number | '') => {
+    setProductId(next);
+    setParentId('');
+    setParentOptions([]);
     setFormError(null);
   };
 
@@ -123,36 +126,14 @@ export function ProductModuleEditDrawer({
       />
       <div style={{ marginBottom: 12 }}>
         <label style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }}>
-          产品分类（可选 — 用于过滤产品下拉）
-        </label>
-        <select
-          className="rainier-treeselect-trigger"
-          value={categoryId}
-          onChange={(e) =>
-            handleCategoryChange(e.target.value === '' ? '' : Number(e.target.value))
-          }
-          disabled={editing !== null}
-          data-testid="product-module-category-select"
-        >
-          <option value="">全部分类</option>
-          {categories.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name}（{c.code}）
-            </option>
-          ))}
-        </select>
-      </div>
-      <div style={{ marginBottom: 12 }}>
-        <label style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }}>
           所属产品（创建时锁定）
         </label>
         <select
           className="rainier-treeselect-trigger"
           value={productId}
-          onChange={(e) => {
-            setProductId(e.target.value === '' ? '' : Number(e.target.value));
-            setFormError(null);
-          }}
+          onChange={(e) =>
+            handleProductChange(e.target.value === '' ? '' : Number(e.target.value))
+          }
           disabled={editing !== null}
           data-testid="product-module-product-select"
         >
@@ -160,6 +141,27 @@ export function ProductModuleEditDrawer({
           {products.map((p) => (
             <option key={p.id} value={p.id}>
               {p.name}（{p.code}）
+            </option>
+          ))}
+        </select>
+      </div>
+      <div style={{ marginBottom: 12 }}>
+        <label style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }}>
+          父级模块（可选 — 留空为顶层；可改 = 调整层级）
+        </label>
+        <select
+          className="rainier-treeselect-trigger"
+          value={parentId}
+          onChange={(e) => {
+            setParentId(e.target.value === '' ? '' : Number(e.target.value));
+            setFormError(null);
+          }}
+          data-testid="product-module-parent-select"
+        >
+          <option value="">顶层模块（无父级）</option>
+          {parentOptions.map((m) => (
+            <option key={m.id} value={m.id} title={m.pathName ?? m.name}>
+              {m.pathName ?? m.name}（{m.code}）
             </option>
           ))}
         </select>
@@ -237,6 +239,7 @@ export function ProductModuleEditDrawer({
                 name,
                 description: description || undefined,
                 status,
+                parentId: parentId === '' ? undefined : parentId,
                 ownerUserId,
               });
             } else {
@@ -246,6 +249,7 @@ export function ProductModuleEditDrawer({
                 description: description || undefined,
                 status,
                 productId: productId as number,
+                parentId: parentId === '' ? undefined : parentId,
                 ownerUserId,
               });
             }

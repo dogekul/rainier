@@ -43,10 +43,8 @@ public class ProductController {
 
   @GetMapping
   public PageResponse<ProductDetail> list(
-      @RequestParam(required = false) Long categoryId,
-      @RequestParam(required = false) String status,
-      PageParams page) {
-    return service.list(categoryId, status, page);
+      @RequestParam(required = false) String status, PageParams page) {
+    return service.list(status, page);
   }
 
   @PutMapping("/{id}")

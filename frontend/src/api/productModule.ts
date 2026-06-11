@@ -12,6 +12,13 @@ export interface ProductModule {
   productId: number;
   productCode?: string | null;
   productName?: string | null;
+  /** v0.0.13: self-FK tree — null means top-level. */
+  parentId?: number | null;
+  parentCode?: string | null;
+  parentName?: string | null;
+  /** Ancestor chain joined root-first, e.g. "钱包 / 余额". */
+  pathName?: string | null;
+  pathCodes?: string | null;
   ownerUserId: number;
   ownerName?: string | null;
   ownerLoginName?: string | null;
@@ -27,6 +34,7 @@ export interface ProductModuleCreate {
   description?: string;
   status?: ProductModuleStatus;
   productId: number;
+  parentId?: number;
   ownerUserId: number;
 }
 
@@ -35,11 +43,14 @@ export interface ProductModuleUpdate {
   name: string;
   description?: string;
   status: ProductModuleStatus;
+  /** Full-replace semantics: omit/null moves the module to top level. */
+  parentId?: number | null;
   ownerUserId: number;
 }
 
 export interface ProductModuleListParams {
   productId?: number;
+  parentId?: number;
   status?: ProductModuleStatus;
   search?: string;
   page?: number;

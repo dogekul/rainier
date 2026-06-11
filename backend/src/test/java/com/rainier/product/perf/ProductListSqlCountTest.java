@@ -9,9 +9,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.rainier.product.domain.Product;
 import com.rainier.product.domain.ProductStatus;
 import com.rainier.product.repository.ProductRepository;
-import com.rainier.productcategory.domain.ProductCategory;
-import com.rainier.productcategory.domain.ProductCategoryStatus;
-import com.rainier.productcategory.repository.ProductCategoryRepository;
 import com.rainier.user.domain.User;
 import com.rainier.user.repository.UserRepository;
 import javax.persistence.EntityManagerFactory;
@@ -26,7 +23,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
-/** TC-PERF-PROD-001: 2 page + 1 user + 1 category = 4. */
+/** TC-PERF-PROD-001 (v0.0.13): 2 page + 1 user batch = 3 (category enrich removed). */
 @SpringBootTest(properties = {"spring.jpa.properties.hibernate.generate_statistics=true"})
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
@@ -35,14 +32,12 @@ class ProductListSqlCountTest {
   @Autowired private MockMvc mockMvc;
   @Autowired private EntityManagerFactory emf;
   @Autowired private ProductRepository repo;
-  @Autowired private ProductCategoryRepository categoryRepo;
   @Autowired private UserRepository userRepo;
 
   @BeforeEach
   @Transactional
   void seed() {
     repo.deleteAll();
-    categoryRepo.deleteAll();
     userRepo.deleteAll();
     Long[] uids = new Long[4];
     for (int i = 0; i < 4; i++) {
@@ -53,21 +48,11 @@ class ProductListSqlCountTest {
       u.setEnabled(true);
       uids[i] = userRepo.saveAndFlush(u).getId();
     }
-    Long[] cids = new Long[4];
-    for (int i = 0; i < 4; i++) {
-      ProductCategory c = new ProductCategory();
-      c.setCode("CAT-PROD-PERF-" + i);
-      c.setName("Cat " + i);
-      c.setStatus(ProductCategoryStatus.ACTIVE);
-      c.setOwnerUserId(uids[i % 4]);
-      cids[i] = categoryRepo.saveAndFlush(c).getId();
-    }
     for (int i = 0; i < 20; i++) {
       Product p = new Product();
       p.setCode("PROD-PERF-" + i);
       p.setName("P " + i);
       p.setStatus(ProductStatus.PLANNING);
-      p.setCategoryId(cids[i % 4]);
       p.setOwnerUserId(uids[i % 4]);
       repo.saveAndFlush(p);
     }
@@ -82,8 +67,12 @@ class ProductListSqlCountTest {
         .perform(get("/api/products?page=0&size=20"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.total").value(20))
-        .andExpect(jsonPath("$.content[0].categoryName").exists());
+        .andExpect(jsonPath("$.content[0].ownerName").exists());
     long n = stats.getPrepareStatementCount();
-    assertTrue(n >= 4L && n <= 5L, "expected 4..5 statements, got " + n);
+    // v0.0.13 budget: page select + count + user batch = 3 (≥2 guards against stats-off false
+    // green; ≤4 leaves one statement of headroom — 陷阱 G range assert).
+    long min = 2L;
+    long max = 4L;
+    assertTrue(n >= min && n <= max, "expected " + min + ".." + max + " statements, got " + n);
   }
 }

@@ -5,7 +5,13 @@ import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 
-/** {@code productId} omitted — immutable after creation; Jackson silently drops it. */
+/**
+ * {@code productId} omitted — immutable after creation; Jackson silently drops it.
+ *
+ * <p>{@code parentId} included since v0.0.13 — full-replace semantics: null (or omitted) moves the
+ * module to top level; non-null reparents under strict validation (same product → no cycle →
+ * depth cap).
+ */
 public class ProductModuleUpdateRequest {
 
   @NotBlank
@@ -23,7 +29,17 @@ public class ProductModuleUpdateRequest {
   @Size(max = 16)
   private String status;
 
+  private Long parentId;
+
   @NotNull private Long ownerUserId;
+
+  public Long getParentId() {
+    return parentId;
+  }
+
+  public void setParentId(Long parentId) {
+    this.parentId = parentId;
+  }
 
   public String getCode() {
     return code;
