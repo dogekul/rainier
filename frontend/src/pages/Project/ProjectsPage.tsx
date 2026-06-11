@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
@@ -13,6 +13,7 @@ import {
   updateProject,
   type Project,
   type ProjectStatus,
+  type ProjectType,
 } from '../../api/project';
 import { listUsers, type User } from '../../api/user';
 import { useAuthStore } from '../../store/auth';
@@ -26,13 +27,36 @@ const STATUS_OPTIONS: ProjectStatus[] = [
   'ARCHIVED',
 ];
 
+const PROJECT_TYPE_OPTIONS: ProjectType[] = ['CASUAL', 'FORMAL'];
+const PROJECT_TYPE_LABELS: Record<ProjectType, string> = {
+  CASUAL: '轻量',
+  FORMAL: '正式',
+};
+
 export function ProjectsPage() {
+  // v0.0.16 — type filter is folded into the fetcher closure; usePaginated only auto-refetches on
+  // page/size/search, so a dedicated effect re-queries when the filter changes.
+  const [typeFilter, setTypeFilter] = useState<ProjectType | ''>('');
   const fetcher = useCallback(
     async ({ page, size, search }: { page: number; size: number; search: string }) =>
-      listProjects({ page, size, search: search || undefined }),
-    [],
+      listProjects({
+        page,
+        size,
+        search: search || undefined,
+        projectType: typeFilter || undefined,
+      }),
+    [typeFilter],
   );
   const list = usePaginated<Project>(fetcher, { initialSize: 20 });
+  const typeFilterMounted = useRef(false);
+  useEffect(() => {
+    if (!typeFilterMounted.current) {
+      typeFilterMounted.current = true;
+      return;
+    }
+    void list.refetch();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [typeFilter]);
   const currentLoginName = useAuthStore((s) => s.user?.username ?? null);
 
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -44,6 +68,7 @@ export function ProjectsPage() {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [status, setStatus] = useState<ProjectStatus>('PLANNING');
+  const [projectType, setProjectType] = useState<ProjectType>('CASUAL');
   const [ownerUserId, setOwnerUserId] = useState<number | ''>('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
@@ -74,6 +99,7 @@ export function ProjectsPage() {
       setName(editing.name);
       setDescription(editing.description ?? '');
       setStatus(editing.status);
+      setProjectType(editing.projectType);
       setStartDate(editing.startDate ?? '');
       setEndDate(editing.endDate ?? '');
       setEnabled(editing.enabled);
@@ -82,6 +108,7 @@ export function ProjectsPage() {
       setName('');
       setDescription('');
       setStatus('PLANNING');
+      setProjectType('CASUAL');
       setStartDate('');
       setEndDate('');
       setEnabled(true);
@@ -92,6 +119,11 @@ export function ProjectsPage() {
     { key: 'code', title: '编码', render: (r) => r.code },
     { key: 'name', title: '名称', render: (r) => r.name },
     { key: 'status', title: '状态', render: (r) => r.status },
+    {
+      key: 'projectType',
+      title: '类型',
+      render: (r) => PROJECT_TYPE_LABELS[r.projectType] ?? r.projectType,
+    },
     {
       key: 'owner',
       title: '负责人',
@@ -136,6 +168,21 @@ export function ProjectsPage() {
         >
           新建项目
         </Button>
+        <select
+          className="rainier-treeselect-trigger"
+          style={{ maxWidth: 160 }}
+          value={typeFilter}
+          onChange={(e) => setTypeFilter(e.target.value as ProjectType | '')}
+          data-testid="projects-type-filter"
+          aria-label="类型过滤"
+        >
+          <option value="">全部类型</option>
+          {PROJECT_TYPE_OPTIONS.map((t) => (
+            <option key={t} value={t}>
+              {PROJECT_TYPE_LABELS[t]}
+            </option>
+          ))}
+        </select>
       </div>
       <Table<Project> columns={columns} dataSource={list.items} rowKey="id" />
       <Pagination
@@ -172,6 +219,21 @@ export function ProjectsPage() {
             {STATUS_OPTIONS.map((s) => (
               <option key={s} value={s}>
                 {s}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div style={{ marginBottom: 12 }}>
+          <label style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }}>项目类型</label>
+          <select
+            className="rainier-treeselect-trigger"
+            value={projectType}
+            onChange={(e) => setProjectType(e.target.value as ProjectType)}
+            data-testid="projects-type-select"
+          >
+            {PROJECT_TYPE_OPTIONS.map((t) => (
+              <option key={t} value={t}>
+                {PROJECT_TYPE_LABELS[t]}
               </option>
             ))}
           </select>
@@ -252,6 +314,7 @@ export function ProjectsPage() {
                   // round-trips to the backend as a clear instead of being preserved.
                   description,
                   status,
+                  projectType,
                   ownerUserId,
                   startDate: startDate || undefined,
                   endDate: endDate || undefined,
@@ -263,6 +326,7 @@ export function ProjectsPage() {
                   name,
                   description: description || undefined,
                   status,
+                  projectType,
                   ownerUserId,
                   startDate: startDate || undefined,
                   endDate: endDate || undefined,

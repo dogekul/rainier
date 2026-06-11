@@ -29,6 +29,10 @@ public class ProjectUpdateRequest {
   private LocalDate endDate;
   private Boolean enabled;
 
+  /** v0.0.16 — optional on update; absent/null → preserve current value (no silent downgrade). */
+  @Size(max = 16)
+  private String projectType;
+
   public String getName() {
     return name;
   }
@@ -83,5 +87,13 @@ public class ProjectUpdateRequest {
 
   public void setEnabled(Boolean enabled) {
     this.enabled = enabled;
+  }
+
+  public String getProjectType() {
+    return projectType;
+  }
+
+  public void setProjectType(String projectType) {
+    this.projectType = projectType;
   }
 }

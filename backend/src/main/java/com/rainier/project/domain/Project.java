@@ -54,6 +54,14 @@ public class Project extends BaseEntity {
   @Column(nullable = false)
   private Boolean enabled = Boolean.TRUE;
 
+  /**
+   * v0.0.16 — extensible project type (CASUAL/FORMAL seed; see {@link ProjectType}). Nullable column
+   * (so the ALTER is safe on existing MySQL rows); legacy NULLs are backfilled to CASUAL by {@code
+   * ProjectTypeBackfill} at startup and read-coalesced in {@code ProjectDetail.from}.
+   */
+  @Column(name = "project_type", length = 16)
+  private String projectType;
+
   public String getCode() {
     return code;
   }
@@ -116,5 +124,13 @@ public class Project extends BaseEntity {
 
   public void setEnabled(Boolean enabled) {
     this.enabled = enabled;
+  }
+
+  public String getProjectType() {
+    return projectType;
+  }
+
+  public void setProjectType(String projectType) {
+    this.projectType = projectType;
   }
 }

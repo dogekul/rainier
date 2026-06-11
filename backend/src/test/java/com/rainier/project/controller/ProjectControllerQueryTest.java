@@ -99,6 +99,7 @@ class ProjectControllerQueryTest {
       "startDate",
       "endDate",
       "enabled",
+      "projectType",
       "createTime",
       "updateTime",
       "createBy",

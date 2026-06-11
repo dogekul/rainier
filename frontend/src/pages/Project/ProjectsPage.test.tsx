@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { ProjectsPage } from './ProjectsPage';
 import { useAuthStore } from '../../store/auth';
@@ -85,6 +85,7 @@ describe('ProjectsPage', () => {
           name: 'X',
           description: null,
           status: 'PLANNING',
+          projectType: 'CASUAL',
           ownerUserId: 1,
           ownerName: 'Alice',
           ownerLoginName: 'alice',
@@ -117,5 +118,96 @@ describe('ProjectsPage', () => {
     const args = (updateProject as ReturnType<typeof vi.fn>).mock.calls[0];
     expect(args[0]).toBe(7);
     expect(args[1].ownerUserId).toBe(2);
+  });
+
+  /** TC-FES-PROJTYPE-001: 新建抽屉含项目类型下拉且默认轻量(CASUAL). */
+  it('new drawer has a project-type select defaulting to 轻量 (TC-FES-PROJTYPE-001)', async () => {
+    render(<ProjectsPage />);
+    fireEvent.click(screen.getByTestId('projects-new-btn'));
+    await waitFor(() => {
+      expect(screen.getByTestId('projects-type-select')).toBeInTheDocument();
+    });
+    const typeSelect = screen.getByTestId('projects-type-select') as HTMLSelectElement;
+    expect(typeSelect.value).toBe('CASUAL');
+    // Options scoped to this select (轻量/正式 also appear in the toolbar filter).
+    expect(within(typeSelect).getByText('轻量')).toBeInTheDocument();
+    expect(within(typeSelect).getByText('正式')).toBeInTheDocument();
+  });
+
+  /** TC-FES-PROJTYPE-002: 表格类型列显示中文. */
+  it('renders the type column with a Chinese label (TC-FES-PROJTYPE-002)', async () => {
+    const { listProjects } = await import('../../api/project');
+    (listProjects as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      content: [
+        {
+          id: 11,
+          code: 'PROJ-FORMAL',
+          name: '正式项目',
+          description: null,
+          status: 'ACTIVE',
+          projectType: 'FORMAL',
+          ownerUserId: 1,
+          ownerName: 'Alice',
+          ownerLoginName: 'alice',
+          startDate: null,
+          endDate: null,
+          enabled: true,
+        },
+      ],
+      total: 1,
+      page: 0,
+      size: 20,
+    });
+    render(<ProjectsPage />);
+    await waitFor(() => {
+      expect(screen.getByText('PROJ-FORMAL')).toBeInTheDocument();
+    });
+    // Column header present.
+    expect(screen.getByText('类型')).toBeInTheDocument();
+    // The row's type cell shows 正式 (scope to the row so the toolbar filter option doesn't match).
+    const row = screen.getByText('PROJ-FORMAL').closest('tr') as HTMLElement;
+    expect(within(row).getByText('正式')).toBeInTheDocument();
+  });
+
+  /** TC-FES-PROJTYPE-003: 类型过滤触发带 projectType 的查询. */
+  it('type filter triggers a query carrying projectType (TC-FES-PROJTYPE-003)', async () => {
+    const { listProjects } = await import('../../api/project');
+    render(<ProjectsPage />);
+    // Let the initial mount fetch settle, then attribute the next call to the filter change.
+    await waitFor(() => {
+      expect(listProjects).toHaveBeenCalled();
+    });
+    (listProjects as ReturnType<typeof vi.fn>).mockClear();
+    fireEvent.change(screen.getByTestId('projects-type-filter'), {
+      target: { value: 'FORMAL' },
+    });
+    await waitFor(() => {
+      expect(listProjects).toHaveBeenCalledWith(
+        expect.objectContaining({ projectType: 'FORMAL' }),
+      );
+    });
+  });
+
+  /** TC-FES-PROJTYPE-004: 提交携带 projectType. */
+  it('submits createProject carrying the chosen projectType (TC-FES-PROJTYPE-004)', async () => {
+    const { createProject } = await import('../../api/project');
+    (createProject as ReturnType<typeof vi.fn>).mockClear();
+    render(<ProjectsPage />);
+    fireEvent.click(screen.getByTestId('projects-new-btn'));
+    await waitFor(() => {
+      expect(screen.getByTestId('projects-type-select')).toBeInTheDocument();
+    });
+    // Owner auto-defaults to the logged-in user (alice → id 1), so only type + text fields remain.
+    fireEvent.change(screen.getByLabelText(/编码/), { target: { value: 'PROJ-NEW' } });
+    fireEvent.change(screen.getByLabelText(/^名称/), { target: { value: 'X' } });
+    fireEvent.change(screen.getByTestId('projects-type-select'), {
+      target: { value: 'FORMAL' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: '保存' }));
+    await waitFor(() => {
+      expect(createProject).toHaveBeenCalledWith(
+        expect.objectContaining({ projectType: 'FORMAL' }),
+      );
+    });
   });
 });

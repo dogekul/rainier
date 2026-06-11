@@ -8,6 +8,7 @@ import com.rainier.common.web.PageParams;
 import com.rainier.common.web.PageResponse;
 import com.rainier.project.domain.Project;
 import com.rainier.project.domain.ProjectStatus;
+import com.rainier.project.domain.ProjectType;
 import com.rainier.project.dto.ProjectCreateRequest;
 import com.rainier.project.dto.ProjectDetail;
 import com.rainier.project.dto.ProjectUpdateRequest;
@@ -69,6 +70,10 @@ public class ProjectService {
     if (!ProjectStatus.ALL.contains(status)) {
       throw new BadRequestException("invalid status: " + status);
     }
+    String projectType = req.getProjectType() == null ? ProjectType.CASUAL : req.getProjectType();
+    if (!ProjectType.ALL.contains(projectType)) {
+      throw new BadRequestException("invalid project type: " + projectType);
+    }
     Project p = new Project();
     p.setCode(req.getCode());
     p.setName(req.getName());
@@ -78,6 +83,7 @@ public class ProjectService {
     p.setStartDate(req.getStartDate());
     p.setEndDate(req.getEndDate());
     p.setEnabled(req.getEnabled() == null ? Boolean.TRUE : req.getEnabled());
+    p.setProjectType(projectType);
     return enrich(repo.saveAndFlush(p));
   }
 
@@ -85,12 +91,16 @@ public class ProjectService {
     return enrich(getOrThrow(id));
   }
 
-  public PageResponse<ProjectDetail> list(String status, Boolean enabled, PageParams page) {
+  public PageResponse<ProjectDetail> list(
+      String status, String projectType, Boolean enabled, PageParams page) {
     Specification<Project> spec =
         (root, query, cb) -> {
           javax.persistence.criteria.Predicate p = cb.conjunction();
           if (status != null) {
             p = cb.and(p, cb.equal(root.get("status"), status));
+          }
+          if (projectType != null) {
+            p = cb.and(p, cb.equal(root.get("projectType"), projectType));
           }
           if (enabled != null) {
             p = cb.and(p, cb.equal(root.get("enabled"), enabled));
@@ -123,6 +133,13 @@ public class ProjectService {
     if (!ProjectStatus.ALL.contains(req.getStatus())) {
       throw new BadRequestException("invalid status: " + req.getStatus());
     }
+    // v0.0.16: projectType is the 轻量→正式 conversion lever — validate membership up front (mirrors
+    // how status is validated early, set late). Absent/null → preserve the current value (a partial
+    // payload must NOT silently downgrade a FORMAL project to CASUAL). No approval / no completeness
+    // gate (A2 narrowed). The actual write happens below with the other field setters.
+    if (req.getProjectType() != null && !ProjectType.ALL.contains(req.getProjectType())) {
+      throw new BadRequestException("invalid project type: " + req.getProjectType());
+    }
     if (!req.getOwnerUserId().equals(p.getOwnerUserId())) {
       if (!userRepo.existsById(req.getOwnerUserId())) {
         throw new BadRequestException("owner user not found: id=" + req.getOwnerUserId());
@@ -135,6 +152,9 @@ public class ProjectService {
     // field; omitted-as-null also clears. Resolves Code-M3 / Code-M6 (clear-description path).
     p.setDescription(req.getDescription());
     p.setStatus(req.getStatus());
+    if (req.getProjectType() != null) {
+      p.setProjectType(req.getProjectType());
+    }
     p.setStartDate(req.getStartDate());
     p.setEndDate(req.getEndDate());
     // enabled stays null-guarded — DB column is NOT NULL bit(1); silently swallowing a malformed

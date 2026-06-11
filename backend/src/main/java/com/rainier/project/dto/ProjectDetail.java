@@ -2,6 +2,7 @@
 package com.rainier.project.dto;
 
 import com.rainier.project.domain.Project;
+import com.rainier.project.domain.ProjectType;
 import java.time.Instant;
 import java.time.LocalDate;
 
@@ -21,6 +22,9 @@ public class ProjectDetail {
   private LocalDate startDate;
   private LocalDate endDate;
   private Boolean enabled;
+  /** v0.0.16 — read-coalesced: a legacy NULL column surfaces as CASUAL (defends pre-backfill reads). */
+  private String projectType;
+
   private Instant createTime;
   private Instant updateTime;
   private String createBy;
@@ -37,6 +41,7 @@ public class ProjectDetail {
     dto.startDate = p.getStartDate();
     dto.endDate = p.getEndDate();
     dto.enabled = p.getEnabled();
+    dto.projectType = p.getProjectType() == null ? ProjectType.CASUAL : p.getProjectType();
     dto.createTime = p.getCreateTime();
     dto.updateTime = p.getUpdateTime();
     dto.createBy = p.getCreateBy();
@@ -94,6 +99,10 @@ public class ProjectDetail {
 
   public Boolean getEnabled() {
     return enabled;
+  }
+
+  public String getProjectType() {
+    return projectType;
   }
 
   public Instant getCreateTime() {

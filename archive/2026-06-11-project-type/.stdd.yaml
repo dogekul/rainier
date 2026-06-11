@@ -1,0 +1,161 @@
+change:
+  id: 2026-06-11-project-type
+  title: v0.0.16-project-type — Project gains extensible projectType field (A2 narrowed)
+  baseline:
+    commit: e6b0878
+    tag: v0.0.15-audit-log
+  type: entity-field-add
+  parent_change: 2026-06-11-audit-log
+  source: A-角色意图卡片.md §2.3 (项目规模分级 + 轻量→正式转化), gap item A2 (narrowed)
+
+phase:
+  current: archived
+  archived_at: '2026-06-12'
+  understand:
+    status: completed
+    confirmed_at: '2026-06-11'
+    artifact: proposal.md
+    gate1_decisions:
+      d1_enum_names: CASUAL_FORMAL          # display 轻量/正式
+      d2_column: nullable_backfill_coalesce # nullable col + bootstrap backfill CASUAL + read null→CASUAL
+      d3_create_optional: true               # omit → default CASUAL (same as status PLANNING default)
+  spec:
+    status: completed
+    confirmed_at: '2026-06-12'
+    artifacts:
+      - design.md
+      - specs/entity-project/spec.md
+      - specs/frontend-scaffold/spec.md
+      - test-plan.md
+    metrics:
+      capabilities: 2
+      requirements: 8
+      scenarios: 14
+      tc_cases: 15
+      p0: 15
+      p1: 0
+      p2: 0
+    gate2_decisions:
+      d4_update_omit_preserves: true        # update projectType absent → preserve (no silent downgrade)
+      d5_conversion_is_plain_update: true   # no promote endpoint / no approval / no completeness gate
+      d7_backfill_plus_read_coalesce: true  # ProjectTypeBackfill runner + ProjectDetail.from null→CASUAL
+      d8_frontend_chinese_labels: true      # 类型列/下拉 中文 轻量/正式 + new type filter dropdown
+  slice:
+    status: completed
+    completed_at: '2026-06-12'
+    artifacts:
+      - slices.md
+      - tasks.md
+    metrics:
+      slices: 8          # P01-P08
+      backend_slices: 5  # P01-P05
+      frontend_slices: 2 # P06-P07
+      e2e_slices: 1      # P08
+  build:
+    status: completed
+    completed_at: '2026-06-12'
+    metrics:
+      backend_tests: 320    # 309 baseline + 11 new (controller 8 + backfill 1 + dto 2)
+      frontend_tests: 62    # 58 baseline + 4 new (ProjectsPage type select/column/filter/submit)
+      e2e_status: green     # 18 tables, column added nullable, 3 rows backfilled CASUAL, conversion+preserve+filter+audit, existing data intact
+    notable_adjustments:
+      - 'PA-1: existing detail field-set test is presence-loop not exact-equality → 🟡→🟢; still appended projectType.'
+      - 'PA-2: type filter needs dedicated refetch effect (usePaginated does not watch fetcher identity).'
+  verify:
+    status: completed
+    completed_at: '2026-06-12'
+    confirmed_at: '2026-06-12'        # Gate 3 pre-confirmed by user directive
+    artifacts:
+      - test-report.md
+      - design-adjustments.md
+      - pending-adjustments.md
+    metrics:
+      backend_tests_total: 320
+      frontend_tests_total: 62
+      review_round1:
+        critical: 0
+        high: 0
+        medium: 2
+        low: 8
+      review_post_fix:
+        critical: 0
+        high: 0
+        medium: 0    # Code-M1 + Docs-M1 fixed; remaining low are intentional pattern-matches
+      scenario_coverage_percent: 100
+      failure_modes_hits: 0
+      e2e_status: green
+  deliver:
+    status: completed
+    completed_at: '2026-06-12'
+    tag: v0.0.16-project-type
+    pushed: true
+    artifacts:
+      - archive/2026-06-11-project-type/        # full change record archived
+      - specs/entity-project/spec.md            # MOD — 5 ADDED Requirements + field-set + changelog
+      - specs/frontend-scaffold/spec.md         # MOD — 3 ADDED Requirements + changelog
+    spec_merge:
+      new_capabilities: 0
+      modified_capabilities: 2   # entity-project + frontend-scaffold
+    metrics:
+      backend_tests_total: 320
+      frontend_tests_total: 62
+      tables: 18                 # no new table (rainier_project +1 column)
+      e2e_status: green
+
+long_range:
+  enabled: true
+  mode: full_auto
+  pre_auth_completed: true
+  pre_auth_timestamp: '2026-06-12'
+  pre_auth:
+    decisions:
+      design_deviation:
+        minor: auto_record
+        major: auto_record_continue
+      technical_blocker: workaround
+      iteration:
+        max_rounds: 10
+      git_ops: allow_including_push          # v0.0.16: user explicitly authorized push this round
+    operations:
+      directory: allow
+      file_write: allow
+      command: allow
+      script: allow
+      network: allow
+      file_read: allow
+      git_readonly: allow
+    gates:
+      gate_3: pre_confirmed                  # user said "这一轮stdd全部通过 完成后直接deliver然后push"
+  user_directive: '确认进行全自动长程模式，这一轮stdd全部通过 完成后直接deliver然后push'
+
+scope:
+  type: entity-field-add
+  capabilities_new: []
+  capabilities_modified:
+    - entity-project          # Project.projectType + create/update/list/detail + enum validate + backfill
+    - frontend-scaffold       # ProjectsPage type select + type column + filter (no new page/route/Sider group)
+  new_tables: 0               # rainier_project gains 1 column only
+  design_decisions_pre_locked:
+    field_name: projectType
+    enum_values_initial: [CASUAL, FORMAL]   # extensible — future values for other uses
+    default_value: CASUAL
+    conversion_model: plain_update          # light→formal = update projectType; no promote endpoint
+    approval: none                          # A2 narrowed — no approval workflow
+    completeness_gate: none                 # 暂不校验 — only enum-membership validation
+    column_constraint: nullable             # D2 — safe ALTER on existing MySQL rows
+    backfill: bootstrap_runner_casual       # ProjectTypeBackfill, mirrors DanglingProjectIdCleanup
+    read_coalesce_null_to_casual: true
+  explicitly_excluded:
+    - formal_content_fields_risk_scope      # 风险评估 / 范围声明
+    - milestone_B4
+    - completeness_validation_gate
+    - team_lead_approval_workflow
+    - process_ai_audit_intensity_differentiation
+    - create_permission_gating              # 谁能创建正式项目
+
+baseline_metrics:
+  backend_tests: 309
+  frontend_tests: 58
+  tables: 18
+
+standing_constraint: 测试和修复不删改已有业务数据; projectType 对存量项目回填 CASUAL, 不动其它字段; E2E 验证存量不变.

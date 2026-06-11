@@ -32,6 +32,10 @@ public class ProjectCreateRequest {
   private LocalDate endDate;
   private Boolean enabled;
 
+  /** v0.0.16 — optional; omitted → defaults to CASUAL in the service. */
+  @Size(max = 16)
+  private String projectType;
+
   public String getCode() {
     return code;
   }
@@ -94,5 +98,13 @@ public class ProjectCreateRequest {
 
   public void setEnabled(Boolean enabled) {
     this.enabled = enabled;
+  }
+
+  public String getProjectType() {
+    return projectType;
+  }
+
+  public void setProjectType(String projectType) {
+    this.projectType = projectType;
   }
 }

@@ -8,12 +8,17 @@ export type ProjectStatus =
   | 'DELIVERED'
   | 'ARCHIVED';
 
+/** v0.0.16 — extensible project type; seeded with 轻量(CASUAL)/正式(FORMAL). */
+export type ProjectType = 'CASUAL' | 'FORMAL';
+
 export interface Project {
   id: number;
   code: string;
   name: string;
   description?: string | null;
   status: ProjectStatus;
+  /** v0.0.16 — backend read-coalesces a legacy NULL to CASUAL, so this is always set. */
+  projectType: ProjectType;
   ownerUserId: number;
   /** v0.0.8 enrichment — backend join with User. */
   ownerName?: string | null;
@@ -32,6 +37,8 @@ export interface ProjectCreate {
   name: string;
   description?: string;
   status?: ProjectStatus;
+  /** v0.0.16 — optional; omitted → backend defaults to CASUAL. */
+  projectType?: ProjectType;
   ownerUserId: number;
   startDate?: string;
   endDate?: string;
@@ -42,6 +49,8 @@ export interface ProjectUpdate {
   name: string;
   description?: string;
   status: ProjectStatus;
+  /** v0.0.16 — set to convert 轻量↔正式; omitted → backend preserves current value. */
+  projectType?: ProjectType;
   /** v0.0.8: owner IS mutable (admin can transfer ownership). */
   ownerUserId: number;
   startDate?: string;
@@ -51,6 +60,7 @@ export interface ProjectUpdate {
 
 export interface ProjectListParams {
   status?: ProjectStatus;
+  projectType?: ProjectType;
   enabled?: boolean;
   search?: string;
   page?: number;

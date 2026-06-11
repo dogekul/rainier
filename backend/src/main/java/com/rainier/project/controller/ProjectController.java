@@ -45,9 +45,10 @@ public class ProjectController {
   @GetMapping
   public PageResponse<ProjectDetail> list(
       @RequestParam(required = false) String status,
+      @RequestParam(required = false) String projectType,
       @RequestParam(required = false) Boolean enabled,
       @Valid PageParams page) {
-    return service.list(status, enabled, page);
+    return service.list(status, projectType, enabled, page);
   }
 
   @PutMapping("/{id}")
