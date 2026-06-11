@@ -28,6 +28,9 @@ public class SprintCreateRequest {
 
   @NotNull private Long requirementId;
 
+  /** Optional — pre-binds the sprint's product at creation; otherwise established on first link. */
+  private Long productId;
+
   @NotNull private Long ownerUserId;
 
   private LocalDate startDate;
@@ -79,6 +82,14 @@ public class SprintCreateRequest {
 
   public void setRequirementId(Long requirementId) {
     this.requirementId = requirementId;
+  }
+
+  public Long getProductId() {
+    return productId;
+  }
+
+  public void setProductId(Long productId) {
+    this.productId = productId;
   }
 
   public Long getOwnerUserId() {

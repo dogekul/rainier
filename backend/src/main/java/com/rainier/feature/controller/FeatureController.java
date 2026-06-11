@@ -7,7 +7,10 @@ import com.rainier.feature.dto.FeatureCreateRequest;
 import com.rainier.feature.dto.FeatureDetail;
 import com.rainier.feature.dto.FeatureUpdateRequest;
 import com.rainier.feature.service.FeatureService;
+import com.rainier.sprintfeature.dto.FeatureSprintView;
+import com.rainier.sprintfeature.service.SprintFeatureLinkService;
 import java.net.URI;
+import java.util.List;
 import javax.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -25,9 +28,11 @@ import org.springframework.web.bind.annotation.RestController;
 public class FeatureController {
 
   private final FeatureService service;
+  private final SprintFeatureLinkService linkService;
 
-  public FeatureController(FeatureService service) {
+  public FeatureController(FeatureService service, SprintFeatureLinkService linkService) {
     this.service = service;
+    this.linkService = linkService;
   }
 
   @PostMapping
@@ -39,6 +44,12 @@ public class FeatureController {
   @GetMapping("/{id}")
   public FeatureDetail get(@PathVariable Long id) {
     return service.findById(id);
+  }
+
+  /** v0.0.14: sprints (iterations) this feature is linked into. */
+  @GetMapping("/{id}/sprints")
+  public List<FeatureSprintView> sprints(@PathVariable Long id) {
+    return linkService.findSprintsByFeature(id);
   }
 
   @GetMapping

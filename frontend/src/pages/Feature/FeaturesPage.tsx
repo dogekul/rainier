@@ -13,6 +13,7 @@ import {
 } from '../../api/feature';
 import { usePaginated } from '../../hooks/usePaginated';
 import { FeatureEditDrawer } from './FeatureEditDrawer';
+import { FeatureSprintsPanel } from './FeatureSprintsPanel';
 
 export function FeaturesPage() {
   const fetcher = useCallback(
@@ -25,6 +26,7 @@ export function FeaturesPage() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [editing, setEditing] = useState<Feature | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<Feature | null>(null);
+  const [sprintsPanelFor, setSprintsPanelFor] = useState<number | null>(null);
 
   const columns: TableColumn<Feature>[] = [
     { key: 'code', title: '编码', render: (f) => f.code },
@@ -57,6 +59,14 @@ export function FeaturesPage() {
           >
             编辑
           </Button>{' '}
+          <Button
+            type="button"
+            variant="secondary"
+            data-testid={`feature-sprints-toggle-${f.id}`}
+            onClick={() => setSprintsPanelFor((cur) => (cur === f.id ? null : f.id))}
+          >
+            所在迭代
+          </Button>{' '}
           <Button type="button" variant="secondary" onClick={() => setConfirmDelete(f)}>
             删除
           </Button>
@@ -80,6 +90,9 @@ export function FeaturesPage() {
         </Button>
       </div>
       <Table<Feature> columns={columns} dataSource={list.items} rowKey="id" />
+      {sprintsPanelFor != null && (
+        <FeatureSprintsPanel key={sprintsPanelFor} featureId={sprintsPanelFor} />
+      )}
       <Pagination
         page={list.page}
         size={list.size}

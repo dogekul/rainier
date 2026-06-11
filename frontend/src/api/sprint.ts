@@ -16,6 +16,9 @@ export interface Sprint {
   projectId?: number | null;
   projectName?: string | null;
   projectCode?: string | null;
+  /** v0.0.14: the product this sprint iterates on (null until first feature linked). */
+  productId?: number | null;
+  productName?: string | null;
   ownerUserId: number;
   ownerName?: string | null;
   ownerLoginName?: string | null;
@@ -35,6 +38,8 @@ export interface SprintCreate {
   goal?: string;
   status?: SprintStatus;
   requirementId: number;
+  /** v0.0.14: optional create-time product pre-bind; otherwise established on first feature link. */
+  productId?: number;
   ownerUserId: number;
   startDate?: string;
   endDate?: string;

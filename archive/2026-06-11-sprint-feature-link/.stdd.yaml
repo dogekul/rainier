@@ -1,0 +1,145 @@
+change:
+  id: 2026-06-11-sprint-feature-link
+  title: v0.0.14-sprint-feature-link — bridge product & requirement domains via Sprint
+  baseline:
+    commit: 952e320
+    tag: v0.0.13-product-restructure
+  type: domain-architecture
+  parent_change: 2026-06-10-product-restructure
+
+phase:
+  current: archived
+  archived_at: '2026-06-11'
+  understand:
+    status: completed
+    confirmed_at: '2026-06-11'
+    artifact: proposal.md
+  spec:
+    status: completed
+    confirmed_at: '2026-06-11'
+    artifacts:
+      - design.md
+      - specs/entity-sprint-feature/spec.md
+      - specs/entity-sprint/spec.md
+      - specs/entity-feature/spec.md
+      - specs/entity-requirement/spec.md
+      - specs/frontend-scaffold/spec.md
+      - test-plan.md
+    metrics:
+      capabilities: 5
+      requirements: 10
+      scenarios: 24
+      tc_cases: 28
+      p0: 28
+      p1: 0
+      p2: 0
+  slice:
+    status: completed
+    completed_at: '2026-06-11'
+    artifacts:
+      - slices.md
+      - tasks.md
+    metrics:
+      slices: 10
+      p0_slices: 10
+      backend_slices: 7   # M01-M07
+      frontend_slices: 2  # M08-M09
+      e2e_slices: 1       # M10
+  build:
+    status: completed
+    completed_at: '2026-06-11'
+    metrics:
+      backend_tests: 293    # 269 baseline + 24 new (SF create 6 + delete/query 3 + SPR-PF 5 + reverse 8 + perf 2)
+      frontend_tests: 54    # 51 baseline + 3 new (SprintFeaturePanel 2 + FeatureSprintsPanel 1)
+      e2e_status: green     # 17 tables, lazy-lock, cross-product 400, 3 reverse, unbind 204, existing data untouched
+    notable_adjustments:
+      - 'PA-1: perf budget ≥4∧≤7 (was est. ≥3∧≤6) — product batch adds 1 over the 6 baseline.'
+      - 'PA-2: v0.0.13 LegacyProductCategoryCleanupTest table-count 16→17.'
+      - 'PA-3: extra TC for unknown pre-bind productId → 400.'
+      - 'PA-4: helper post()→postLink() name collision + Priority import path, fixed pre-run.'
+  verify:
+    status: completed
+    completed_at: '2026-06-11'
+    artifacts:
+      - test-report.md
+      - design-adjustments.md
+      - pending-adjustments.md
+    metrics:
+      backend_tests_total: 293
+      frontend_tests_total: 54
+      review_round0_aggregate_initial:
+        critical: 0
+        high: 1
+        medium: 10
+      review_round0_aggregate_post_fix:
+        critical: 0
+        high: 0
+        medium: 4
+      scenario_coverage_percent: 100   # 28/28 P0
+      e2e_status: green
+  deliver:
+    status: completed
+    completed_at: '2026-06-11'
+    artifacts:
+      - archive/2026-06-11-sprint-feature-link/
+      - specs/entity-sprint-feature/spec.md       # NEW
+      - specs/entity-sprint/spec.md               # MOD — productId + features 反查
+      - specs/entity-feature/spec.md              # MOD — sprints 反查
+      - specs/entity-requirement/spec.md          # MOD — features 2-hop 反查
+      - specs/frontend-scaffold/spec.md           # MOD — Sprint 关联功能面板 + Feature 所在迭代
+    tag: v0.0.14-sprint-feature-link
+
+long_range:
+  enabled: true
+  mode: full_auto
+  pre_auth_completed: true
+  pre_auth_timestamp: '2026-06-11'
+  pre_auth:
+    decisions:
+      design_deviation:
+        minor: auto_record
+        major: auto_record_continue
+      technical_blocker: workaround
+      iteration:
+        max_rounds: 10
+      git_ops: allow_up_to_commit_and_tag   # no push
+    operations:
+      directory: allow
+      file_write: allow
+      command: allow
+      script: allow
+      network: allow
+      file_read: allow
+      git_readonly: allow
+    gates:
+      gate_3: require_user_confirmation
+
+scope:
+  type: domain-architecture
+  capabilities_new:
+    - entity-sprint-feature
+  capabilities_modified:
+    - entity-sprint            # + productId (nullable) + lazy-lock + /{id}/features
+    - entity-feature           # + /{id}/sprints
+    - entity-requirement       # + /{id}/features (2-hop rollup)
+    - frontend-scaffold        # Sprint 关联功能 panel + Feature 所在迭代
+  design_decisions_pre_locked:
+    bridge: via_sprint_not_direct_feature_requirement
+    sprint_product_id: nullable_lazy_lock   # Q1 — Gate 1 confirmed
+    product_id_immutable_once_set: true
+    link_table: sprint_feature_M_N_hard_delete   # mirrors DemandRequirementLink
+    link_type: none_plain_link
+    product_consistency_check: feature_module_product_equals_sprint_product
+    reverse_endpoints:
+      - GET /api/sprints/{id}/features
+      - GET /api/features/{id}/sprints
+      - GET /api/requirements/{id}/features
+  explicitly_excluded:
+    - feature_requirement_direct_link
+    - feature_demand_direct_link
+    - link_type_metadata
+    - story_feature_link
+    - task_feature_link
+    - attachment_field
+    - events_ai_extraction
+    - cross_sprint_bulk_reparent

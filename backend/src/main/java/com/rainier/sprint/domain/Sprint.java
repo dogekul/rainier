@@ -46,6 +46,14 @@ public class Sprint extends BaseEntity {
   @Column(name = "requirement_id", nullable = false)
   private Long requirementId;
 
+  /**
+   * v0.0.14: the product this sprint iterates on. Nullable — established lazily when the first
+   * feature is linked (see SprintFeatureLinkService), immutable once non-null. Existing sprints
+   * stay null.
+   */
+  @Column(name = "product_id")
+  private Long productId;
+
   @Column(name = "owner_user_id", nullable = false)
   private Long ownerUserId;
 
@@ -101,6 +109,14 @@ public class Sprint extends BaseEntity {
 
   public void setRequirementId(Long requirementId) {
     this.requirementId = requirementId;
+  }
+
+  public Long getProductId() {
+    return productId;
+  }
+
+  public void setProductId(Long productId) {
+    this.productId = productId;
   }
 
   public Long getOwnerUserId() {

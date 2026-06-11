@@ -63,11 +63,13 @@ class LegacyProductCategoryCleanupTest {
                 "SELECT LOWER(TABLE_NAME) FROM INFORMATION_SCHEMA.TABLES"
                     + " WHERE LOWER(TABLE_NAME) LIKE 'rainier_%'")
             .getResultList();
-    assertEquals(16, rows.size(), "v0.0.13 schema must have exactly 16 rainier_* tables: " + rows);
+    // v0.0.14 added rainier_sprint_feature → 17 tables.
+    assertEquals(17, rows.size(), "v0.0.14 schema must have exactly 17 rainier_* tables: " + rows);
     assertFalse(rows.contains("rainier_product_category"));
     assertTrue(rows.contains("rainier_product"));
     assertTrue(rows.contains("rainier_product_module"));
     assertTrue(rows.contains("rainier_feature"));
+    assertTrue(rows.contains("rainier_sprint_feature"));
   }
 
   private boolean tableExists(String table) {

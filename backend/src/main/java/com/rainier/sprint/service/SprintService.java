@@ -6,6 +6,8 @@ import com.rainier.common.exception.ConflictException;
 import com.rainier.common.exception.NotFoundException;
 import com.rainier.common.web.PageParams;
 import com.rainier.common.web.PageResponse;
+import com.rainier.product.domain.Product;
+import com.rainier.product.repository.ProductRepository;
 import com.rainier.project.domain.Project;
 import com.rainier.project.repository.ProjectRepository;
 import com.rainier.requirement.domain.Requirement;
@@ -56,6 +58,7 @@ public class SprintService {
   private final RequirementRepository requirementRepo;
   private final UserRepository userRepo;
   private final ProjectRepository projectRepo;
+  private final ProductRepository productRepo;
   private final StoryRepository storyRepo;
   @PersistenceContext private EntityManager em;
 
@@ -64,11 +67,13 @@ public class SprintService {
       RequirementRepository requirementRepo,
       UserRepository userRepo,
       ProjectRepository projectRepo,
+      ProductRepository productRepo,
       StoryRepository storyRepo) {
     this.repo = repo;
     this.requirementRepo = requirementRepo;
     this.userRepo = userRepo;
     this.projectRepo = projectRepo;
+    this.productRepo = productRepo;
     this.storyRepo = storyRepo;
   }
 
@@ -79,6 +84,9 @@ public class SprintService {
     }
     if (!userRepo.existsById(req.getOwnerUserId())) {
       throw new BadRequestException("owner user not found: id=" + req.getOwnerUserId());
+    }
+    if (req.getProductId() != null && !productRepo.existsById(req.getProductId())) {
+      throw new BadRequestException("product not found: id=" + req.getProductId());
     }
     if (repo.existsByCode(req.getCode())) {
       throw new ConflictException("code already exists: " + req.getCode());
@@ -94,6 +102,7 @@ public class SprintService {
     s.setGoal(req.getGoal());
     s.setStatus(status);
     s.setRequirementId(req.getRequirementId());
+    s.setProductId(req.getProductId());
     s.setOwnerUserId(req.getOwnerUserId());
     // Sprint is hierarchical, NOT a time-box — no start ≤ end check.
     s.setStartDate(req.getStartDate());
@@ -172,10 +181,19 @@ public class SprintService {
         projectIds.isEmpty()
             ? Collections.emptyMap()
             : batchById(projectRepo.findAllById(projectIds), Project::getId);
+    Set<Long> productIds =
+        sprints.stream()
+            .map(Sprint::getProductId)
+            .filter(Objects::nonNull)
+            .collect(Collectors.toCollection(HashSet::new));
+    Map<Long, Product> productMap =
+        productIds.isEmpty()
+            ? Collections.emptyMap()
+            : batchById(productRepo.findAllById(productIds), Product::getId);
     Map<Long, Long> storyCountMap = batchStoryCount(sprintIds);
     return PageResponse.of(
         sprints.stream()
-            .map(s -> enrichBatch(s, userMap, requirementMap, projectMap, storyCountMap))
+            .map(s -> enrichBatch(s, userMap, requirementMap, projectMap, productMap, storyCountMap))
             .collect(Collectors.toList()),
         page.getPage(),
         page.getSize(),
@@ -218,6 +236,7 @@ public class SprintService {
       Map<Long, User> userMap,
       Map<Long, Requirement> requirementMap,
       Map<Long, Project> projectMap,
+      Map<Long, Product> productMap,
       Map<Long, Long> storyCountMap) {
     SprintDetail dto = SprintDetail.from(s);
     User u = userMap.get(s.getOwnerUserId());
@@ -236,6 +255,12 @@ public class SprintService {
           dto.setProjectName(p.getName());
           dto.setProjectCode(p.getCode());
         }
+      }
+    }
+    if (s.getProductId() != null) {
+      Product prod = productMap.get(s.getProductId());
+      if (prod != null) {
+        dto.setProductName(prod.getName());
       }
     }
     dto.setStoryCount(storyCountMap.getOrDefault(s.getId(), 0L));
@@ -307,6 +332,9 @@ public class SprintService {
           dto.setProjectCode(p.getCode());
         }
       }
+    }
+    if (s.getProductId() != null) {
+      productRepo.findById(s.getProductId()).ifPresent(p -> dto.setProductName(p.getName()));
     }
     dto.setStoryCount(storyRepo.countBySprintId(s.getId()));
     return dto;

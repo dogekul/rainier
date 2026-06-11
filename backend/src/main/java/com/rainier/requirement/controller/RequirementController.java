@@ -9,6 +9,8 @@ import com.rainier.requirement.dto.RequirementCreateRequest;
 import com.rainier.requirement.dto.RequirementDetail;
 import com.rainier.requirement.dto.RequirementUpdateRequest;
 import com.rainier.requirement.service.RequirementService;
+import com.rainier.sprintfeature.dto.SprintFeatureView;
+import com.rainier.sprintfeature.service.SprintFeatureLinkService;
 import java.net.URI;
 import java.util.List;
 import javax.validation.Valid;
@@ -30,11 +32,15 @@ public class RequirementController {
 
   private final RequirementService service;
   private final DemandRequirementLinkService linkService;
+  private final SprintFeatureLinkService sprintFeatureLinkService;
 
   public RequirementController(
-      RequirementService service, DemandRequirementLinkService linkService) {
+      RequirementService service,
+      DemandRequirementLinkService linkService,
+      SprintFeatureLinkService sprintFeatureLinkService) {
     this.service = service;
     this.linkService = linkService;
+    this.sprintFeatureLinkService = sprintFeatureLinkService;
   }
 
   @PostMapping
@@ -74,5 +80,11 @@ public class RequirementController {
   @GetMapping("/{id}/source-demands")
   public List<SourceDemandView> getSourceDemands(@PathVariable Long id) {
     return linkService.findSourceDemands(id);
+  }
+
+  /** v0.0.14: features reached by this requirement through its sprints (2-hop, deduped). */
+  @GetMapping("/{id}/features")
+  public List<SprintFeatureView> getFeatures(@PathVariable Long id) {
+    return sprintFeatureLinkService.findFeaturesByRequirement(id);
   }
 }

@@ -20,6 +20,9 @@ public class SprintDetail {
   private Long projectId;
   private String projectName;
   private String projectCode;
+  /** v0.0.14: the product this sprint iterates on (nullable until first feature linked). */
+  private Long productId;
+  private String productName;
   private Long ownerUserId;
   private String ownerName;
   private String ownerLoginName;
@@ -42,6 +45,7 @@ public class SprintDetail {
     dto.goal = s.getGoal();
     dto.status = s.getStatus();
     dto.requirementId = s.getRequirementId();
+    dto.productId = s.getProductId();
     dto.ownerUserId = s.getOwnerUserId();
     dto.startDate = s.getStartDate();
     dto.endDate = s.getEndDate();
@@ -118,6 +122,22 @@ public class SprintDetail {
 
   public void setProjectCode(String projectCode) {
     this.projectCode = projectCode;
+  }
+
+  public Long getProductId() {
+    return productId;
+  }
+
+  public void setProductId(Long productId) {
+    this.productId = productId;
+  }
+
+  public String getProductName() {
+    return productName;
+  }
+
+  public void setProductName(String productName) {
+    this.productName = productName;
   }
 
   public Long getOwnerUserId() {

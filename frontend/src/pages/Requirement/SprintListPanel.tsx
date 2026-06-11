@@ -10,6 +10,7 @@ import {
   type Sprint,
 } from '../../api/sprint';
 import { SprintEditDrawer } from '../Sprint/SprintEditDrawer';
+import { SprintFeaturePanel } from '../Sprint/SprintFeaturePanel';
 
 export interface SprintListPanelProps {
   requirementId: number;
@@ -28,6 +29,7 @@ export function SprintListPanel({
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [editing, setEditing] = useState<Sprint | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<Sprint | null>(null);
+  const [featurePanelFor, setFeaturePanelFor] = useState<number | null>(null);
 
   const refetch = useCallback(async () => {
     const res = await listSprints({ requirementId, size: 100 });
@@ -65,6 +67,14 @@ export function SprintListPanel({
           >
             编辑
           </Button>{' '}
+          <Button
+            type="button"
+            variant="secondary"
+            data-testid={`sprint-features-toggle-${s.id}`}
+            onClick={() => setFeaturePanelFor((cur) => (cur === s.id ? null : s.id))}
+          >
+            功能
+          </Button>{' '}
           <Button type="button" variant="secondary" onClick={() => setConfirmDelete(s)}>
             删除
           </Button>
@@ -72,6 +82,9 @@ export function SprintListPanel({
       ),
     },
   ];
+
+  const featurePanelSprint =
+    featurePanelFor != null ? sprints.find((s) => s.id === featurePanelFor) : undefined;
 
   return (
     <div
@@ -96,6 +109,13 @@ export function SprintListPanel({
         </Button>
       </div>
       <Table<Sprint> columns={columns} dataSource={sprints} rowKey="id" />
+      {featurePanelSprint && (
+        <SprintFeaturePanel
+          key={featurePanelSprint.id}
+          sprintId={featurePanelSprint.id}
+          productId={featurePanelSprint.productId}
+        />
+      )}
       <SprintEditDrawer
         key={editing?.id ?? 'new'}
         open={drawerOpen}
