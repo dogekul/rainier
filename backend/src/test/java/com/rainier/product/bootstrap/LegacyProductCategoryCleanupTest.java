@@ -54,23 +54,24 @@ class LegacyProductCategoryCleanupTest {
     assertFalse(tableExists("rainier_product_category"));
   }
 
-  /** TC-LCLN-003: v0.0.13 schema 共 16 张 rainier_* 表，不含 product_category，含产品域 3 表. */
+  /** TC-LCLN-003: schema 表数（不含 product_category，含产品域 3 表 + 审计 + 里程碑）. */
   @Test
   @SuppressWarnings("unchecked")
-  void schema_tableCount_is16WithoutProductCategory() {
+  void schema_tableCount_withoutProductCategory() {
     List<Object> rows =
         em.createNativeQuery(
                 "SELECT LOWER(TABLE_NAME) FROM INFORMATION_SCHEMA.TABLES"
                     + " WHERE LOWER(TABLE_NAME) LIKE 'rainier_%'")
             .getResultList();
-    // v0.0.15 added rainier_audit_log → 18 tables.
-    assertEquals(18, rows.size(), "v0.0.15 schema must have exactly 18 rainier_* tables: " + rows);
+    // v0.0.15 added rainier_audit_log (18); v0.0.17 added rainier_milestone → 19 tables.
+    assertEquals(19, rows.size(), "v0.0.17 schema must have exactly 19 rainier_* tables: " + rows);
     assertFalse(rows.contains("rainier_product_category"));
     assertTrue(rows.contains("rainier_product"));
     assertTrue(rows.contains("rainier_product_module"));
     assertTrue(rows.contains("rainier_feature"));
     assertTrue(rows.contains("rainier_sprint_feature"));
     assertTrue(rows.contains("rainier_audit_log"));
+    assertTrue(rows.contains("rainier_milestone"));
   }
 
   private boolean tableExists(String table) {

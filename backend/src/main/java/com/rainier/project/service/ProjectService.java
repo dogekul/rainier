@@ -6,6 +6,7 @@ import com.rainier.common.exception.ConflictException;
 import com.rainier.common.exception.NotFoundException;
 import com.rainier.common.web.PageParams;
 import com.rainier.common.web.PageResponse;
+import com.rainier.milestone.repository.MilestoneRepository;
 import com.rainier.project.domain.Project;
 import com.rainier.project.domain.ProjectStatus;
 import com.rainier.project.domain.ProjectType;
@@ -44,18 +45,21 @@ public class ProjectService {
   private final RequirementRepository requirementRepo;
   private final UserRoleRepository userRoleRepo;
   private final TaskRepository taskRepo;
+  private final MilestoneRepository milestoneRepo;
 
   public ProjectService(
       ProjectRepository repo,
       UserRepository userRepo,
       RequirementRepository requirementRepo,
       UserRoleRepository userRoleRepo,
-      TaskRepository taskRepo) {
+      TaskRepository taskRepo,
+      MilestoneRepository milestoneRepo) {
     this.repo = repo;
     this.userRepo = userRepo;
     this.requirementRepo = requirementRepo;
     this.userRoleRepo = userRoleRepo;
     this.taskRepo = taskRepo;
+    this.milestoneRepo = milestoneRepo;
   }
 
   @Transactional
@@ -181,6 +185,10 @@ public class ProjectService {
     if (taskCount > 0) {
       throw new ConflictException("project has linked tasks");
     }
+    // v0.0.17: cascade soft-delete this project's milestones (they have no independent meaning).
+    // Reached only after the FK-protection checks pass — a 409 above rolls back with nothing
+    // deleted. @SQLDelete sets del_flag=1 per row; findByProjectId returns only active rows.
+    milestoneRepo.deleteAll(milestoneRepo.findByProjectId(id));
     repo.delete(p);
   }
 

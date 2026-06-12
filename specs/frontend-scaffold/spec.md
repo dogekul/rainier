@@ -12,6 +12,7 @@
 > - 2026-06-11 (v0.0.14-sprint-feature-link) — SprintListPanel 每 sprint 行加「功能」按钮 → SprintFeaturePanel (挂载/解绑 feature, 下拉按 sprint 产品过滤); FeaturesPage 每 feature 行加「所在迭代」→ FeatureSprintsPanel; 新 `api/sprintFeature.ts`, `api/sprint.ts` 加 productId/productName.
 > - 2026-06-11 (v0.0.15-audit-log) — NEW Sider **第 5 顶级组「系统」**(末位, 位于「人事配置」之后), 含 1 项「审计日志」→ `/sys/audit-logs`. 新只读 `AuditLogsPage` (表格 actor/entityType/entityId/action/时间 + 过滤 + 分页, **无新建/编辑/删除**); 新 `api/auditLog.ts`. Sider 顶级组 4 → **5**.
 > - 2026-06-11 (v0.0.16-project-type) — ProjectsPage 新建/编辑抽屉加「项目类型」下拉 (`projects-type-select`, 选项 轻量/正式, 新建默认 轻量); 表格加「类型」列 (中文 轻量/正式); 表格上方加「类型」过滤下拉 (`projects-type-filter`, 含「全部类型」, 改变即带 `projectType` 重查). `api/project.ts` 加 `ProjectType` 类型 + `projectType` 字段. 无新增页面/路由/Sider 组.
+> - 2026-06-12 (v0.0.17-milestone) — ProjectsPage 每行操作区加「里程碑」按钮 (`projects-milestones-btn-${id}`) → 用 Table 的 `isExpanded`/`renderExpanded` 在行下内联展开 `MilestonesPanel` (`milestones-panel-${projectId}`, SprintsPage 同款展开模式); 面板内对该项目里程碑做 列表(按 sortOrder)/新建/编辑/删除 (`milestone-save-btn` 等). 新 `api/milestone.ts`. 无新增页面/路由/Sider 组.
 
 ## Requirements
 
@@ -533,3 +534,38 @@
 - **GIVEN** ProjectsPage 已渲染
 - **WHEN** 用户在「类型」过滤下拉选择「正式」
 - **THEN** SHALL 调用 `listProjects` 且 params 含 `projectType: "FORMAL"`
+
+## ADDED Requirements (from change 2026-06-12-milestone / v0.0.17)
+
+### Requirement: ProjectsPage 里程碑按钮 + 内联面板
+
+前端 SHALL 在 ProjectsPage 每个项目行的操作区提供「里程碑」按钮(`projects-milestones-btn-${id}`)；点击 SHALL 在该行下方内联展开/收起 `MilestonesPanel`(`milestones-panel-${projectId}`)。
+
+#### Scenario: 点击里程碑按钮展开内联面板
+
+- **GIVEN** ProjectsPage 已渲染，含项目行 id=7
+- **WHEN** 用户点击该行的「里程碑」按钮
+- **THEN** 页面 SHALL 渲染 `milestones-panel-7` 面板
+- **AND** 面板 SHALL 调用 `listMilestones` 且 params 含 `projectId: 7`
+
+### Requirement: MilestonesPanel 内联 CRUD
+
+前端 SHALL 在 `MilestonesPanel` 列出该项目里程碑(按 sortOrder)，并提供内联新建/编辑表单(code/name/targetDate/status/actualDate/sortOrder)与删除。
+
+#### Scenario: 面板列出该项目里程碑
+
+- **GIVEN** `listMilestones({projectId:7})` 返回 2 个里程碑
+- **WHEN** `MilestonesPanel` 渲染完成
+- **THEN** 面板 SHALL 显示这 2 个里程碑的 name 与 status
+
+#### Scenario: 面板新建里程碑携带 projectId
+
+- **GIVEN** 项目 id=7 的 `MilestonesPanel` 已展开
+- **WHEN** 用户填妥必填项（code/name/targetDate）并点击「新建里程碑」
+- **THEN** SHALL 调用 `createMilestone` 且 body 含 `projectId: 7`
+
+#### Scenario: 面板删除里程碑
+
+- **GIVEN** 项目 id=7 的面板列出里程碑 id=11
+- **WHEN** 用户点击该里程碑的删除并确认
+- **THEN** SHALL 调用 `deleteMilestone` 且参数为 `11`

@@ -29,6 +29,15 @@ vi.mock('../../api/user', async () => {
   };
 });
 
+vi.mock('../../api/milestone', async () => {
+  const actual =
+    await vi.importActual<typeof import('../../api/milestone')>('../../api/milestone');
+  return {
+    ...actual,
+    listMilestones: vi.fn().mockResolvedValue({ content: [], total: 0, page: 0, size: 100 }),
+  };
+});
+
 describe('ProjectsPage', () => {
   beforeEach(() => {
     useAuthStore.setState({ token: 'tk', user: { username: 'alice' } });
@@ -209,5 +218,41 @@ describe('ProjectsPage', () => {
         expect.objectContaining({ projectType: 'FORMAL' }),
       );
     });
+  });
+
+  /** TC-FES-MILE-001: 里程碑按钮展开内联面板 + listMilestones(projectId). */
+  it('expands the milestones panel on 里程碑 click (TC-FES-MILE-001)', async () => {
+    const { listProjects } = await import('../../api/project');
+    const { listMilestones } = await import('../../api/milestone');
+    (listProjects as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      content: [
+        {
+          id: 7,
+          code: 'PROJ-001',
+          name: 'X',
+          description: null,
+          status: 'PLANNING',
+          projectType: 'CASUAL',
+          ownerUserId: 1,
+          ownerName: 'Alice',
+          ownerLoginName: 'alice',
+          startDate: null,
+          endDate: null,
+          enabled: true,
+        },
+      ],
+      total: 1,
+      page: 0,
+      size: 20,
+    });
+    render(<ProjectsPage />);
+    await waitFor(() => {
+      expect(screen.getByText('PROJ-001')).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByTestId('projects-milestones-btn-7'));
+    await waitFor(() => {
+      expect(screen.getByTestId('milestones-panel-7')).toBeInTheDocument();
+    });
+    expect(listMilestones).toHaveBeenCalledWith(expect.objectContaining({ projectId: 7 }));
   });
 });

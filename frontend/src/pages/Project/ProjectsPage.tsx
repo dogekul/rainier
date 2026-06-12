@@ -18,6 +18,7 @@ import {
 import { listUsers, type User } from '../../api/user';
 import { useAuthStore } from '../../store/auth';
 import { usePaginated } from '../../hooks/usePaginated';
+import { MilestonesPanel } from './MilestonesPanel';
 
 const STATUS_OPTIONS: ProjectStatus[] = [
   'PLANNING',
@@ -62,6 +63,16 @@ export function ProjectsPage() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [editing, setEditing] = useState<Project | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<Project | null>(null);
+  // v0.0.17: per-row inline 里程碑 panel toggle (SprintsPage expand pattern).
+  const [milestonesExpanded, setMilestonesExpanded] = useState<Set<number>>(new Set());
+  const toggleMilestones = (id: number) => {
+    setMilestonesExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
 
   const [users, setUsers] = useState<User[]>([]);
   const [code, setCode] = useState('');
@@ -149,6 +160,14 @@ export function ProjectsPage() {
           </Button>{' '}
           <Button type="button" variant="secondary" onClick={() => setConfirmDelete(r)}>
             删除
+          </Button>{' '}
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={() => toggleMilestones(r.id)}
+            data-testid={`projects-milestones-btn-${r.id}`}
+          >
+            里程碑
           </Button>
         </>
       ),
@@ -184,7 +203,13 @@ export function ProjectsPage() {
           ))}
         </select>
       </div>
-      <Table<Project> columns={columns} dataSource={list.items} rowKey="id" />
+      <Table<Project>
+        columns={columns}
+        dataSource={list.items}
+        rowKey="id"
+        isExpanded={(r) => milestonesExpanded.has(r.id)}
+        renderExpanded={(r) => <MilestonesPanel projectId={r.id} />}
+      />
       <Pagination
         page={list.page}
         size={list.size}

@@ -1,0 +1,171 @@
+change:
+  id: 2026-06-12-milestone
+  title: v0.0.17-milestone — NEW Milestone entity (project-scoped point-in-time checkpoints, B4)
+  baseline:
+    commit: 75c53a7
+    tag: v0.0.16-project-type
+  type: new-entity
+  parent_change: 2026-06-11-project-type
+  source: A-角色意图卡片.md §2.3 (里程碑 = formal-project completion item), gap item B4
+
+phase:
+  current: archived
+  archived_at: '2026-06-12'
+  understand:
+    status: completed
+    confirmed_at: '2026-06-12'
+    artifact: proposal.md
+    gate1_decisions:
+      user_locked:
+        status_tristate: PLANNED_REACHED_MISSED
+        actual_date: true
+        attach_to: project_only
+        frontend: inline_panel_under_project_row   # SprintFeaturePanel pattern
+        sort_order: true
+        owner: false
+      d1_code_unique: composite_project_code        # (projectId, code) service-level
+      d2_target_date_required: true
+      d3_delete: allow_with_cascade_soft_delete      # project delete cascades soft-delete to milestones
+      d4_status_free_change: true                    # no state machine, enum-membership only
+      d5_list_sort: sortOrder_asc_then_createTime    # sortOrder default 0
+  spec:
+    status: completed
+    confirmed_at: '2026-06-12'
+    artifacts:
+      - design.md
+      - specs/entity-milestone/spec.md
+      - specs/entity-project/spec.md
+      - specs/frontend-scaffold/spec.md
+      - test-plan.md
+    metrics:
+      capabilities: 3
+      requirements: 8
+      scenarios: 20    # +缺 code→400 (Step 0 Docs-M fix)
+      tc_cases: 21     # +TC-MILE-014
+      p0: 21
+      p1: 0
+      p2: 0
+  slice:
+    status: completed
+    completed_at: '2026-06-12'
+    artifacts:
+      - slices.md
+      - tasks.md
+    metrics:
+      slices: 10         # M01-M10
+      backend_slices: 6  # M01-M06
+      frontend_slices: 3 # M07-M09
+      e2e_slices: 1      # M10
+  build:
+    status: completed
+    completed_at: '2026-06-12'
+    metrics:
+      backend_tests: 336    # 320 baseline + 16 new (controller 14 + cascade 2)
+      frontend_tests: 66    # 62 baseline + 4 new (MilestonesPanel 3 + ProjectsPage milestone btn 1)
+      e2e_status: green     # 19 tables, milestone CRUD, cascade soft-delete, existing data intact
+    notable_adjustments:
+      - 'PA-1: frontend panel mounted via Table isExpanded/renderExpanded (SprintsPage pattern).'
+      - 'PA-2: cascade via milestoneRepo.deleteAll(findByProjectId) → @SQLDelete soft-delete, after FK 409 checks.'
+      - 'PA-3: cross-version table-count test 18→19 + rainier_milestone.'
+  verify:
+    status: completed
+    completed_at: '2026-06-12'
+    artifacts:
+      - test-report.md
+      - design-adjustments.md
+      - pending-adjustments.md
+    metrics:
+      backend_tests_total: 336
+      frontend_tests_total: 66
+      review_round1:
+        critical: 0
+        high: 0
+        medium: 2
+        low: 8
+      review_post_fix:
+        critical: 0
+        high: 0
+        medium: 0    # Docs-M + Code-M1 fixed
+      scenario_coverage_percent: 100
+      failure_modes_hits: 0
+      e2e_status: green
+    confirmed_at: '2026-06-12'   # Gate 3 confirmed after user manual test ("没问题")
+  deliver:
+    status: completed
+    completed_at: '2026-06-12'
+    tag: v0.0.17-milestone
+    pushed: true                 # user authorized push this round ("没问题 push")
+    artifacts:
+      - archive/2026-06-12-milestone/
+      - specs/entity-milestone/spec.md        # NEW (copied)
+      - specs/entity-project/spec.md          # MOD — cascade ADDED Requirement + changelog
+      - specs/frontend-scaffold/spec.md       # MOD — panel ADDED Requirements + changelog
+    spec_merge:
+      new_capabilities: 1   # entity-milestone
+      modified_capabilities: 2 # entity-project + frontend-scaffold
+    metrics:
+      backend_tests_total: 336
+      frontend_tests_total: 66
+      tables: 19              # +rainier_milestone
+      e2e_status: green
+
+long_range:
+  enabled: true
+  mode: full_auto
+  pre_auth_completed: true
+  pre_auth_timestamp: '2026-06-12'
+  pre_auth:
+    decisions:
+      design_deviation:
+        minor: auto_record
+        major: auto_record_continue
+      technical_blocker: workaround
+      iteration:
+        max_rounds: 10
+      git_ops: allow_up_to_commit_and_tag    # v0.0.17: push NOT pre-authorized this round
+    operations:
+      directory: allow
+      file_write: allow
+      command: allow
+      script: allow
+      network: allow
+      file_read: allow
+      git_readonly: allow
+    gates:
+      gate_3: require_user_confirmation       # stop at Gate 3 (not pre-confirmed this round)
+  user_directive: '全自动长程'
+
+scope:
+  type: new-entity
+  capabilities_new:
+    - entity-milestone
+  capabilities_modified:
+    - frontend-scaffold        # ProjectsPage 里程碑 button + inline MilestonesPanel
+    - entity-project           # ProjectService.delete cascades soft-delete to milestones
+  new_tables: 1                # rainier_milestone
+  design_decisions_pre_locked:
+    entity: Milestone
+    package: com.rainier.milestone
+    table: rainier_milestone
+    fields: [projectId(NN), code, name(NN), description, targetDate(NN), status, actualDate, sortOrder]
+    status_values: [PLANNED, REACHED, MISSED]
+    status_default: PLANNED
+    sort_order_default: 0
+    code_uniqueness: composite_project_code
+    delete_semantics: cascade_soft_delete_from_project
+    no_state_machine: true
+    attach: project_only
+    no_owner: true
+  explicitly_excluded:
+    - release_gate_decision_assist       # 放行门 (card 6, AI layer)
+    - milestone_test_defect_links
+    - formal_project_milestone_validation # A2 暂不校验
+    - status_state_machine
+    - attach_to_sprint
+
+baseline_metrics:
+  backend_tests: 320
+  frontend_tests: 62
+  tables: 18
+
+standing_constraint: 测试和修复不删改已有业务数据; Milestone 纯新增 (新表+新包+前端面板); 级联删除仅作用于被删项目自身的里程碑; E2E 验证存量不变.
