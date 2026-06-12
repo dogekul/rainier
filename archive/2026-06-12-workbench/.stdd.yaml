@@ -1,0 +1,111 @@
+change:
+  id: 2026-06-12-workbench
+  title: v0.0.18-workbench — current-user context (me) + frontline 我的工作台
+  baseline:
+    commit: ac280fd
+    tag: v0.0.17-milestone
+  type: feature-role-journey
+  parent_change: 2026-06-12-milestone
+  source: A-角色意图卡片.md — pivot to role-usage-logic; step 1 = foundation + frontline workbench
+
+phase:
+  current: archived
+  archived_at: '2026-06-12'
+  understand:
+    status: completed
+    confirmed_at: '2026-06-12'
+    artifact: proposal.md
+    gate1_decisions:        # user: 全按建议
+      d1_sections: tasks_stories_projects   # workbench v1: 我的任务 + 我的 Story + 我的项目
+      d2_me_shape: rich                      # {id,username,name,roles[],projects[]} in one call
+      d3_task_status_quickchange: true
+      d4_owner_filter_scope: story_only
+      d5_my_projects_source: user_roles
+  spec:
+    status: completed
+    confirmed_at: '2026-06-12'              # Gate 2 auto-proceed (user: 不需要再check)
+    artifacts:
+      - design.md
+      - specs/auth-placeholder/spec.md
+      - specs/entity-story/spec.md
+      - specs/frontend-scaffold/spec.md
+      - test-plan.md
+  slice:
+    status: completed
+    completed_at: '2026-06-12'
+    artifacts: [slices.md, tasks.md]
+  build:
+    status: completed
+    completed_at: '2026-06-12'
+    metrics:
+      backend_tests: 341    # 336 baseline + 5 new (AuthMeContext 4 + StoryOwnerFilter 1)
+      frontend_tests: 73    # 66 + WorkbenchPage 3 + AppLayout nav-shell 4 (Gate 3 iteration)
+      e2e_status: green     # me context (alice 2 roles incl org-level + dedup), story owner filter, 19 tables, existing intact
+    notable_adjustments:
+      - 'AuthUser carries full context (optional fields); login still sets {username}.'
+      - 'placeholder Home deleted → pages/Workbench; ProtectedRoute.test migrated home→workbench.'
+      - 'TC-ME-004 (no-token 401) reuses existing AuthControllerMeTest.'
+  verify:
+    status: completed
+    completed_at: '2026-06-12'
+    artifacts: [test-report.md, design-adjustments.md, pending-adjustments.md]
+    metrics:
+      backend_tests_total: 341
+      frontend_tests_total: 73
+      review_round1: {critical: 0, high: 1, medium: 3, low: 6}   # within thresholds
+      review_post_fix: {critical: 0, high: 0, medium: 0}
+      scenario_coverage_percent: 100
+      failure_modes_hits: 0
+      e2e_status: green
+    gate3_iteration:         # user manual-test feedback @ Gate 3 → looped back to build
+      feedback: '我的工作台页没有菜单可以点'
+      changes: [工作台菜单组, 品牌链接, 工作台条目可跳转, 菜单组折叠, Sider 收起, 样式优化]
+      verified: browser_live   # docker frontend rebuilt; nav shell confirmed in DOM
+    gate3_confirmed_at: '2026-06-12'   # user: 可以先这样交付
+  deliver:
+    status: completed
+    completed_at: '2026-06-12'
+    tag: v0.0.18-workbench
+    pushed: false              # user said 交付 only; push left to user
+    artifacts:
+      - archive/2026-06-12-workbench/
+      - specs/auth-placeholder/spec.md     # MOD — me context ADDED Requirement + changelog
+      - specs/entity-story/spec.md         # MOD — ownerUserId filter ADDED Requirement + changelog
+      - specs/frontend-scaffold/spec.md    # MOD — workbench + nav-shell ADDED Requirements + changelog
+    spec_merge: {new_capabilities: 0, modified_capabilities: 3}
+    metrics: {backend_tests_total: 341, frontend_tests_total: 73, tables: 19, e2e_status: green}
+
+long_range:
+  enabled: true
+  mode: full_auto
+  pre_auth_completed: true
+  pre_auth_timestamp: '2026-06-12'
+  pre_auth:
+    decisions:
+      design_deviation: {minor: auto_record, major: auto_record_continue}
+      technical_blocker: workaround
+      iteration: {max_rounds: 10}
+      git_ops: allow_up_to_commit_and_tag    # push NOT pre-authorized this round
+      gate_2: auto_proceed                    # user: 不需要再check, 直接到 phase5
+    operations: {directory: allow, file_write: allow, command: allow, script: allow, network: allow, file_read: allow, git_readonly: allow}
+    gates:
+      gate_3: require_user_confirmation        # stop at end of Phase 5 (user: 直接到 phase5)
+  user_directive: '全按建议，然后长程模式，不需要再check，直接到phase5'
+
+scope:
+  type: feature-role-journey
+  capabilities_new: []
+  capabilities_modified:
+    - auth-placeholder      # me() → full current-user context
+    - entity-story          # list +ownerUserId filter
+    - frontend-scaffold     # Home → WorkbenchPage 我的工作台 + AuthUser expansion
+  new_tables: 0
+  explicitly_excluded:
+    - ai_insights_health_risk_autodraft
+    - status_autosync_commit_pr
+    - other_role_dashboards
+    - role_based_nav_gating_permissions
+    - real_identity_provider
+
+baseline_metrics: {backend_tests: 336, frontend_tests: 66, tables: 19}
+standing_constraint: 测试和修复不删改已有业务数据; 纯扩展(me 返回/story param/前端工作台); E2E 验证存量不变.

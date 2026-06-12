@@ -48,8 +48,9 @@ public class StoryController {
       @RequestParam(required = false) Long sprintId,
       @RequestParam(required = false) String status,
       @RequestParam(required = false) String priority,
+      @RequestParam(required = false) Long ownerUserId,
       @Valid PageParams page) {
-    return service.list(projectId, sprintId, status, priority, page);
+    return service.list(projectId, sprintId, status, priority, ownerUserId, page);
   }
 
   @PutMapping("/{id}")

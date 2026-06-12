@@ -120,7 +120,12 @@ public class StoryService {
   }
 
   public PageResponse<StoryDetail> list(
-      Long projectId, Long sprintId, String status, String priority, PageParams page) {
+      Long projectId,
+      Long sprintId,
+      String status,
+      String priority,
+      Long ownerUserId,
+      PageParams page) {
     Specification<Story> spec =
         (root, query, cb) -> {
           javax.persistence.criteria.Predicate p = cb.conjunction();
@@ -136,6 +141,9 @@ public class StoryService {
           }
           if (priority != null) {
             p = cb.and(p, cb.equal(root.get("priority"), priority));
+          }
+          if (ownerUserId != null) {
+            p = cb.and(p, cb.equal(root.get("ownerUserId"), ownerUserId));
           }
           String search = page.getSearch();
           if (search != null && !search.isEmpty()) {

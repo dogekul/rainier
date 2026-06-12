@@ -1,8 +1,18 @@
 import { create } from 'zustand';
+import type { MeProject, MeRole } from '../api/auth';
 
-/** User identity carried by the auth store. */
+/**
+ * User identity carried by the auth store.
+ *
+ * <p>v0.0.18: extended with the current-user context (id/name/roles/projects) from GET /api/auth/me.
+ * All but `username` are optional — login sets only `{username}`, then the workbench upgrades it.
+ */
 export interface AuthUser {
   username: string;
+  id?: number | null;
+  name?: string | null;
+  roles?: MeRole[];
+  projects?: MeProject[];
 }
 
 interface AuthState {

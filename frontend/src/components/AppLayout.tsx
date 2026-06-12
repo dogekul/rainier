@@ -1,10 +1,13 @@
-import { NavLink, Outlet } from 'react-router-dom';
+import { useState } from 'react';
+import { Link, NavLink, Outlet } from 'react-router-dom';
 import { useAuthStore } from '../store/auth';
 import './AppLayout.css';
 
 interface NavItem {
   to: string;
   label: string;
+  /** react-router NavLink `end` — needed for "/" so it isn't active on every route. */
+  end?: boolean;
 }
 
 interface NavGroup {
@@ -14,6 +17,11 @@ interface NavGroup {
 }
 
 const navGroups: NavGroup[] = [
+  {
+    key: 'workbench',
+    title: '工作台',
+    items: [{ to: '/', label: '我的工作台', end: true }],
+  },
   {
     key: 'org',
     title: '组织',
@@ -61,41 +69,86 @@ const navGroups: NavGroup[] = [
 ];
 
 /**
- * Page shell: header (brand + username) + left Sider nav + main content.
- *
- * <p>Sider menu groups are statically configured; a future change can swap to a permission-aware
- * generator hook.
+ * Page shell: header (sider toggle + brand link + username) + collapsible left Sider nav + main
+ * content. v0.0.18: brand links home, a 工作台 group fronts the nav, each group folds, and the whole
+ * Sider can be collapsed.
  */
 export function AppLayout() {
   const user = useAuthStore((s) => s.user);
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
+  const [siderCollapsed, setSiderCollapsed] = useState(false);
+
+  const toggleGroup = (key: string) =>
+    setCollapsedGroups((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+
   return (
     <div className="rainier-shell">
       <header className="rainier-shell-header">
-        <span className="rainier-shell-brand">Rainier</span>
+        <div className="rainier-shell-header-left">
+          <button
+            type="button"
+            className="rainier-shell-sider-toggle"
+            onClick={() => setSiderCollapsed((c) => !c)}
+            data-testid="appshell-sider-toggle"
+            aria-label="收起或展开侧边栏"
+            aria-expanded={!siderCollapsed}
+          >
+            ☰
+          </button>
+          <Link to="/" className="rainier-shell-brand" data-testid="appshell-brand">
+            Rainier
+          </Link>
+        </div>
         <span className="rainier-shell-user" data-testid="appshell-username">
           {user?.username ?? ''}
         </span>
       </header>
       <div className="rainier-shell-body">
-        <aside className="rainier-shell-sider" data-testid="appshell-sider">
-          {navGroups.map((g) => (
-            <div key={g.key} className="rainier-shell-sider-group">
-              <div className="rainier-shell-sider-group-title">{g.title}</div>
-              {g.items.map((item) => (
-                <NavLink
-                  key={item.to}
-                  to={item.to}
-                  className={({ isActive }) =>
-                    `rainier-shell-sider-item${isActive ? ' rainier-shell-sider-item-active' : ''}`
-                  }
-                  data-testid={`appshell-nav-${item.to}`}
-                >
-                  {item.label}
-                </NavLink>
-              ))}
-            </div>
-          ))}
-        </aside>
+        {!siderCollapsed && (
+          <aside className="rainier-shell-sider" data-testid="appshell-sider">
+            {navGroups.map((g) => {
+              const collapsed = collapsedGroups.has(g.key);
+              return (
+                <div key={g.key} className="rainier-shell-sider-group">
+                  <button
+                    type="button"
+                    className="rainier-shell-sider-group-title"
+                    onClick={() => toggleGroup(g.key)}
+                    data-testid={`appshell-group-${g.key}`}
+                    aria-expanded={!collapsed}
+                  >
+                    <span
+                      className={`rainier-shell-sider-caret${collapsed ? ' is-collapsed' : ''}`}
+                      aria-hidden="true"
+                    >
+                      ▾
+                    </span>
+                    <span className="rainier-shell-sider-group-label">{g.title}</span>
+                  </button>
+                  {!collapsed &&
+                    g.items.map((item) => (
+                      <NavLink
+                        key={item.to}
+                        to={item.to}
+                        end={item.end}
+                        className={({ isActive }) =>
+                          `rainier-shell-sider-item${isActive ? ' rainier-shell-sider-item-active' : ''}`
+                        }
+                        data-testid={`appshell-nav-${item.to}`}
+                      >
+                        {item.label}
+                      </NavLink>
+                    ))}
+                </div>
+              );
+            })}
+          </aside>
+        )}
         <main className="rainier-shell-main">
           <Outlet />
         </main>

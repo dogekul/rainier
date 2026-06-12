@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { useAuthStore } from '../store/auth';
@@ -172,5 +172,52 @@ describe('AppLayout Sider (TC-FES-201)', () => {
     const html = screen.getByTestId('appshell-sider').innerHTML;
     // 系统组 (/sys/audit-logs) 位于 人事配置组 (/hr/positions) 之后（末位）.
     expect(html.indexOf('/hr/positions')).toBeLessThan(html.indexOf('/sys/audit-logs'));
+  });
+
+  const renderShell = () =>
+    render(
+      <MemoryRouter initialEntries={['/']}>
+        <Routes>
+          <Route element={<AppLayout />}>
+            <Route path="/" element={<div>home</div>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>,
+    );
+
+  /** v0.0.18 TC-FES-WB-101: 工作台 group fronts the nav with 我的工作台 → /. */
+  it('renders the 工作台 group first with 我的工作台 → / (TC-FES-WB-101)', () => {
+    renderShell();
+    expect(screen.getByText('工作台')).toBeInTheDocument();
+    expect(screen.getByTestId('appshell-nav-/')).toHaveAttribute('href', '/');
+    // 工作台 (我的工作台) appears before 组织 (组织节点).
+    const html = screen.getByTestId('appshell-sider').innerHTML;
+    expect(html.indexOf('我的工作台')).toBeLessThan(html.indexOf('组织节点'));
+  });
+
+  /** v0.0.18 TC-FES-WB-102: brand links to the workbench. */
+  it('brand links to the workbench (TC-FES-WB-102)', () => {
+    renderShell();
+    expect(screen.getByTestId('appshell-brand')).toHaveAttribute('href', '/');
+  });
+
+  /** v0.0.18 TC-FES-WB-103: a group folds/unfolds when its title is clicked. */
+  it('collapses and expands a menu group on title click (TC-FES-WB-103)', () => {
+    renderShell();
+    expect(screen.getByText('审计日志')).toBeInTheDocument();
+    fireEvent.click(screen.getByTestId('appshell-group-sys'));
+    expect(screen.queryByText('审计日志')).toBeNull();
+    fireEvent.click(screen.getByTestId('appshell-group-sys'));
+    expect(screen.getByText('审计日志')).toBeInTheDocument();
+  });
+
+  /** v0.0.18 TC-FES-WB-104: the whole Sider hides when the toggle is clicked. */
+  it('hides the Sider when the toggle is clicked (TC-FES-WB-104)', () => {
+    renderShell();
+    expect(screen.getByTestId('appshell-sider')).toBeInTheDocument();
+    fireEvent.click(screen.getByTestId('appshell-sider-toggle'));
+    expect(screen.queryByTestId('appshell-sider')).toBeNull();
+    fireEvent.click(screen.getByTestId('appshell-sider-toggle'));
+    expect(screen.getByTestId('appshell-sider')).toBeInTheDocument();
   });
 });

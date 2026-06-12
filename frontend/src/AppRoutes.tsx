@@ -4,7 +4,7 @@ import { ProtectedRoute } from './components/ProtectedRoute';
 import DemandsPage from './pages/Demand';
 import DemandRequirementsPage from './pages/DemandRequirement';
 import FeaturesPage from './pages/Feature';
-import Home from './pages/Home';
+import Workbench from './pages/Workbench';
 import Login from './pages/Login';
 import AuditLogsPage from './pages/AuditLog';
 import OrganizationsPage from './pages/Organization';
@@ -27,7 +27,7 @@ export function AppRoutes() {
       <Route path="/login" element={<Login />} />
       <Route element={<ProtectedRoute />}>
         <Route element={<AppLayout />}>
-          <Route path="/" element={<Home />} />
+          <Route path="/" element={<Workbench />} />
           <Route path="/org" element={<Navigate to="/org/organizations" replace />} />
           <Route path="/org/organizations" element={<OrganizationsPage />} />
           <Route path="/org/users" element={<UsersPage />} />

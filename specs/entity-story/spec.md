@@ -11,6 +11,8 @@
 >   sprintStatus`. The legacy `requirement_id` column is left on
 >   `rainier_story` (loosened to NULL by the migration) and is queued for DROP
 >   in v0.0.11+.
+> - 2026-06-12 (v0.0.18-workbench) — `GET /api/stories` adds an `ownerUserId` filter
+>   param (powers 我的 Story on the workbench); optional, combinable with the existing filters.
 >
 > Family invariants retained: code service-level unique (soft-delete reuse OK);
 > 6-state machine (DRAFT / READY / IN_PROGRESS / DONE / BLOCKED / CANCELLED);
@@ -155,3 +157,16 @@
 - **THEN** SHALL 返回 204
 - **AND** 后续 `GET /api/stories/1` SHALL 返回 404
 - **AND** DB `SELECT del_flag FROM rainier_story WHERE id=1` SHALL 为 1
+
+## ADDED Requirements (from change 2026-06-12-workbench / v0.0.18)
+
+### Requirement: 按 ownerUserId 过滤 Story 列表
+
+后端 SHALL 在 `GET /api/stories?ownerUserId=` 按 `ownerUserId` 精确过滤，可与既有 projectId/sprintId/status/priority 组合；省略则不过滤。
+
+#### Scenario: 按 ownerUserId 过滤仅返回匹配项
+
+- **GIVEN** owner=1 有 2 个 Story，owner=2 有 1 个 Story
+- **WHEN** `GET /api/stories?ownerUserId=1`
+- **THEN** body.total SHALL 为 2
+- **AND** body.content 全部 `ownerUserId=1`

@@ -76,6 +76,8 @@ export interface StoryListParams {
   sprintId?: number;
   status?: StoryStatus;
   priority?: Priority;
+  /** v0.0.18: filter to a single owner (powers 我的 Story on the workbench). */
+  ownerUserId?: number;
   search?: string;
   page?: number;
   size?: number;

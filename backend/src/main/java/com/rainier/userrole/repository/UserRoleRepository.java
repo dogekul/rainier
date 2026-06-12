@@ -2,6 +2,7 @@
 package com.rainier.userrole.repository;
 
 import com.rainier.userrole.domain.UserRole;
+import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
@@ -19,6 +20,9 @@ public interface UserRoleRepository
   long countByRoleId(Long roleId);
 
   long countByUserId(Long userId);
+
+  /** v0.0.18: all role assignments of a user, for the GET /api/auth/me context. */
+  List<UserRole> findByUserId(Long userId);
 
   /** v0.0.8: used by ProjectService.delete to enforce FK protection. */
   long countByProjectId(Long projectId);

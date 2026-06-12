@@ -1,12 +1,24 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AppRoutes } from '../AppRoutes';
 import { useAuthStore } from '../store/auth';
 
+// The protected landing page (WorkbenchPage) fetches GET /api/auth/me on mount — stub it so this
+// routing/protection test doesn't hit the network. id:null keeps it from loading tasks/stories.
+vi.mock('../api/auth', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../api/auth')>();
+  return {
+    ...actual,
+    me: vi
+      .fn()
+      .mockResolvedValue({ id: null, username: 'alice', name: 'Alice', roles: [], projects: [] }),
+  };
+});
+
 /**
- * Covers TC-FES-001 (unauthenticated → /login) and TC-FES-002 (authenticated → Home with username
- * shown in header and main greeting).
+ * Covers TC-FES-001 (unauthenticated → /login) and TC-FES-002 (authenticated → protected workbench
+ * with username in the header).
  */
 describe('ProtectedRoute via full route tree', () => {
   beforeEach(() => {
@@ -21,10 +33,10 @@ describe('ProtectedRoute via full route tree', () => {
       </MemoryRouter>,
     );
     expect(screen.getByText('Rainier 登录')).toBeInTheDocument();
-    expect(screen.queryByTestId('home-greeting')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('workbench-greeting')).not.toBeInTheDocument();
   });
 
-  it('renders Home with username when authenticated (TC-FES-002)', () => {
+  it('renders the protected workbench when authenticated (TC-FES-002)', async () => {
     useAuthStore.setState({ token: 'fake-token', user: { username: 'alice' } });
 
     render(
@@ -34,6 +46,10 @@ describe('ProtectedRoute via full route tree', () => {
     );
 
     expect(screen.getByTestId('appshell-username')).toHaveTextContent('alice');
-    expect(screen.getByTestId('home-greeting')).toHaveTextContent('Hello, alice');
+    expect(screen.getByTestId('workbench-greeting')).toBeInTheDocument();
+    // Await the me() resolution so the post-mount state update is wrapped (silences the act warning).
+    await waitFor(() =>
+      expect(screen.getByTestId('workbench-greeting')).toHaveTextContent('Alice'),
+    );
   });
 });

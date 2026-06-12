@@ -6,6 +6,7 @@ import com.rainier.auth.dto.LoginResponse;
 import com.rainier.auth.dto.MeResponse;
 import com.rainier.auth.dto.UserDto;
 import com.rainier.auth.service.AuthService;
+import com.rainier.auth.service.MeService;
 import com.rainier.common.exception.BadRequestException;
 import com.rainier.common.exception.UnauthorizedException;
 import javax.servlet.http.HttpServletRequest;
@@ -28,9 +29,11 @@ public class AuthController {
   public static final String ATTR_USERNAME = "rainier.username";
 
   private final AuthService authService;
+  private final MeService meService;
 
-  public AuthController(AuthService authService) {
+  public AuthController(AuthService authService, MeService meService) {
     this.authService = authService;
+    this.meService = meService;
   }
 
   @PostMapping(path = "/login", produces = "application/json", consumes = "application/json")
@@ -51,7 +54,7 @@ public class AuthController {
     if (!(username instanceof String) || ((String) username).isEmpty()) {
       throw new UnauthorizedException("Missing or invalid token");
     }
-    return new MeResponse((String) username);
+    return meService.forUsername((String) username);
   }
 
   private static boolean isBlank(String s) {

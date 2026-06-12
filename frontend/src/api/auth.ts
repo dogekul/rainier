@@ -5,8 +5,30 @@ export interface LoginResponse {
   user: { username: string };
 }
 
+/** One role assignment of the current user (v0.0.18). */
+export interface MeRole {
+  roleId: number | null;
+  roleCode: string | null;
+  roleName: string | null;
+  projectId: number | null;
+  projectName: string | null;
+  projectCode: string | null;
+}
+
+/** A project the current user participates in (v0.0.18). */
+export interface MeProject {
+  id: number;
+  code: string;
+  name: string;
+}
+
+/** v0.0.18: full current-user context. `id` is null when the token subject has no User. */
 export interface MeResponse {
+  id: number | null;
   username: string;
+  name: string | null;
+  roles: MeRole[];
+  projects: MeProject[];
 }
 
 /** Calls {@code POST /api/auth/login}. */
