@@ -5,6 +5,7 @@
 > - 2026-06-07 (v0.0.8-project) — `projectId` activated (strict create/update validation + projectName/projectCode enrichment + startup self-heal). `ownerUserId` mutability reversed: now mutable, service validates new owner exists.
 > - 2026-06-08 (v0.0.9-story) — DELETE FK protection extended with Story-reference check (ordered after demand_requirement check); `storyCount` enrichment added to GET single + list paths.
 > - 2026-06-09 (v0.0.10-sprint) — Story moved under Sprint, so the Requirement-level FK now blocks on Sprint references (message "requirement has linked sprints"); `storyCount` removed from RequirementDetail and replaced by `sprintCount`. The demand_requirement → sprint check ordering is preserved (demands first).
+> - 2026-06-12 (decision — Requirement = Epic, gap B5) — **Requirement IS the agile "Epic"**: the top decomposition unit under Project, broken down into Sprint → Story → Task. The role-card's "Epic" (§卡4 "拆 Epic → Story → Task"; §2 "诉求 → 需求 → Story") maps to this entity — **no separate Epic entity/layer is added**. Where docs list attachment/关联 targets as "项目 / Epic / Story / Task", that means 项目 / 需求(Requirement) / Story / Task. No schema or behavior change; clarification only.
 
 ## Requirements
 
