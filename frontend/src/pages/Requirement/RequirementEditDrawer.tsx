@@ -4,10 +4,11 @@ import { Drawer } from '../../components/ui/Drawer';
 import { Input } from '../../components/ui/Input';
 import { Pagination } from '../../components/ui/Pagination';
 import { Table, type TableColumn } from '../../components/ui/Table';
-import { listDemands, type Demand, type Priority } from '../../api/demand';
+import { listDemands, PRIORITY_LABELS, type Demand, type Priority } from '../../api/demand';
 import { listProjects, type Project } from '../../api/project';
 import { listUsers, type User } from '../../api/user';
 import {
+  REQUIREMENT_STATUS_LABELS as STATUS_LABELS,
   type Complexity,
   type Requirement,
   type RequirementCreate,
@@ -18,13 +19,13 @@ import { usePaginated } from '../../hooks/usePaginated';
 
 const STATUSES: RequirementStatus[] = [
   'DRAFT',
-  'IN_REVIEW',
-  'APPROVED',
-  'IN_DEV',
+  'IN_APPROVAL',
+  'IN_ANALYSIS',
+  'IN_PROGRESS',
   'DELIVERED',
-  'DEPRECATED',
+  'CLOSED',
 ];
-const PRIORITIES: Priority[] = ['URGENT', 'HIGH', 'MEDIUM', 'LOW'];
+const PRIORITIES: Priority[] = ['URGENT', 'HIGH', 'MEDIUM', 'LOW', 'LOWEST'];
 const COMPLEXITIES: Complexity[] = ['XS', 'S', 'M', 'L', 'XL'];
 
 export interface RequirementEditDrawerProps {
@@ -58,6 +59,7 @@ export function RequirementEditDrawer({
   const [complexity, setComplexity] = useState<Complexity | ''>('');
   const [projectId, setProjectId] = useState<number | ''>('');
   const [closeReason, setCloseReason] = useState('');
+  const [expectedDate, setExpectedDate] = useState('');
 
   // sourceDemandIds multi-select state (Set for O(1) toggle); only used on create path.
   const [selected, setSelected] = useState<Set<number>>(new Set());
@@ -91,6 +93,7 @@ export function RequirementEditDrawer({
       setComplexity(editing.complexity ?? '');
       setProjectId(editing.projectId ?? '');
       setCloseReason(editing.closeReason ?? '');
+      setExpectedDate(editing.expectedDate ?? '');
     } else {
       setCode('');
       setTitle('');
@@ -101,6 +104,7 @@ export function RequirementEditDrawer({
       setComplexity('');
       setProjectId('');
       setCloseReason('');
+      setExpectedDate('');
       setSelected(new Set());
     }
   }, [open, editing]);
@@ -172,7 +176,7 @@ export function RequirementEditDrawer({
         >
           {STATUSES.map((s) => (
             <option key={s} value={s}>
-              {s}
+              {STATUS_LABELS[s]}
             </option>
           ))}
         </select>
@@ -186,7 +190,7 @@ export function RequirementEditDrawer({
         >
           {PRIORITIES.map((p) => (
             <option key={p} value={p}>
-              {p}
+              {PRIORITY_LABELS[p]}
             </option>
           ))}
         </select>
@@ -206,6 +210,12 @@ export function RequirementEditDrawer({
           ))}
         </select>
       </div>
+      <Input
+        label="期望交付日期 (YYYY-MM-DD)"
+        value={expectedDate}
+        onChange={(e) => setExpectedDate(e.target.value)}
+        data-testid="req-expected-date"
+      />
       <div style={{ marginBottom: 12 }}>
         <label style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }}>
           所属项目（可空）
@@ -224,9 +234,9 @@ export function RequirementEditDrawer({
           ))}
         </select>
       </div>
-      {status === 'DEPRECATED' && (
+      {status === 'CLOSED' && (
         <Input
-          label="弃用原因"
+          label="关闭原因"
           value={closeReason}
           onChange={(e) => setCloseReason(e.target.value)}
         />
@@ -298,6 +308,7 @@ export function RequirementEditDrawer({
                 // v0.0.8: explicit null clears link (backend treats omitted as null too).
                 projectId: projectId === '' ? null : projectId,
                 closeReason: closeReason || undefined,
+                expectedDate: expectedDate || undefined,
               });
             } else {
               await onCreate({
@@ -310,6 +321,7 @@ export function RequirementEditDrawer({
                 complexity: (complexity || undefined) as Complexity | undefined,
                 projectId: projectId === '' ? undefined : projectId,
                 closeReason: closeReason || undefined,
+                expectedDate: expectedDate || undefined,
                 sourceDemandIds: Array.from(selected),
               });
             }

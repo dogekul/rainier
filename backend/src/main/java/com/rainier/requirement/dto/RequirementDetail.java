@@ -3,6 +3,7 @@ package com.rainier.requirement.dto;
 
 import com.rainier.requirement.domain.Requirement;
 import java.time.Instant;
+import java.time.LocalDate;
 
 /** Response DTO for {@link Requirement} read endpoints. */
 public class RequirementDetail {
@@ -25,6 +26,8 @@ public class RequirementDetail {
 
   private String projectCode;
   private String closeReason;
+  /** v0.0.19 — 期望交付日期 (可空). */
+  private LocalDate expectedDate;
   /**
    * v0.0.10 enrichment — service join with Sprint (count of non-deleted Sprints). Replaces v0.0.9
    * storyCount.
@@ -48,6 +51,7 @@ public class RequirementDetail {
     dto.complexity = r.getComplexity();
     dto.projectId = r.getProjectId();
     dto.closeReason = r.getCloseReason();
+    dto.expectedDate = r.getExpectedDate();
     dto.createTime = r.getCreateTime();
     dto.updateTime = r.getUpdateTime();
     dto.createBy = r.getCreateBy();
@@ -125,6 +129,10 @@ public class RequirementDetail {
 
   public String getCloseReason() {
     return closeReason;
+  }
+
+  public LocalDate getExpectedDate() {
+    return expectedDate;
   }
 
   public Long getSprintCount() {

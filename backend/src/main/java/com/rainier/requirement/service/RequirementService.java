@@ -98,6 +98,7 @@ public class RequirementService {
     r.setComplexity(req.getComplexity());
     r.setProjectId(req.getProjectId());
     r.setCloseReason(req.getCloseReason());
+    r.setExpectedDate(req.getExpectedDate());
 
     Requirement saved;
     try {
@@ -216,6 +217,7 @@ public class RequirementService {
     if (req.getCloseReason() != null) {
       r.setCloseReason(req.getCloseReason());
     }
+    r.setExpectedDate(req.getExpectedDate());
     return enrich(repo.saveAndFlush(r));
   }
 

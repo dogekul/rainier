@@ -1,7 +1,24 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { TasksPage } from './TasksPage';
 import { useAuthStore } from '../../store/auth';
+
+vi.mock('../../api/project', async (o) => ({
+  ...(await o<typeof import('../../api/project')>()),
+  listProjects: vi.fn().mockResolvedValue({ content: [], total: 0, page: 0, size: 100 }),
+}));
+vi.mock('../../api/sprint', async (o) => ({
+  ...(await o<typeof import('../../api/sprint')>()),
+  listSprints: vi.fn().mockResolvedValue({ content: [], total: 0, page: 0, size: 100 }),
+}));
+vi.mock('../../api/story', async (o) => ({
+  ...(await o<typeof import('../../api/story')>()),
+  listStories: vi.fn().mockResolvedValue({ content: [], total: 0, page: 0, size: 100 }),
+}));
+vi.mock('../../api/user', async (o) => ({
+  ...(await o<typeof import('../../api/user')>()),
+  listUsers: vi.fn().mockResolvedValue({ content: [], total: 0, page: 0, size: 100 }),
+}));
 
 vi.mock('../../api/task', async () => {
   const actual = await vi.importActual<typeof import('../../api/task')>('../../api/task');
@@ -40,5 +57,17 @@ describe('TasksPage', () => {
     });
     expect(screen.getByText('修登录页 bug')).toBeInTheDocument();
     expect(screen.getByTestId('task-new-btn')).toBeInTheDocument();
+  });
+
+  /** TC-FES-PRIO-001: the task edit drawer's priority dropdown includes 最低 (shared 5-level). */
+  it('task drawer priority dropdown includes 最低 (TC-FES-PRIO-001)', async () => {
+    render(<TasksPage />);
+    await waitFor(() => {
+      expect(screen.getByTestId('task-new-btn')).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByTestId('task-new-btn'));
+    await waitFor(() => {
+      expect(screen.getByText('最低')).toBeInTheDocument();
+    });
   });
 });

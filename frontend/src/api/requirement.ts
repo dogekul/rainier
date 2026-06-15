@@ -4,11 +4,21 @@ import type { Priority } from './demand';
 
 export type RequirementStatus =
   | 'DRAFT'
-  | 'IN_REVIEW'
-  | 'APPROVED'
-  | 'IN_DEV'
+  | 'IN_APPROVAL'
+  | 'IN_ANALYSIS'
+  | 'IN_PROGRESS'
   | 'DELIVERED'
-  | 'DEPRECATED';
+  | 'CLOSED';
+
+/** v0.0.19 — 中文 labels for the requirement status set (drawer dropdown + table column). */
+export const REQUIREMENT_STATUS_LABELS: Record<RequirementStatus, string> = {
+  DRAFT: '草稿',
+  IN_APPROVAL: '审批中',
+  IN_ANALYSIS: '分析中',
+  IN_PROGRESS: '实施中',
+  DELIVERED: '已交付',
+  CLOSED: '已关闭',
+};
 
 export type Complexity = 'XS' | 'S' | 'M' | 'L' | 'XL';
 
@@ -30,6 +40,8 @@ export interface Requirement {
   /** v0.0.10 enrichment — count of non-deleted Sprints under this Requirement (replaces v0.0.9 storyCount). */
   sprintCount?: number;
   closeReason?: string | null;
+  /** v0.0.19 — 期望交付日期 (YYYY-MM-DD, 可空). */
+  expectedDate?: string | null;
   createBy?: string;
   createTime?: string;
   updateBy?: string;
@@ -46,6 +58,8 @@ export interface RequirementCreate {
   complexity?: Complexity;
   projectId?: number;
   closeReason?: string;
+  /** v0.0.19 — 期望交付日期 (YYYY-MM-DD). */
+  expectedDate?: string;
   /** Optional: atomically create N derived links to existing demands. */
   sourceDemandIds?: number[];
 }
@@ -62,6 +76,8 @@ export interface RequirementUpdate {
   /** v0.0.8: null explicitly clears projectId (backend accepts unset for null). */
   projectId?: number | null;
   closeReason?: string;
+  /** v0.0.19 — 期望交付日期 (YYYY-MM-DD). */
+  expectedDate?: string;
 }
 
 export interface RequirementListParams {

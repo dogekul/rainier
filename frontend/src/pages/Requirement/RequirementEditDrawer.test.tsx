@@ -80,7 +80,6 @@ vi.mock('../../api/project', async () => {
 
 describe('RequirementEditDrawer', () => {
   /** TC-FES-D03: 用户勾选 2 个 demand 后保存 → onCreate 收到 body.sourceDemandIds = [10, 20]. */
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   it('passes selected demand ids and selected projectId on create (TC-FES-D03 + v0.0.8 project)', async () => {
     const onCreate = vi.fn();
     const onUpdate = vi.fn();
@@ -163,5 +162,75 @@ describe('RequirementEditDrawer', () => {
     const [id, body] = onUpdate.mock.calls[0];
     expect(id).toBe(99);
     expect(body.ownerUserId).toBe(2);
+  });
+
+  /** TC-FES-REQE-001: status dropdown shows the new 6 中文 states, not the legacy labels. */
+  it('renders the new 6 status options in Chinese (TC-FES-REQE-001)', async () => {
+    render(
+      <RequirementEditDrawer
+        open={true}
+        editing={null}
+        onClose={vi.fn()}
+        onCreate={vi.fn()}
+        onUpdate={vi.fn()}
+      />,
+    );
+    await waitFor(() => {
+      expect(screen.getByTestId('req-sources-section')).toBeInTheDocument();
+    });
+    for (const label of ['草稿', '审批中', '分析中', '实施中', '已交付', '已关闭']) {
+      expect(screen.getByText(label)).toBeInTheDocument();
+    }
+    // legacy labels gone
+    expect(screen.queryByText('评审中')).toBeNull();
+    expect(screen.queryByText('已批准')).toBeNull();
+    expect(screen.queryByText('已废弃')).toBeNull();
+  });
+
+  /** TC-FES-REQE-002: priority dropdown has 5 levels including 最低. */
+  it('renders 5 priority options including 最低 (TC-FES-REQE-002)', async () => {
+    render(
+      <RequirementEditDrawer
+        open={true}
+        editing={null}
+        onClose={vi.fn()}
+        onCreate={vi.fn()}
+        onUpdate={vi.fn()}
+      />,
+    );
+    await waitFor(() => {
+      expect(screen.getByTestId('req-sources-section')).toBeInTheDocument();
+    });
+    expect(screen.getByText('最低')).toBeInTheDocument();
+    expect(screen.getByText('紧急')).toBeInTheDocument();
+  });
+
+  /** TC-FES-REQE-003: submitting carries expectedDate. */
+  it('submits expectedDate on create (TC-FES-REQE-003)', async () => {
+    const onCreate = vi.fn();
+    render(
+      <RequirementEditDrawer
+        open={true}
+        editing={null}
+        onClose={vi.fn()}
+        onCreate={onCreate}
+        onUpdate={vi.fn()}
+      />,
+    );
+    await waitFor(() => {
+      expect(screen.getByTestId('req-sources-section')).toBeInTheDocument();
+    });
+    fireEvent.change(screen.getByLabelText(/编码/), { target: { value: 'REQ-E1' } });
+    fireEvent.change(screen.getByLabelText(/标题/), { target: { value: 'X' } });
+    fireEvent.change(screen.getByTestId('req-owner-select'), { target: { value: '1' } });
+    fireEvent.change(screen.getByTestId('req-expected-date'), {
+      target: { value: '2026-09-01' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: '保存' }));
+    await waitFor(() => {
+      expect(onCreate).toHaveBeenCalledWith(
+        expect.objectContaining({ expectedDate: '2026-09-01' }),
+      );
+    });
   });
 });

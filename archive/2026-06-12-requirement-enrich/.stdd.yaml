@@ -1,0 +1,80 @@
+change:
+  id: 2026-06-12-requirement-enrich
+  title: v0.0.19-requirement-enrich — status 6-state remap + 5-level priority + expectedDate
+  baseline: {commit: 80a62d5, tag: v0.0.18-workbench}
+  type: entity-enrich
+  parent_change: 2026-06-12-workbench
+
+phase:
+  current: archived
+  archived_at: '2026-06-15'
+  understand:
+    status: completed
+    confirmed_at: '2026-06-12'
+    artifact: proposal.md
+    gate1_decisions:
+      d1_status: DRAFT_IN_APPROVAL_IN_ANALYSIS_IN_PROGRESS_DELIVERED_CLOSED
+      d1_remap: {IN_REVIEW: IN_APPROVAL, APPROVED: IN_ANALYSIS, IN_DEV: IN_PROGRESS, DEPRECATED: CLOSED}
+      d2_priority_5th: LOWEST
+      d2_priority_shared: true       # affects demand/requirement/story/task
+      d3_enforce_transitions: false
+      d4_remap_via_bootstrap_runner: true
+  spec:
+    status: completed
+    confirmed_at: '2026-06-12'        # Gate 2 auto-proceed (user: 中间都不需要我确认)
+    artifacts: [design.md, specs/entity-requirement/spec.md, specs/frontend-scaffold/spec.md, test-plan.md]
+  slice: {status: completed, completed_at: '2026-06-12', artifacts: [slices.md, tasks.md]}
+  build:
+    status: completed
+    completed_at: '2026-06-15'
+    metrics: {backend_tests: 348, frontend_tests: 77, e2e_status: green}
+  verify:
+    status: completed
+    completed_at: '2026-06-15'
+    artifacts: [test-report.md, design-adjustments.md, pending-adjustments.md]
+    metrics:
+      backend_tests_total: 348
+      frontend_tests_total: 77
+      review_round1: {critical: 0, high: 1, medium: 4, low: 7}
+      review_post_fix: {critical: 0, high: 0, medium: 0}
+      failure_modes_hits: 0
+      e2e_status: green
+    gate3_confirmed_at: '2026-06-15'   # user: 先这样，确认交付
+  deliver:
+    status: completed
+    completed_at: '2026-06-15'
+    tag: v0.0.19-requirement-enrich
+    pushed: false              # user said 交付 only; push left to user
+    artifacts:
+      - archive/2026-06-12-requirement-enrich/
+      - specs/entity-requirement/spec.md      # MOD — status/remap/priority/expectedDate ADDED Requirements + changelog
+      - specs/frontend-scaffold/spec.md       # MOD — requirement UI + priority labels ADDED Requirements + changelog
+    spec_merge: {new_capabilities: 0, modified_capabilities: 2}
+    metrics: {backend_tests_total: 348, frontend_tests_total: 77, tables: 19, e2e_status: green}
+
+long_range:
+  enabled: true
+  mode: full_auto
+  pre_auth_completed: true
+  pre_auth_timestamp: '2026-06-12'
+  pre_auth:
+    decisions:
+      design_deviation: {minor: auto_record, major: auto_record_continue}
+      technical_blocker: workaround
+      iteration: {max_rounds: 10}
+      git_ops: allow_up_to_commit_and_tag    # push NOT pre-authorized
+      gate_2: auto_proceed                    # user: 中间都不需要我确认
+    operations: {directory: allow, file_write: allow, command: allow, script: allow, network: allow, file_read: allow, git_readonly: allow}
+    gates: {gate_3: require_user_confirmation}   # stop at end of Phase 5 (user: 完成 phase 345)
+  user_directive: '就这样，然后直接完成phase 345，中间都不需要我确认'
+
+scope:
+  type: entity-enrich
+  capabilities_new: []
+  capabilities_modified: [entity-requirement, frontend-scaffold]
+  shared_change: priority_common_adds_LOWEST   # touches demand/requirement/story/task accept-side + 4 frontend dropdowns
+  new_tables: 0
+  explicitly_excluded: [enforced_status_transitions, other_candidate_fields_value_acceptance_tags, ai]
+
+baseline_metrics: {backend_tests: 341, frontend_tests: 73, tables: 19}
+standing_constraint: 仅状态 remap 是有意的存量数据变更(IN_REVIEW→IN_APPROVAL 等, 保留语义); 其它存量字段不动; expectedDate/priority 纯加; E2E 验证.

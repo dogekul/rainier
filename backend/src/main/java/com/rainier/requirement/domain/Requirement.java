@@ -2,6 +2,7 @@
 package com.rainier.requirement.domain;
 
 import com.rainier.common.persistence.BaseEntity;
+import java.time.LocalDate;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Table;
@@ -52,6 +53,10 @@ public class Requirement extends BaseEntity {
 
   @Column(name = "close_reason", length = 500)
   private String closeReason;
+
+  /** v0.0.19 — 期望交付日期 (nullable). */
+  @Column(name = "expected_date")
+  private LocalDate expectedDate;
 
   public String getCode() {
     return code;
@@ -123,5 +128,13 @@ public class Requirement extends BaseEntity {
 
   public void setCloseReason(String closeReason) {
     this.closeReason = closeReason;
+  }
+
+  public LocalDate getExpectedDate() {
+    return expectedDate;
+  }
+
+  public void setExpectedDate(LocalDate expectedDate) {
+    this.expectedDate = expectedDate;
   }
 }

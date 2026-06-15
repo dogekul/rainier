@@ -9,8 +9,10 @@ import {
   deleteRequirement,
   listRequirements,
   updateRequirement,
+  REQUIREMENT_STATUS_LABELS,
   type Requirement,
 } from '../../api/requirement';
+import { PRIORITY_LABELS } from '../../api/demand';
 import { usePaginated } from '../../hooks/usePaginated';
 import { RequirementEditDrawer } from './RequirementEditDrawer';
 import { SprintListPanel } from './SprintListPanel';
@@ -76,8 +78,12 @@ export function RequirementsPage() {
       title: 'Sprint 数',
       render: (r) => (r.sprintCount ?? 0).toString(),
     },
-    { key: 'status', title: '状态', render: (r) => r.status },
-    { key: 'priority', title: '优先级', render: (r) => r.priority },
+    {
+      key: 'status',
+      title: '状态',
+      render: (r) => REQUIREMENT_STATUS_LABELS[r.status] ?? r.status,
+    },
+    { key: 'priority', title: '优先级', render: (r) => PRIORITY_LABELS[r.priority] ?? r.priority },
     { key: 'complexity', title: '复杂度', render: (r) => r.complexity ?? '—' },
     {
       key: 'actions',

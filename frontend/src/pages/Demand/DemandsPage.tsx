@@ -11,6 +11,7 @@ import {
   deleteDemand,
   listDemands,
   updateDemand,
+  PRIORITY_LABELS,
   type Demand,
   type DemandStatus,
   type Priority,
@@ -20,7 +21,7 @@ import { listUsers, type User } from '../../api/user';
 import { usePaginated } from '../../hooks/usePaginated';
 
 const STATUSES: DemandStatus[] = ['PENDING', 'IN_REVIEW', 'CONVERTED', 'DONE', 'CLOSED'];
-const PRIORITIES: Priority[] = ['URGENT', 'HIGH', 'MEDIUM', 'LOW'];
+const PRIORITIES: Priority[] = ['URGENT', 'HIGH', 'MEDIUM', 'LOW', 'LOWEST'];
 const SOURCES: Source[] = ['WEB', 'WECHAT', 'EMAIL', 'DINGTALK', 'OTHER'];
 
 export function DemandsPage() {
@@ -170,7 +171,7 @@ export function DemandsPage() {
           >
             {PRIORITIES.map((p) => (
               <option key={p} value={p}>
-                {p}
+                {PRIORITY_LABELS[p]}
               </option>
             ))}
           </select>

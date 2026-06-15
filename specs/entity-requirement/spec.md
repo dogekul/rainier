@@ -6,6 +6,7 @@
 > - 2026-06-08 (v0.0.9-story) — DELETE FK protection extended with Story-reference check (ordered after demand_requirement check); `storyCount` enrichment added to GET single + list paths.
 > - 2026-06-09 (v0.0.10-sprint) — Story moved under Sprint, so the Requirement-level FK now blocks on Sprint references (message "requirement has linked sprints"); `storyCount` removed from RequirementDetail and replaced by `sprintCount`. The demand_requirement → sprint check ordering is preserved (demands first).
 > - 2026-06-12 (decision — Requirement = Epic, gap B5) — **Requirement IS the agile "Epic"**: the top decomposition unit under Project, broken down into Sprint → Story → Task. The role-card's "Epic" (§卡4 "拆 Epic → Story → Task"; §2 "诉求 → 需求 → Story") maps to this entity — **no separate Epic entity/layer is added**. Where docs list attachment/关联 targets as "项目 / Epic / Story / Task", that means 项目 / 需求(Requirement) / Story / Task. No schema or behavior change; clarification only.
+> - 2026-06-15 (v0.0.19-requirement-enrich) — status 6-state set adjusted to DRAFT/IN_APPROVAL/IN_ANALYSIS/IN_PROGRESS/DELIVERED/CLOSED (草稿/审批中/分析中/实施中/已交付/已关闭), freely changeable (no enforced transitions). Legacy statuses remapped at startup by `RequirementStatusBackfill` (IN_REVIEW→IN_APPROVAL, APPROVED→IN_ANALYSIS, IN_DEV→IN_PROGRESS, DEPRECATED→CLOSED). Shared `Priority` gains a 5th level LOWEST. New nullable `expectedDate` (期望交付日期) on create/update/detail (PUT full-replace, same as projectId). See the ADDED Requirements at the end.
 
 ## Requirements
 
@@ -176,3 +177,63 @@
 - **WHEN** `GET /api/requirements/999999/features`
 - **THEN** SHALL 返回 404
 - **AND** body.message SHALL 含 "requirement not found"
+
+## ADDED Requirements (from change 2026-06-12-requirement-enrich / v0.0.19)
+
+### Requirement: 需求新状态集（6 态）
+
+后端 SHALL 校验 Requirement status ∈ {DRAFT, IN_APPROVAL, IN_ANALYSIS, IN_PROGRESS, DELIVERED, CLOSED};旧值不再合法。create 省略默认 DRAFT。不强制转换。
+
+#### Scenario: 新状态创建成功
+
+- **GIVEN** 用户 id=1 存在
+- **WHEN** `POST /api/requirements` body 含 `status="IN_ANALYSIS"`（+必填 code/title/ownerUserId）
+- **THEN** 系统 SHALL 返回 201
+- **AND** body.status SHALL 为 `"IN_ANALYSIS"`
+
+#### Scenario: 旧状态值被拒
+
+- **GIVEN** 用户 id=1 存在
+- **WHEN** `POST /api/requirements` body 含 `status="APPROVED"`（旧值，及 IN_REVIEW/IN_DEV/DEPRECATED）
+- **THEN** 系统 SHALL 返回 400
+- **AND** body.message SHALL 含 `"invalid status"`
+
+### Requirement: 存量状态 remap（启动迁移）
+
+系统 SHALL 在启动时把存量 Requirement 的旧状态 remap 为新值:IN_REVIEW→IN_APPROVAL、APPROVED→IN_ANALYSIS、IN_DEV→IN_PROGRESS、DEPRECATED→CLOSED;DRAFT/DELIVERED 不变;其它字段不变。
+
+#### Scenario: 启动 remap 旧状态
+
+- **GIVEN** rainier_requirement 有行 status 分别为 IN_REVIEW / APPROVED / IN_DEV / DEPRECATED / DRAFT / DELIVERED
+- **WHEN** 应用启动，`RequirementStatusBackfill` 运行
+- **THEN** 这些行 status SHALL 变为 IN_APPROVAL / IN_ANALYSIS / IN_PROGRESS / CLOSED / DRAFT / DELIVERED
+- **AND** 各行其它字段 SHALL 不变
+
+### Requirement: 优先级接受 LOWEST（共用 Priority 五级）
+
+后端 SHALL 接受共用 Priority 第 5 级 `LOWEST`;Requirement 及 demand/story/task create priority=LOWEST 合法（4 实体同校验 `Priority.ALL`）。
+
+#### Scenario: requirement 优先级 LOWEST 创建成功
+
+- **GIVEN** 用户 id=1 存在
+- **WHEN** `POST /api/requirements` body 含 `priority="LOWEST"`
+- **THEN** 系统 SHALL 返回 201
+- **AND** body.priority SHALL 为 `"LOWEST"`
+
+### Requirement: 期望交付日期
+
+后端 SHALL 在 Requirement create/update 接受 `expectedDate`(LocalDate, 可空, PUT 全量替换),并在 Detail 返回。
+
+#### Scenario: create + detail 含 expectedDate
+
+- **GIVEN** 用户 id=1 存在
+- **WHEN** `POST /api/requirements` body 含 `expectedDate="2026-09-01"`
+- **THEN** 系统 SHALL 返回 201
+- **AND** body.expectedDate SHALL 为 `"2026-09-01"`
+
+#### Scenario: update 省略 expectedDate 即清空
+
+- **GIVEN** 需求 id=X 当前 expectedDate="2026-09-01"
+- **WHEN** `PUT /api/requirements/X` body 不含 expectedDate
+- **THEN** 系统 SHALL 返回 200
+- **AND** body.expectedDate SHALL 为 null（全量替换语义,同 projectId）

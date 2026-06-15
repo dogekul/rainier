@@ -2,7 +2,16 @@ import client from './client';
 import type { PaginatedResult } from '../hooks/usePaginated';
 
 export type DemandStatus = 'PENDING' | 'IN_REVIEW' | 'CONVERTED' | 'DONE' | 'CLOSED';
-export type Priority = 'URGENT' | 'HIGH' | 'MEDIUM' | 'LOW';
+export type Priority = 'URGENT' | 'HIGH' | 'MEDIUM' | 'LOW' | 'LOWEST';
+
+/** v0.0.19 — shared 中文 labels for the 5-level Priority (used by every priority dropdown). */
+export const PRIORITY_LABELS: Record<Priority, string> = {
+  URGENT: '紧急',
+  HIGH: '高',
+  MEDIUM: '中',
+  LOW: '低',
+  LOWEST: '最低',
+};
 export type Source = 'WEB' | 'WECHAT' | 'EMAIL' | 'DINGTALK' | 'OTHER';
 
 export interface Demand {

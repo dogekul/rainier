@@ -74,6 +74,22 @@ class DemandControllerCreateTest {
         .andExpect(jsonPath("$.aiDuplicateHint").isEmpty());
   }
 
+  /** TC-PRIO-001: v0.0.19 shared Priority gains LOWEST — accepted end-to-end on a non-requirement entity. */
+  @Test
+  void post_priorityLowest_returns201() throws Exception {
+    Long userId = createUser();
+    ObjectNode body = json.createObjectNode();
+    body.put("title", "x");
+    body.put("description", "x");
+    body.put("submitterUserId", userId);
+    body.put("priority", "LOWEST");
+    mockMvc
+        .perform(
+            post("/api/demands").contentType(MediaType.APPLICATION_JSON).content(body.toString()))
+        .andExpect(status().isCreated())
+        .andExpect(jsonPath("$.priority").value("LOWEST"));
+  }
+
   /** TC-DMD-002: 缺 title → 400. */
   @Test
   void post_missingTitle_returns400() throws Exception {

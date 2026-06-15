@@ -14,6 +14,7 @@
 > - 2026-06-11 (v0.0.16-project-type) — ProjectsPage 新建/编辑抽屉加「项目类型」下拉 (`projects-type-select`, 选项 轻量/正式, 新建默认 轻量); 表格加「类型」列 (中文 轻量/正式); 表格上方加「类型」过滤下拉 (`projects-type-filter`, 含「全部类型」, 改变即带 `projectType` 重查). `api/project.ts` 加 `ProjectType` 类型 + `projectType` 字段. 无新增页面/路由/Sider 组.
 > - 2026-06-12 (v0.0.17-milestone) — ProjectsPage 每行操作区加「里程碑」按钮 (`projects-milestones-btn-${id}`) → 用 Table 的 `isExpanded`/`renderExpanded` 在行下内联展开 `MilestonesPanel` (`milestones-panel-${projectId}`, SprintsPage 同款展开模式); 面板内对该项目里程碑做 列表(按 sortOrder)/新建/编辑/删除 (`milestone-save-btn` 等). 新 `api/milestone.ts`. 无新增页面/路由/Sider 组.
 > - 2026-06-12 (v0.0.18-workbench) — 占位 Home 删除 → `/` 改为「我的工作台」`WorkbenchPage`(挂载调 `GET /api/auth/me` 取当前用户上下文;问候 + 角色 chips + 我的任务(assignee=我, 状态快改 `updateTask`) + 我的 Story(owner=我) + 我的项目;条目均为链接 → 任务/pm/tasks、Story/pm/sprints、项目/pm/projects). `AuthUser` 扩展 id/name/roles/projects(可选);新 `api/auth.ts` 富 MeResponse、`api/story.ts` +ownerUserId. **导航壳增强**(Gate 3 反馈): AppLayout 加「工作台」菜单组(我的工作台→/)、品牌「Rainier」→`/` 链接、菜单组标题可折叠(`appshell-group-${key}`)、顶部 `appshell-sider-toggle` 收起整个 Sider、样式优化.
+> - 2026-06-15 (v0.0.19-requirement-enrich) — RequirementEditDrawer 状态下拉改新 6 态中文(草稿/审批中/分析中/实施中/已交付/已关闭)、优先级下拉 5 级中文(紧急/高/中/低/最低)、加「期望交付日期」输入(`req-expected-date`);RequirementsPage 状态/优先级列中文化;demand/story/task 优先级下拉加「最低」. 中文标签集中:`api/demand.ts:PRIORITY_LABELS`、`api/requirement.ts:REQUIREMENT_STATUS_LABELS`(全下拉/列复用).
 
 ## Requirements
 
@@ -637,3 +638,38 @@
 - **WHEN** 用户点击顶部 Sider 开关
 - **THEN** 整个 Sider SHALL 从 DOM 移除
 - **AND** 再次点击 SHALL 恢复显示
+
+## ADDED Requirements (from change 2026-06-12-requirement-enrich / v0.0.19)
+
+### Requirement: RequirementsPage 新状态 / 五级优先级 / 期望交付日期
+
+前端 SHALL 在 RequirementEditDrawer 状态下拉提供新 6 态中文(草稿/审批中/分析中/实施中/已交付/已关闭)、优先级下拉提供 5 级中文(含「最低」)、并提供「期望交付日期」输入(`req-expected-date`),提交透传 `expectedDate`。RequirementsPage 状态/优先级列 SHALL 中文化。
+
+#### Scenario: 状态下拉为新 6 态中文
+
+- **GIVEN** 用户打开 RequirementEditDrawer
+- **WHEN** 抽屉渲染
+- **THEN** 状态下拉 SHALL 含「草稿」「审批中」「分析中」「实施中」「已交付」「已关闭」
+- **AND** SHALL 不含旧值中文化标签（评审中/已批准/已废弃）
+
+#### Scenario: 优先级下拉含「最低」
+
+- **GIVEN** RequirementEditDrawer 已渲染
+- **WHEN** 查看优先级下拉
+- **THEN** SHALL 含 5 个选项,包括「最低」
+
+#### Scenario: 提交携带 expectedDate
+
+- **GIVEN** 用户在新建抽屉填妥必填项并填「期望交付日期」= "2026-09-01"
+- **WHEN** 点击保存
+- **THEN** SHALL 调用 `createRequirement` 且 body 含 `expectedDate: "2026-09-01"`
+
+### Requirement: demand/story/task 优先级含最低
+
+前端 SHALL 在 demand/story/task 页的优先级下拉提供 5 级中文(含「最低」)。
+
+#### Scenario: TasksPage 优先级下拉含最低
+
+- **GIVEN** 用户打开 TasksPage 新建任务抽屉
+- **WHEN** 查看优先级下拉
+- **THEN** SHALL 含「最低」选项

@@ -104,6 +104,7 @@ class RequirementControllerQueryTest {
       "complexity",
       "projectId",
       "closeReason",
+      "expectedDate",
       "createTime",
       "updateTime",
       "createBy",
@@ -140,7 +141,7 @@ class RequirementControllerQueryTest {
     body.put("code", "REQ-U");
     body.put("title", "x");
     body.put("description", "x");
-    body.put("status", "APPROVED");
+    body.put("status", "IN_ANALYSIS");
     body.put("priority", "HIGH");
     body.put("ownerUserId", userId); // v0.0.8: now required
     mockMvc
@@ -149,7 +150,7 @@ class RequirementControllerQueryTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(body.toString()))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.status").value("APPROVED"))
+        .andExpect(jsonPath("$.status").value("IN_ANALYSIS"))
         .andExpect(jsonPath("$.priority").value("HIGH"));
   }
 

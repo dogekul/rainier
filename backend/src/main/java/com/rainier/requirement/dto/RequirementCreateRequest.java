@@ -1,6 +1,7 @@
 /* (C) 2026 Rainier — internal use only. */
 package com.rainier.requirement.dto;
 
+import java.time.LocalDate;
 import java.util.List;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
@@ -42,6 +43,9 @@ public class RequirementCreateRequest {
 
   @Size(max = 500)
   private String closeReason;
+
+  /** v0.0.19 — 期望交付日期 (可空). */
+  private LocalDate expectedDate;
 
   private List<Long> sourceDemandIds;
 
@@ -115,6 +119,14 @@ public class RequirementCreateRequest {
 
   public void setCloseReason(String closeReason) {
     this.closeReason = closeReason;
+  }
+
+  public LocalDate getExpectedDate() {
+    return expectedDate;
+  }
+
+  public void setExpectedDate(LocalDate expectedDate) {
+    this.expectedDate = expectedDate;
   }
 
   public List<Long> getSourceDemandIds() {

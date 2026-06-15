@@ -4,7 +4,7 @@ import { Drawer } from '../../components/ui/Drawer';
 import { Input } from '../../components/ui/Input';
 import { listUsers, type User } from '../../api/user';
 import { useAuthStore } from '../../store/auth';
-import type { Priority } from '../../api/demand';
+import { PRIORITY_LABELS, type Priority } from '../../api/demand';
 import type { Complexity } from '../../api/requirement';
 import {
   type Story,
@@ -21,7 +21,7 @@ const STATUS_OPTIONS: StoryStatus[] = [
   'BLOCKED',
   'CANCELLED',
 ];
-const PRIORITY_OPTIONS: Priority[] = ['URGENT', 'HIGH', 'MEDIUM', 'LOW'];
+const PRIORITY_OPTIONS: Priority[] = ['URGENT', 'HIGH', 'MEDIUM', 'LOW', 'LOWEST'];
 const COMPLEXITY_OPTIONS: Complexity[] = ['XS', 'S', 'M', 'L', 'XL'];
 
 export interface StoryEditDrawerProps {
@@ -180,7 +180,7 @@ export function StoryEditDrawer({
         >
           {PRIORITY_OPTIONS.map((p) => (
             <option key={p} value={p}>
-              {p}
+              {PRIORITY_LABELS[p]}
             </option>
           ))}
         </select>
