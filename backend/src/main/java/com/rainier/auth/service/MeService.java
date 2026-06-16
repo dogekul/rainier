@@ -85,7 +85,9 @@ public class MeService {
               r == null ? null : r.getName(),
               ur.getProjectId(),
               p == null ? null : p.getName(),
-              p == null ? null : p.getCode()));
+              p == null ? null : p.getCode(),
+              // Never null: getAdminAccess() already coalesces NULL→false; missing role → false.
+              r == null ? Boolean.FALSE : r.getAdminAccess()));
     }
 
     // Distinct projects (first-seen order); org-level roles (projectId null) add no project.

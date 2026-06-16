@@ -16,6 +16,9 @@ public class RoleUpdateRequest {
 
   private Boolean enabled;
 
+  /** v0.0.20: grants the full admin console. When null, the existing value is kept. */
+  private Boolean adminAccess;
+
   public String getName() {
     return name;
   }
@@ -38,5 +41,13 @@ public class RoleUpdateRequest {
 
   public void setEnabled(Boolean enabled) {
     this.enabled = enabled;
+  }
+
+  public Boolean getAdminAccess() {
+    return adminAccess;
+  }
+
+  public void setAdminAccess(Boolean adminAccess) {
+    this.adminAccess = adminAccess;
   }
 }

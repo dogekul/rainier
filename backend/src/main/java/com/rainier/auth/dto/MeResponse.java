@@ -55,6 +55,7 @@ public class MeResponse {
     private final Long projectId;
     private final String projectName;
     private final String projectCode;
+    private final Boolean adminAccess;
 
     public MeRole(
         Long roleId,
@@ -62,13 +63,15 @@ public class MeResponse {
         String roleName,
         Long projectId,
         String projectName,
-        String projectCode) {
+        String projectCode,
+        Boolean adminAccess) {
       this.roleId = roleId;
       this.roleCode = roleCode;
       this.roleName = roleName;
       this.projectId = projectId;
       this.projectName = projectName;
       this.projectCode = projectCode;
+      this.adminAccess = adminAccess;
     }
 
     public Long getRoleId() {
@@ -93,6 +96,11 @@ public class MeResponse {
 
     public String getProjectCode() {
       return projectCode;
+    }
+
+    /** v0.0.20: whether this role grants the full admin console (never null — false when unknown). */
+    public Boolean getAdminAccess() {
+      return adminAccess;
     }
   }
 

@@ -1,12 +1,29 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it } from 'vitest';
+import type { MeRole } from '../api/auth';
 import { useAuthStore } from '../store/auth';
 import { AppLayout } from './AppLayout';
 
+function role(adminAccess: boolean): MeRole {
+  return {
+    roleId: 1,
+    roleCode: 'R',
+    roleName: 'R',
+    projectId: null,
+    projectName: null,
+    projectCode: null,
+    adminAccess,
+  };
+}
+
 describe('AppLayout Sider (TC-FES-201)', () => {
   beforeEach(() => {
-    useAuthStore.setState({ token: 'tk', user: { username: 'alice' } });
+    // v0.0.20: default to an admin user so the existing full-console group assertions hold.
+    useAuthStore.setState({
+      token: 'tk',
+      user: { username: 'alice', roles: [role(true)] },
+    });
   });
 
   it('renders organization menu group with 3 items', () => {
@@ -219,5 +236,41 @@ describe('AppLayout Sider (TC-FES-201)', () => {
     expect(screen.queryByTestId('appshell-sider')).toBeNull();
     fireEvent.click(screen.getByTestId('appshell-sider-toggle'));
     expect(screen.getByTestId('appshell-sider')).toBeInTheDocument();
+  });
+
+  /** v0.0.20 TC-FES-RN-001: a non-admin user sees only 工作台 + 需求管理. */
+  it('shows only 工作台 and 需求管理 to a non-admin user (TC-FES-RN-001)', () => {
+    useAuthStore.setState({
+      token: 'tk',
+      user: { username: 'bob', roles: [role(false)] },
+    });
+    renderShell();
+    // All-users groups present.
+    expect(screen.getByText('工作台')).toBeInTheDocument();
+    expect(screen.getByText('需求管理')).toBeInTheDocument();
+    // Admin-only groups hidden.
+    expect(screen.queryByText('组织')).toBeNull();
+    expect(screen.queryByText('人事配置')).toBeNull();
+    expect(screen.queryByText('系统')).toBeNull();
+    expect(screen.queryByTestId('appshell-nav-/org/organizations')).toBeNull();
+    expect(screen.queryByTestId('appshell-nav-/sys/audit-logs')).toBeNull();
+    // 产品 group title hidden — its item links must be gone too.
+    expect(screen.queryByTestId('appshell-nav-/pm/products')).toBeNull();
+  });
+
+  /** v0.0.20 TC-FES-RN-002: an admin user sees all six groups. */
+  it('shows all six groups to an admin user (TC-FES-RN-002)', () => {
+    useAuthStore.setState({
+      token: 'tk',
+      user: { username: 'alice', roles: [role(false), role(true)] },
+    });
+    renderShell();
+    expect(screen.getByText('工作台')).toBeInTheDocument();
+    expect(screen.getByText('组织')).toBeInTheDocument();
+    expect(screen.getAllByText('产品').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText('需求管理')).toBeInTheDocument();
+    expect(screen.getByText('人事配置')).toBeInTheDocument();
+    expect(screen.getByText('系统')).toBeInTheDocument();
+    expect(screen.getByTestId('appshell-nav-/sys/audit-logs')).toBeInTheDocument();
   });
 });

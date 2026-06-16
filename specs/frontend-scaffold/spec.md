@@ -15,8 +15,67 @@
 > - 2026-06-12 (v0.0.17-milestone) — ProjectsPage 每行操作区加「里程碑」按钮 (`projects-milestones-btn-${id}`) → 用 Table 的 `isExpanded`/`renderExpanded` 在行下内联展开 `MilestonesPanel` (`milestones-panel-${projectId}`, SprintsPage 同款展开模式); 面板内对该项目里程碑做 列表(按 sortOrder)/新建/编辑/删除 (`milestone-save-btn` 等). 新 `api/milestone.ts`. 无新增页面/路由/Sider 组.
 > - 2026-06-12 (v0.0.18-workbench) — 占位 Home 删除 → `/` 改为「我的工作台」`WorkbenchPage`(挂载调 `GET /api/auth/me` 取当前用户上下文;问候 + 角色 chips + 我的任务(assignee=我, 状态快改 `updateTask`) + 我的 Story(owner=我) + 我的项目;条目均为链接 → 任务/pm/tasks、Story/pm/sprints、项目/pm/projects). `AuthUser` 扩展 id/name/roles/projects(可选);新 `api/auth.ts` 富 MeResponse、`api/story.ts` +ownerUserId. **导航壳增强**(Gate 3 反馈): AppLayout 加「工作台」菜单组(我的工作台→/)、品牌「Rainier」→`/` 链接、菜单组标题可折叠(`appshell-group-${key}`)、顶部 `appshell-sider-toggle` 收起整个 Sider、样式优化.
 > - 2026-06-15 (v0.0.19-requirement-enrich) — RequirementEditDrawer 状态下拉改新 6 态中文(草稿/审批中/分析中/实施中/已交付/已关闭)、优先级下拉 5 级中文(紧急/高/中/低/最低)、加「期望交付日期」输入(`req-expected-date`);RequirementsPage 状态/优先级列中文化;demand/story/task 优先级下拉加「最低」. 中文标签集中:`api/demand.ts:PRIORITY_LABELS`、`api/requirement.ts:REQUIREMENT_STATUS_LABELS`(全下拉/列复用).
+> - 2026-06-15 (v0.0.20-role-nav) — **角色分级导航**: `store/auth.ts` 加 `isElevated(user)`(任一角色 `adminAccess` 为真); `AppLayout` 的 `navGroups` 加 `requiresAdmin`(组织/产品/人事配置/系统 = admin, 工作台/需求管理 = 全员), 按 `isElevated` 过滤可见组(普通用户只见 工作台+需求管理). `ProtectedRoute` 升为 **app 级 me() 注水点**(挂载调一次 `GET /api/auth/me` 写 store, 取代 WorkbenchPage 自调) + **admin 路由守卫**(`isAdminPath` 命中 `/org`、`/hr`、`/sys`、`/pm/products`、`/pm/product-modules`、`/pm/features` 且非 elevated → redirect `/`; hydrated 门控避免首帧误踢; `/pm` 全员路由不被守卫). `navGroups` 与 `isAdminPath` 导出 + `navGuardConsistency.test` 机械钉死两者一致. `RolesPage` 加「管理员权限」复选框(`role-admin-access`) + 列表「管理员」列. `WorkbenchPage` 改读 store(不再调 me()). `api/auth.ts` MeRole + `api/role.ts` Role/RoleCreate/RoleUpdate 加 `adminAccess`. **仅前端 UX 收口**(后端 API 鉴权收口留待后续).
 
 ## Requirements
+
+### Requirement: 角色分级导航 (v0.0.20)
+
+前端 SHALL 按当前用户的提升态（`isElevated` = 任一角色 `adminAccess` 为真）裁剪导航并守卫 admin 路由。普通用户
+SHALL 只见 工作台 + 需求管理；管理员 SHALL 见全 6 组。
+
+#### Scenario: 普通用户只见工作台与需求管理
+
+- **GIVEN** 已登录用户所有角色 `adminAccess = false`
+- **WHEN** AppLayout Sider 渲染
+- **THEN** `工作台` 与 `需求管理` 组 SHALL 可见
+- **AND** `组织` / `产品` / `人事配置` / `系统` 组 SHALL NOT 渲染
+
+#### Scenario: 管理员见全六组
+
+- **GIVEN** 已登录用户至少一个角色 `adminAccess = true`
+- **WHEN** AppLayout Sider 渲染
+- **THEN** 6 组（工作台/组织/产品/需求管理/人事配置/系统）SHALL 全部可见
+
+#### Scenario: 非管理员直敲 admin 路由被守卫回首页
+
+- **GIVEN** 已登录非管理员用户且角色上下文已注水
+- **WHEN** 用户导航到 admin 路由（如 `/org/users`、`/hr/roles`、`/sys/audit-logs`、`/pm/products`）
+- **THEN** 路由 SHALL redirect 到 `/`
+
+#### Scenario: pm 组路由对非管理员开放
+
+- **GIVEN** 已登录非管理员用户且角色上下文已注水
+- **WHEN** 用户导航到 `/pm/projects`（需求管理组，全员）
+- **THEN** ProjectsPage SHALL 渲染（不被守卫）
+
+### Requirement: ProtectedRoute app 级注水当前用户上下文 (v0.0.20)
+
+`ProtectedRoute` SHALL 在进入受保护路由时调一次 `GET /api/auth/me` 并把 id/name/roles/projects 写入 auth store
+（应用内只此一处调 me()），使角色分级导航与路由守卫全局可用。
+
+#### Scenario: 入口注水一次
+
+- **GIVEN** 已登录用户但 store `user` 无 `roles`
+- **WHEN** 受保护路由挂载
+- **THEN** ProtectedRoute SHALL 调一次 `me()` 并把结果写入 auth store
+
+#### Scenario: isElevated 助手反映任一 admin 角色
+
+- **GIVEN** AuthUser 角色为 `[{adminAccess:false},{adminAccess:true}]`
+- **WHEN** 求值 `isElevated(user)`
+- **THEN** SHALL 返回 `true`
+- **AND** 无 admin 角色的用户 SHALL 返回 `false`
+
+### Requirement: RolesPage 维护 adminAccess (v0.0.20)
+
+`RolesPage` 编辑/新建抽屉 SHALL 含「管理员权限」复选框，保存时把 `adminAccess` 带入 create/update 请求体。
+
+#### Scenario: 勾选管理员权限保存携 adminAccess
+
+- **GIVEN** RolesPage 编辑/新建抽屉打开
+- **WHEN** 勾选「管理员权限」并保存
+- **THEN** create/update 请求体 SHALL 携 `adminAccess: true`
 
 ### Requirement: 路由守卫保护需登录页面
 

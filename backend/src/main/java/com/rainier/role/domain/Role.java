@@ -34,6 +34,14 @@ public class Role extends BaseEntity {
   @Column(nullable = false)
   private Boolean enabled = Boolean.TRUE;
 
+  /**
+   * v0.0.20: whether wearers of this role get the full admin console (vs. the plain user view of just
+   * 工作台 + 需求管理). Nullable on purpose — adding a NOT NULL column to the existing rainier_role table
+   * under ddl-auto=update would fail on legacy rows; the getter coalesces NULL → false instead.
+   */
+  @Column(name = "admin_access")
+  private Boolean adminAccess = Boolean.FALSE;
+
   public String getCode() {
     return code;
   }
@@ -64,5 +72,14 @@ public class Role extends BaseEntity {
 
   public void setEnabled(Boolean enabled) {
     this.enabled = enabled;
+  }
+
+  /** Read-coalesce: a legacy NULL admin_access reads as false (non-admin). */
+  public Boolean getAdminAccess() {
+    return adminAccess == null ? Boolean.FALSE : adminAccess;
+  }
+
+  public void setAdminAccess(Boolean adminAccess) {
+    this.adminAccess = adminAccess;
   }
 }

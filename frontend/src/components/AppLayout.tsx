@@ -1,22 +1,29 @@
 import { useState } from 'react';
 import { Link, NavLink, Outlet } from 'react-router-dom';
-import { useAuthStore } from '../store/auth';
+import { isElevated, useAuthStore } from '../store/auth';
 import './AppLayout.css';
 
-interface NavItem {
+export interface NavItem {
   to: string;
   label: string;
   /** react-router NavLink `end` — needed for "/" so it isn't active on every route. */
   end?: boolean;
 }
 
-interface NavGroup {
+export interface NavGroup {
   key: string;
   title: string;
   items: NavItem[];
+  /** v0.0.20: only shown to elevated (admin) users. Plain users see just 工作台 + 需求管理. */
+  requiresAdmin?: boolean;
 }
 
-const navGroups: NavGroup[] = [
+/**
+ * Single source of truth for the Sider nav. Exported so the ProtectedRoute admin-route guard can be
+ * cross-checked against it (see navGuardConsistency.test) — the guard's path prefixes MUST stay in
+ * sync with which groups are `requiresAdmin`.
+ */
+export const navGroups: NavGroup[] = [
   {
     key: 'workbench',
     title: '工作台',
@@ -25,6 +32,7 @@ const navGroups: NavGroup[] = [
   {
     key: 'org',
     title: '组织',
+    requiresAdmin: true,
     items: [
       { to: '/org/organizations', label: '组织节点' },
       { to: '/org/users', label: '用户' },
@@ -34,6 +42,7 @@ const navGroups: NavGroup[] = [
   {
     key: 'product',
     title: '产品',
+    requiresAdmin: true,
     items: [
       { to: '/pm/products', label: '产品' },
       { to: '/pm/product-modules', label: '产品模块' },
@@ -55,6 +64,7 @@ const navGroups: NavGroup[] = [
   {
     key: 'hr',
     title: '人事配置',
+    requiresAdmin: true,
     items: [
       { to: '/hr/positions', label: '岗位' },
       { to: '/hr/roles', label: '角色' },
@@ -64,6 +74,7 @@ const navGroups: NavGroup[] = [
   {
     key: 'sys',
     title: '系统',
+    requiresAdmin: true,
     items: [{ to: '/sys/audit-logs', label: '审计日志' }],
   },
 ];
@@ -77,6 +88,10 @@ export function AppLayout() {
   const user = useAuthStore((s) => s.user);
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
   const [siderCollapsed, setSiderCollapsed] = useState(false);
+
+  // v0.0.20: plain users see only the all-users groups (工作台 + 需求管理); admins see all six.
+  const elevated = isElevated(user);
+  const visibleGroups = navGroups.filter((g) => !g.requiresAdmin || elevated);
 
   const toggleGroup = (key: string) =>
     setCollapsedGroups((prev) => {
@@ -111,7 +126,7 @@ export function AppLayout() {
       <div className="rainier-shell-body">
         {!siderCollapsed && (
           <aside className="rainier-shell-sider" data-testid="appshell-sider">
-            {navGroups.map((g) => {
+            {visibleGroups.map((g) => {
               const collapsed = collapsedGroups.has(g.key);
               return (
                 <div key={g.key} className="rainier-shell-sider-group">

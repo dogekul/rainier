@@ -42,6 +42,7 @@ public class RoleService {
     r.setName(req.getName());
     r.setDescription(req.getDescription());
     r.setEnabled(req.getEnabled() == null ? Boolean.TRUE : req.getEnabled());
+    r.setAdminAccess(req.getAdminAccess() == null ? Boolean.FALSE : req.getAdminAccess());
     return RoleDetail.from(repo.saveAndFlush(r));
   }
 
@@ -87,6 +88,9 @@ public class RoleService {
     }
     if (req.getEnabled() != null) {
       r.setEnabled(req.getEnabled());
+    }
+    if (req.getAdminAccess() != null) {
+      r.setAdminAccess(req.getAdminAccess());
     }
     return RoleDetail.from(repo.saveAndFlush(r));
   }

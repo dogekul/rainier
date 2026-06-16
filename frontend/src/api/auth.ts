@@ -5,7 +5,7 @@ export interface LoginResponse {
   user: { username: string };
 }
 
-/** One role assignment of the current user (v0.0.18). */
+/** One role assignment of the current user (v0.0.18; v0.0.20 +adminAccess). */
 export interface MeRole {
   roleId: number | null;
   roleCode: string | null;
@@ -13,6 +13,8 @@ export interface MeRole {
   projectId: number | null;
   projectName: string | null;
   projectCode: string | null;
+  /** v0.0.20: whether this role grants the full admin console. Never null from the API. */
+  adminAccess: boolean;
 }
 
 /** A project the current user participates in (v0.0.18). */

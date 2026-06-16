@@ -5,6 +5,9 @@
 >   current-user context `{id, username, name, roles[], projects[]}` (resolves the token subject to a
 >   User, joins UserRole + Role + Project; degrades to id=null / empty arrays when the subject has no
 >   matching User). The "携带有效 token 查询成功" scenario's `username` assertion still holds (subset).
+> - 2026-06-15 (v0.0.20-role-nav) — each `roles[]` element gains `adminAccess` (reads
+>   `Role.adminAccess`, coalesced NULL→false; never null in the response). Drives the frontend
+>   `isElevated` role-scoped navigation + admin route guards.
 
 ## ADDED Requirements
 
@@ -76,3 +79,20 @@
 - **WHEN** `GET /api/auth/me`
 - **THEN** 系统 SHALL 返回 200
 - **AND** body SHALL 含 `username="system"` / `id=null` / `roles=[]` / `projects=[]`
+
+### Requirement: me() 角色暴露 adminAccess (v0.0.20)
+
+`GET /api/auth/me` 的每个 `roles[]` 元素 SHALL 含 `adminAccess`（读 `Role.adminAccess` 兜底 NULL→false，响应中永不为 null）。
+
+#### Scenario: adminAccess=true 角色在 me() 中可见
+
+- **GIVEN** 用户被指派一个 `adminAccess` 为 true 的角色
+- **WHEN** 携该用户 token `GET /api/auth/me`
+- **THEN** 对应 `roles[].adminAccess` SHALL 为 `true`
+
+#### Scenario: adminAccess=false 或 NULL 角色读为 false
+
+- **GIVEN** 用户被指派一个 `adminAccess` 为 false 或 legacy NULL 的角色
+- **WHEN** `GET /api/auth/me`
+- **THEN** 对应 `roles[].adminAccess` SHALL 为 `false`
+- **AND** 该字段 SHALL 永不为 null

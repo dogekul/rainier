@@ -20,6 +20,9 @@ public class RoleCreateRequest {
 
   private Boolean enabled;
 
+  /** v0.0.20: grants the full admin console. Defaults to false when omitted. */
+  private Boolean adminAccess;
+
   public String getCode() {
     return code;
   }
@@ -50,5 +53,13 @@ public class RoleCreateRequest {
 
   public void setEnabled(Boolean enabled) {
     this.enabled = enabled;
+  }
+
+  public Boolean getAdminAccess() {
+    return adminAccess;
+  }
+
+  public void setAdminAccess(Boolean adminAccess) {
+    this.adminAccess = adminAccess;
   }
 }

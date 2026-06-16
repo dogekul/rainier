@@ -1,0 +1,82 @@
+change:
+  id: 2026-06-15-role-nav
+  title: v0.0.20-role-nav — 角色分级导航 (Role.adminAccess + me elevation + frontend nav/route guards)
+  baseline: {commit: d706864, tag: v0.0.19-requirement-enrich}
+  type: role-journey
+  parent_change: 2026-06-12-workbench
+
+phase:
+  current: archived
+  archived_at: '2026-06-16'
+  understand:
+    status: completed
+    confirmed_at: '2026-06-15'
+    artifact: proposal.md
+    gate1_decisions:
+      d1c_mechanism: Role.adminAccess boolean (nullable, default false, read-coalesce null->false)
+      d1c_elevation: roles.some(r => r.adminAccess)
+      d2_normal_groups: [workbench, pm]           # 普通用户可见
+      d2_admin_groups: [org, product, hr, sys]    # requiresAdmin
+      d3_scope: frontend_ux_only                  # hide menu + route guard; NOT api security (follow-on B)
+      d4_me_hydration: ProtectedRoute_app_level    # WorkbenchPage reads store, drops own me() call
+  spec:
+    status: completed
+    confirmed_at: '2026-06-15'        # Gate 2 auto-proceed (user: 全自动到phase5)
+    artifacts: [design.md, specs/entity-role/spec.md, specs/auth-placeholder/spec.md, specs/frontend-scaffold/spec.md, test-plan.md]
+  slice: {status: completed, completed_at: '2026-06-15', artifacts: [slices.md, tasks.md]}
+  build:
+    status: completed
+    completed_at: '2026-06-15'
+    metrics: {backend_tests: 354, frontend_tests: 106, e2e_status: green}
+  verify:
+    status: completed
+    completed_at: '2026-06-15'
+    artifacts: [test-report.md, design-adjustments.md, pending-adjustments.md]
+    metrics:
+      backend_tests_total: 354          # 348 baseline + 6 new
+      frontend_tests_total: 106         # 77 baseline + 29 new
+      review_round1: {critical: 0, high: 0, medium: 2, low: 9}
+      review_post_fix: {critical: 0, high: 0, medium: 0}
+      failure_modes_hits: 0
+      e2e_status: green
+      tables: 19                        # no new table; rainier_role.admin_access new nullable column
+    gate3_confirmed_at: '2026-06-16'      # user: push (confirm Gate 3 + authorize push)
+  deliver:
+    status: completed
+    completed_at: '2026-06-16'
+    tag: v0.0.20-role-nav
+    pushed: true                          # user explicitly said: push
+    artifacts:
+      - archive/2026-06-15-role-nav/
+      - specs/entity-role/spec.md         # MOD — adminAccess Requirement + changelog
+      - specs/auth-placeholder/spec.md    # MOD — roles[].adminAccess Requirement + changelog
+      - specs/frontend-scaffold/spec.md   # MOD — role-scoped nav / guards / hydration / RolesPage checkbox + changelog
+    spec_merge: {new_capabilities: 0, modified_capabilities: 3}
+    metrics: {backend_tests_total: 354, frontend_tests_total: 106, tables: 19, e2e_status: green}
+
+long_range:
+  enabled: true
+  mode: full_auto
+  pre_auth_completed: true
+  pre_auth_timestamp: '2026-06-15'
+  pre_auth:
+    decisions:
+      design_deviation: {minor: auto_record, major: auto_record_continue}
+      technical_blocker: workaround
+      iteration: {max_rounds: 10}
+      git_ops: allow_up_to_commit_and_tag    # push NOT pre-authorized
+      gate_2: auto_proceed                    # user: 全自动到phase5
+    operations: {directory: allow, file_write: allow, command: allow, script: allow, network: allow, file_read: allow, git_readonly: allow}
+    gates: {gate_3: require_user_confirmation}   # STOP at end of Phase 5 — no deliver/push (user: 全自动到phase5)
+  user_directive: '全自动到phase5'
+
+scope:
+  type: role-journey
+  capabilities_new: []
+  capabilities_modified: [entity-role, auth-placeholder, frontend-scaffold]
+  new_tables: 0
+  new_columns: [rainier_role.admin_access]   # nullable boolean, ddl-auto=update safe
+  explicitly_excluded: [backend_api_authz, permission_points_table, per_role_workbench_content, project_scoped_admin]
+
+baseline_metrics: {backend_tests: 348, frontend_tests: 77, tables: 19}
+standing_constraint: 测试和修复不删改已有业务数据；adminAccess 为纯新增可空列(存量行 NULL→读 false)；勾选是用户后续显式动作；E2E 验证 PMO 未勾选=普通视图 / 勾选=全控制台.

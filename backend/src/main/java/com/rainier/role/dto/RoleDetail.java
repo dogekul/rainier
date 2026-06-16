@@ -12,6 +12,7 @@ public class RoleDetail {
   private String name;
   private String description;
   private Boolean enabled;
+  private Boolean adminAccess;
   private Instant createTime;
   private Instant updateTime;
   private String createBy;
@@ -24,6 +25,7 @@ public class RoleDetail {
     dto.name = r.getName();
     dto.description = r.getDescription();
     dto.enabled = r.getEnabled();
+    dto.adminAccess = r.getAdminAccess();
     dto.createTime = r.getCreateTime();
     dto.updateTime = r.getUpdateTime();
     dto.createBy = r.getCreateBy();
@@ -49,6 +51,10 @@ public class RoleDetail {
 
   public Boolean getEnabled() {
     return enabled;
+  }
+
+  public Boolean getAdminAccess() {
+    return adminAccess;
   }
 
   public Instant getCreateTime() {

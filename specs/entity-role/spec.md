@@ -1,5 +1,11 @@
 # Capability: entity-role
 
+> Change log:
+> - 2026-06-15 (v0.0.20-role-nav) — `Role` gains an `adminAccess` boolean (nullable column
+>   `admin_access`, Java default FALSE, getter read-coalesces NULL→false so legacy rows read as
+>   non-admin). Surfaced through `RoleCreateRequest`/`RoleUpdateRequest`/`RoleDetail`; create defaults
+>   false, update changes it only when non-null. Drives the v0.0.20 role-scoped navigation.
+
 ## ADDED Requirements
 
 ### Requirement: 创建角色
@@ -75,3 +81,34 @@
 - **WHEN** `DELETE /api/roles/1`
 - **THEN** SHALL 返回 409
 - **AND** body.message SHALL 含 "role has assignments"
+
+### Requirement: Role 携带 adminAccess 标记 (v0.0.20)
+
+`Role` SHALL 含 `adminAccess` 布尔标记（可空列 `admin_access`，Java 默认 FALSE，读时 NULL→false 兜底），经
+`POST/PUT /api/roles` 维护，`RoleDetail` 透出。
+
+#### Scenario: 创建不带 adminAccess 默认 false
+
+- **GIVEN** `POST /api/roles` body 含 code/name 不含 `adminAccess`
+- **WHEN** 创建角色
+- **THEN** 响应 `adminAccess` SHALL 为 `false`
+- **AND** 持久化行 SHALL 读 `adminAccess = false`
+
+#### Scenario: 创建带 adminAccess=true 持久为 true
+
+- **GIVEN** `POST /api/roles` body 含 `adminAccess: true`
+- **WHEN** 创建角色
+- **THEN** 响应 `adminAccess` SHALL 为 `true`
+
+#### Scenario: 更新切换 adminAccess
+
+- **GIVEN** 既有角色 `adminAccess = false`
+- **WHEN** `PUT /api/roles/{id}` body 设 `adminAccess: true`
+- **THEN** 更新后 `adminAccess` SHALL 为 `true`
+
+#### Scenario: 存量 NULL admin_access 读为 false
+
+- **GIVEN** 既有 `rainier_role` 行 `admin_access` 列为 NULL（v0.0.20 之前）
+- **WHEN** `GET /api/roles/{id}` 读取
+- **THEN** 响应 `adminAccess` SHALL 为 `false`
+- **AND** 该读取 SHALL NOT 改写既有列值（仍为 NULL）

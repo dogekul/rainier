@@ -5,28 +5,25 @@ import { WorkbenchPage } from './WorkbenchPage';
 import { useAuthStore } from '../../store/auth';
 import * as taskApi from '../../api/task';
 
-vi.mock('../../api/auth', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../../api/auth')>();
-  return {
-    ...actual,
-    me: vi.fn().mockResolvedValue({
-      id: 5,
-      username: 'alice',
-      name: 'Alice',
-      roles: [
-        {
-          roleId: 1,
-          roleCode: 'PMO',
-          roleName: 'PMO',
-          projectId: 9,
-          projectName: '采购',
-          projectCode: 'PRJ-1',
-        },
-      ],
-      projects: [{ id: 9, code: 'PRJ-1', name: '采购' }],
-    }),
-  };
-});
+// v0.0.20: WorkbenchPage now reads the current-user context from the store (hydrated app-wide by
+// ProtectedRoute), so the test seeds the store directly — no me() mock needed here.
+const STORE_USER = {
+  username: 'alice',
+  id: 5,
+  name: 'Alice',
+  roles: [
+    {
+      roleId: 1,
+      roleCode: 'PMO',
+      roleName: 'PMO',
+      projectId: 9,
+      projectName: '采购',
+      projectCode: 'PRJ-1',
+      adminAccess: false,
+    },
+  ],
+  projects: [{ id: 9, code: 'PRJ-1', name: '采购' }],
+};
 
 vi.mock('../../api/task', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../../api/task')>();
@@ -78,12 +75,12 @@ vi.mock('../../api/story', async (importOriginal) => {
 
 describe('WorkbenchPage', () => {
   beforeEach(() => {
-    useAuthStore.setState({ token: 'tk', user: { username: 'alice' } });
+    useAuthStore.setState({ token: 'tk', user: STORE_USER });
     vi.clearAllMocks();
   });
 
-  /** TC-FES-WB-001: 渲染问候 + 角色 + 三块. */
-  it('renders greeting, roles and my work (TC-FES-WB-001)', async () => {
+  /** TC-FES-WB-001 / TC-FES-RN-009: 渲染问候 + 角色 + 三块（数据来自 store）. */
+  it('renders greeting, roles and my work from the store (TC-FES-WB-001 / TC-FES-RN-009)', async () => {
     render(
       <MemoryRouter>
         <WorkbenchPage />

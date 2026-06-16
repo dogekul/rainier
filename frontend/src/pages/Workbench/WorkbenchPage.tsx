@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Card } from '../../components/ui';
-import { me, type MeResponse } from '../../api/auth';
 import { useAuthStore } from '../../store/auth';
 import { listTasks, updateTask, type Task, type TaskStatus } from '../../api/task';
 import { listStories, type Story } from '../../api/story';
@@ -15,14 +14,14 @@ const TASK_STATUS_OPTIONS: TaskStatus[] = [
 ];
 
 /**
- * v0.0.18 — 我的工作台 (role pivot, step 1). Replaces the placeholder Home: fetches the current-user
- * context from GET /api/auth/me and shows my roles + my tasks (assignee=me, with inline status
- * change) + my stories (owner=me) + my projects. Pure entity aggregation, no AI.
+ * v0.0.18 — 我的工作台 (role pivot, step 1). Shows my roles + my tasks (assignee=me, with inline
+ * status change) + my stories (owner=me) + my projects. Pure entity aggregation, no AI.
+ *
+ * <p>v0.0.20: reads the current-user context from the auth store (hydrated app-wide by ProtectedRoute
+ * via GET /api/auth/me) instead of calling me() itself — so the page makes no duplicate auth call.
  */
 export function WorkbenchPage() {
-  const token = useAuthStore((s) => s.token);
-  const setAuth = useAuthStore((s) => s.setAuth);
-  const [ctx, setCtx] = useState<MeResponse | null>(null);
+  const ctx = useAuthStore((s) => s.user);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [stories, setStories] = useState<Story[]>([]);
 
@@ -35,32 +34,12 @@ export function WorkbenchPage() {
     setStories(s.content);
   }, []);
 
+  const userId = ctx?.id;
   useEffect(() => {
-    let cancelled = false;
-    void (async () => {
-      try {
-        const res = await me();
-        if (cancelled) return;
-        setCtx(res);
-        if (token) {
-          setAuth(token, {
-            username: res.username,
-            id: res.id,
-            name: res.name,
-            roles: res.roles,
-            projects: res.projects,
-          });
-        }
-        if (res.id != null) await loadWork(res.id);
-      } catch {
-        // A 401 is already handled by the axios interceptor (redirect to /login); any other error
-        // leaves the workbench in its empty state rather than crashing.
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [token, setAuth, loadWork]);
+    if (userId == null) return;
+    // Leave the workbench in its empty state rather than crashing on a transient list error.
+    void loadWork(userId).catch(() => undefined);
+  }, [userId, loadWork]);
 
   const changeTaskStatus = async (task: Task, status: TaskStatus) => {
     try {

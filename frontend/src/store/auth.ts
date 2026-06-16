@@ -22,6 +22,15 @@ interface AuthState {
   logout: () => void;
 }
 
+/**
+ * v0.0.20: a user is "elevated" (admin) when ANY of their roles grants admin access. Drives the
+ * role-scoped navigation (which Sider groups show) and the admin route guards. Org-level and
+ * project-level roles are treated alike — elevation is global, not per-project.
+ */
+export function isElevated(user: AuthUser | null | undefined): boolean {
+  return (user?.roles ?? []).some((r) => r.adminAccess === true);
+}
+
 /** localStorage key used to persist the bearer token across reloads. */
 export const TOKEN_STORAGE_KEY = 'rainier.token';
 

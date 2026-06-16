@@ -7,6 +7,8 @@ export interface Role {
   name: string;
   description?: string | null;
   enabled: boolean;
+  /** v0.0.20: grants the full admin console (false for legacy/unset). */
+  adminAccess: boolean;
   createBy?: string;
   createTime?: string;
   updateBy?: string;
@@ -18,12 +20,14 @@ export interface RoleCreate {
   name: string;
   description?: string;
   enabled?: boolean;
+  adminAccess?: boolean;
 }
 
 export interface RoleUpdate {
   name: string;
   description?: string;
   enabled?: boolean;
+  adminAccess?: boolean;
 }
 
 export interface RoleListParams {

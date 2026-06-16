@@ -25,6 +25,7 @@ export function RolesPage() {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [enabled, setEnabled] = useState(true);
+  const [adminAccess, setAdminAccess] = useState(false);
 
   useEffect(() => {
     if (!drawerOpen) return;
@@ -33,11 +34,13 @@ export function RolesPage() {
       setName(editing.name);
       setDescription(editing.description ?? '');
       setEnabled(editing.enabled);
+      setAdminAccess(editing.adminAccess);
     } else {
       setCode('');
       setName('');
       setDescription('');
       setEnabled(true);
+      setAdminAccess(false);
     }
   }, [drawerOpen, editing]);
 
@@ -46,6 +49,7 @@ export function RolesPage() {
     { key: 'name', title: '名称', render: (r) => r.name },
     { key: 'description', title: '描述', render: (r) => r.description ?? '—' },
     { key: 'enabled', title: '启用', render: (r) => (r.enabled ? '是' : '否') },
+    { key: 'adminAccess', title: '管理员', render: (r) => (r.adminAccess ? '是' : '否') },
     {
       key: 'actions',
       title: '操作',
@@ -117,6 +121,17 @@ export function RolesPage() {
             启用
           </label>
         </div>
+        <div style={{ marginBottom: 12 }}>
+          <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            <input
+              type="checkbox"
+              checked={adminAccess}
+              onChange={(e) => setAdminAccess(e.target.checked)}
+              data-testid="role-admin-access"
+            />
+            管理员权限（可见完整控制台）
+          </label>
+        </div>
         <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
           <Button type="button" variant="secondary" onClick={() => setDrawerOpen(false)}>
             取消
@@ -129,6 +144,7 @@ export function RolesPage() {
                   name,
                   description: description || undefined,
                   enabled,
+                  adminAccess,
                 });
               } else {
                 await createRole({
@@ -136,6 +152,7 @@ export function RolesPage() {
                   name,
                   description: description || undefined,
                   enabled,
+                  adminAccess,
                 });
               }
               setDrawerOpen(false);
