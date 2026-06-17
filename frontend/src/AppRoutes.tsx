@@ -7,6 +7,7 @@ import DemandRequirementsPage from './pages/DemandRequirement';
 import FeaturesPage from './pages/Feature';
 import CockpitPage from './pages/Cockpit';
 import TeamLeadPage from './pages/TeamLead';
+import PortfolioPage from './pages/Portfolio';
 import Workbench from './pages/Workbench';
 import Login from './pages/Login';
 import AuditLogsPage from './pages/AuditLog';
@@ -32,6 +33,7 @@ export function AppRoutes() {
         <Route element={<AppLayout />}>
           <Route path="/" element={<Workbench />} />
           <Route path="/team" element={<TeamLeadPage />} />
+          <Route path="/portfolio" element={<PortfolioPage />} />
           <Route path="/demand-submit" element={<DemandSubmitPage />} />
           <Route path="/org" element={<Navigate to="/org/organizations" replace />} />
           <Route path="/org/organizations" element={<OrganizationsPage />} />

@@ -34,6 +34,11 @@ export const navGroups: NavGroup[] = [
     ],
   },
   {
+    key: 'dashboards',
+    title: '数据看板',
+    items: [{ to: '/portfolio', label: '项目地图' }],
+  },
+  {
     key: 'org',
     title: '组织',
     requiresAdmin: true,

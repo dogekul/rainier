@@ -1,0 +1,4 @@
+change: {id: 2026-06-17-portfolio-map, title: v0.0.30-portfolio-map — scoped 项目地图 landing (PMO/exec/domain/dept), baseline: {tag: v0.0.29-portfolio-consumers}, type: frontend-page, parent_effort: structural-wave-2}
+phase: {current: build, build: {status: completed, metrics: {frontend_tests: 153}}, verify: {status: pending}, deliver: {status: pending}}
+long_range: {enabled: true, mode: full_auto, pre_auth: {git_ops: allow_up_to_commit_and_tag, gate_3: auto_proceed_no_push}}
+scope: {type: frontend-page, capabilities_modified: [frontend-scaffold], consumes: [GET /api/me/portfolio], serves_roles: [PMO, 高管, 领域负责人, 部门负责人, PM, 团队负责人]}
