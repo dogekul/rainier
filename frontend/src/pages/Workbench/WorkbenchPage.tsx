@@ -1,9 +1,11 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Card } from '../../components/ui';
+import { isOverdue, todayISO } from '../../utils/board';
 import { useAuthStore } from '../../store/auth';
 import { listTasks, updateTask, type Task, type TaskStatus } from '../../api/task';
 import { listStories, type Story } from '../../api/story';
+import type { Priority } from '../../api/demand';
 
 const TASK_STATUS_OPTIONS: TaskStatus[] = [
   'TODO',
@@ -12,6 +14,26 @@ const TASK_STATUS_OPTIONS: TaskStatus[] = [
   'BLOCKED',
   'CANCELLED',
 ];
+
+const PRIORITY_RANK: Record<Priority, number> = {
+  URGENT: 0,
+  HIGH: 1,
+  MEDIUM: 2,
+  LOW: 3,
+  LOWEST: 4,
+};
+
+const CLOSED: TaskStatus[] = ['DONE', 'CANCELLED'];
+
+/** v0.0.32 今日聚焦 — bucket a task by urgency: overdue → today → future-due → no-due; closed sinks. */
+function focusBucket(t: Task, today: string): { rank: number; flag: '逾期' | '今天' | null } {
+  if (CLOSED.includes(t.status)) return { rank: 9, flag: null };
+  const due = t.dueDate ?? null;
+  if (isOverdue(due, today)) return { rank: 0, flag: '逾期' };
+  if (due && due.slice(0, 10) === today) return { rank: 1, flag: '今天' };
+  if (due) return { rank: 2, flag: null };
+  return { rank: 3, flag: null };
+}
 
 /**
  * v0.0.18 — 我的工作台 (role pivot, step 1). Shows my roles + my tasks (assignee=me, with inline
@@ -63,6 +85,17 @@ export function WorkbenchPage() {
   const roles = ctx?.roles ?? [];
   const projects = ctx?.projects ?? [];
 
+  // v0.0.32 今日聚焦: order my tasks by urgency (逾期 → 今天 → 有期限 → 无期限; 已完成沉底), then priority.
+  const today = todayISO();
+  const sortedTasks = useMemo(() => {
+    return [...tasks].sort((a, b) => {
+      const ra = focusBucket(a, today);
+      const rb = focusBucket(b, today);
+      if (ra.rank !== rb.rank) return ra.rank - rb.rank;
+      return (PRIORITY_RANK[a.priority] ?? 9) - (PRIORITY_RANK[b.priority] ?? 9);
+    });
+  }, [tasks, today]);
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <Card>
@@ -93,15 +126,33 @@ export function WorkbenchPage() {
       </Card>
 
       <Card>
-        <h3>我的任务</h3>
-        {tasks.length === 0 ? (
+        <h3>我的任务（今日聚焦）</h3>
+        {sortedTasks.length === 0 ? (
           <p style={{ color: 'var(--rainier-color-text-2)' }}>暂无指派给我的任务。</p>
         ) : (
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <tbody>
-              {tasks.map((t) => (
+              {sortedTasks.map((t) => {
+                const flag = focusBucket(t, today).flag;
+                return (
                 <tr key={t.id} data-testid={`my-task-${t.id}`}>
                   <td style={{ padding: '4px 8px' }}>
+                    {flag && (
+                      <span
+                        data-testid={`my-task-flag-${t.id}`}
+                        style={{
+                          marginRight: 6,
+                          padding: '1px 6px',
+                          borderRadius: 8,
+                          fontSize: 11,
+                          color: flag === '逾期' ? 'var(--rainier-status-red)' : 'var(--rainier-status-yellow)',
+                          background:
+                            flag === '逾期' ? 'var(--rainier-status-red-bg)' : 'var(--rainier-status-yellow-bg)',
+                        }}
+                      >
+                        {flag}
+                      </span>
+                    )}
                     <Link to="/pm/tasks">{t.title}</Link>
                   </td>
                   <td style={{ padding: '4px 8px', color: 'var(--rainier-color-text-2)' }}>
@@ -122,7 +173,8 @@ export function WorkbenchPage() {
                     </select>
                   </td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         )}

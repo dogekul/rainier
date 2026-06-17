@@ -41,8 +41,19 @@ vi.mock('../../api/task', async (importOriginal) => {
           projectName: '采购',
           assigneeUserId: 5,
         },
+        {
+          id: 12,
+          code: 'T-2',
+          title: '逾期任务',
+          status: 'TODO',
+          priority: 'HIGH',
+          projectId: 9,
+          projectName: '采购',
+          assigneeUserId: 5,
+          dueDate: '2020-01-01',
+        },
       ],
-      total: 1,
+      total: 2,
       page: 0,
       size: 100,
     }),
@@ -95,6 +106,20 @@ describe('WorkbenchPage', () => {
     });
     expect(screen.getByTestId('my-story-21')).toBeInTheDocument();
     expect(screen.getByTestId('my-project-9')).toBeInTheDocument();
+  });
+
+  /** TC-WB-FOCUS: 今日聚焦 — overdue task flagged 逾期 and sorted above the no-due task. */
+  it('flags and sorts overdue tasks to the top (TC-WB-FOCUS)', async () => {
+    render(
+      <MemoryRouter>
+        <WorkbenchPage />
+      </MemoryRouter>,
+    );
+    await waitFor(() => expect(screen.getByTestId('my-task-12')).toBeInTheDocument());
+    expect(screen.getByTestId('my-task-flag-12')).toHaveTextContent('逾期');
+    // overdue task (12) renders before the no-due task (11)
+    const html = screen.getByText('我的任务（今日聚焦）').closest('div')?.innerHTML ?? '';
+    expect(html.indexOf('my-task-12')).toBeLessThan(html.indexOf('my-task-11'));
   });
 
   /** TC-FES-WB-002: 我的任务/Story 携当前用户 id 查询. */
