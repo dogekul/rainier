@@ -5,6 +5,7 @@ import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import { Drawer } from '../../components/ui/Drawer';
 import { Pagination } from '../../components/ui/Pagination';
 import { Table, type TableColumn } from '../../components/ui/Table';
+import { StatusChip } from '../../components/board';
 import { listDemands, type Demand } from '../../api/demand';
 import { listRequirements, type Requirement } from '../../api/requirement';
 import {
@@ -48,7 +49,7 @@ export function LinksPage() {
   const columns: TableColumn<DemandRequirementLink>[] = [
     { key: 'demandId', title: '诉求 ID', render: (r) => r.demandId },
     { key: 'requirementId', title: '需求 ID', render: (r) => r.requirementId },
-    { key: 'linkType', title: '类型', render: (r) => r.linkType },
+    { key: 'linkType', title: '类型', render: (r) => <StatusChip status={r.linkType} /> },
     {
       key: 'actions',
       title: '操作',
@@ -61,8 +62,10 @@ export function LinksPage() {
   ];
 
   return (
-    <Card>
-      <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
+    <div className="rainier-page">
+      <div className="rainier-page-head">
+        <h2 style={{ margin: 0 }}>诉求-需求关联</h2>
+        <div style={{ flex: 1 }} />
         <Button
           type="button"
           onClick={() => setDrawerOpen(true)}
@@ -71,13 +74,15 @@ export function LinksPage() {
           新建关联
         </Button>
       </div>
-      <Table<DemandRequirementLink> columns={columns} dataSource={list.items} rowKey="id" />
-      <Pagination
-        page={list.page}
-        size={list.size}
-        total={list.total}
-        onPageChange={list.setPage}
-      />
+      <Card>
+        <Table<DemandRequirementLink> columns={columns} dataSource={list.items} rowKey="id" />
+        <Pagination
+          page={list.page}
+          size={list.size}
+          total={list.total}
+          onPageChange={list.setPage}
+        />
+      </Card>
       <Drawer open={drawerOpen} title="新建关联" onClose={() => setDrawerOpen(false)}>
         <div style={{ marginBottom: 12 }}>
           <label style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }}>诉求</label>
@@ -155,6 +160,6 @@ export function LinksPage() {
           void list.refetch();
         }}
       />
-    </Card>
+    </div>
   );
 }

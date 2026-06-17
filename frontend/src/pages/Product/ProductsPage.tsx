@@ -12,6 +12,7 @@ import {
   type Product,
 } from '../../api/product';
 import { usePaginated } from '../../hooks/usePaginated';
+import { StatusChip } from '../../components/board';
 import { ProductEditDrawer } from './ProductEditDrawer';
 
 export function ProductsPage() {
@@ -29,7 +30,7 @@ export function ProductsPage() {
   const columns: TableColumn<Product>[] = [
     { key: 'code', title: '编码', render: (p) => p.code },
     { key: 'name', title: '名称', render: (p) => p.name },
-    { key: 'status', title: '状态', render: (p) => p.status },
+    { key: 'status', title: '状态', render: (p) => <StatusChip status={p.status} /> },
     {
       key: 'owner',
       title: '负责人',
@@ -60,8 +61,10 @@ export function ProductsPage() {
   ];
 
   return (
-    <Card>
-      <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
+    <div className="rainier-page">
+      <div className="rainier-page-head">
+        <h2 style={{ margin: 0 }}>产品</h2>
+        <div style={{ flex: 1 }} />
         <Button
           type="button"
           onClick={() => {
@@ -73,13 +76,15 @@ export function ProductsPage() {
           新建产品
         </Button>
       </div>
-      <Table<Product> columns={columns} dataSource={list.items} rowKey="id" />
-      <Pagination
-        page={list.page}
-        size={list.size}
-        total={list.total}
-        onPageChange={list.setPage}
-      />
+      <Card>
+        <Table<Product> columns={columns} dataSource={list.items} rowKey="id" />
+        <Pagination
+          page={list.page}
+          size={list.size}
+          total={list.total}
+          onPageChange={list.setPage}
+        />
+      </Card>
       <ProductEditDrawer
         key={editing?.id ?? 'new'}
         open={drawerOpen}
@@ -107,6 +112,6 @@ export function ProductsPage() {
           void list.refetch();
         }}
       />
-    </Card>
+    </div>
   );
 }

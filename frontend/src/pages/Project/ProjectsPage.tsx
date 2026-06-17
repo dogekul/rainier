@@ -6,6 +6,7 @@ import { Drawer } from '../../components/ui/Drawer';
 import { Input } from '../../components/ui/Input';
 import { Pagination } from '../../components/ui/Pagination';
 import { Table, type TableColumn } from '../../components/ui/Table';
+import { StatusChip } from '../../components/board';
 import {
   createProject,
   deleteProject,
@@ -129,7 +130,7 @@ export function ProjectsPage() {
   const columns: TableColumn<Project>[] = [
     { key: 'code', title: '编码', render: (r) => r.code },
     { key: 'name', title: '名称', render: (r) => r.name },
-    { key: 'status', title: '状态', render: (r) => r.status },
+    { key: 'status', title: '状态', render: (r) => <StatusChip status={r.status} /> },
     {
       key: 'projectType',
       title: '类型',
@@ -175,21 +176,12 @@ export function ProjectsPage() {
   ];
 
   return (
-    <Card>
-      <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
-        <Button
-          type="button"
-          onClick={() => {
-            setEditing(null);
-            setDrawerOpen(true);
-          }}
-          data-testid="projects-new-btn"
-        >
-          新建项目
-        </Button>
+    <div className="rainier-page">
+      <div className="rainier-page-head">
+        <h2 style={{ margin: 0 }}>项目</h2>
+        <div style={{ flex: 1 }} />
         <select
-          className="rainier-treeselect-trigger"
-          style={{ maxWidth: 160 }}
+          className="rainier-select"
           value={typeFilter}
           onChange={(e) => setTypeFilter(e.target.value as ProjectType | '')}
           data-testid="projects-type-filter"
@@ -202,20 +194,32 @@ export function ProjectsPage() {
             </option>
           ))}
         </select>
+        <Button
+          type="button"
+          onClick={() => {
+            setEditing(null);
+            setDrawerOpen(true);
+          }}
+          data-testid="projects-new-btn"
+        >
+          新建项目
+        </Button>
       </div>
-      <Table<Project>
-        columns={columns}
-        dataSource={list.items}
-        rowKey="id"
-        isExpanded={(r) => milestonesExpanded.has(r.id)}
-        renderExpanded={(r) => <MilestonesPanel projectId={r.id} />}
-      />
-      <Pagination
-        page={list.page}
-        size={list.size}
-        total={list.total}
-        onPageChange={list.setPage}
-      />
+      <Card>
+        <Table<Project>
+          columns={columns}
+          dataSource={list.items}
+          rowKey="id"
+          isExpanded={(r) => milestonesExpanded.has(r.id)}
+          renderExpanded={(r) => <MilestonesPanel projectId={r.id} />}
+        />
+        <Pagination
+          page={list.page}
+          size={list.size}
+          total={list.total}
+          onPageChange={list.setPage}
+        />
+      </Card>
       <Drawer
         open={drawerOpen}
         title={editing ? '编辑项目' : '新建项目'}
@@ -377,6 +381,6 @@ export function ProjectsPage() {
           void list.refetch();
         }}
       />
-    </Card>
+    </div>
   );
 }

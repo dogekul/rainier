@@ -1,5 +1,29 @@
 /* v0.0.22 board-kit — shared dashboard styles. Feishu-style: airy, low-density, subtle status color. */
 
+/* StatTiles (v0.0.37) — KPI summary tiles */
+.rainier-stat-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+}
+.rainier-stat-tile {
+  background: var(--rainier-bg-card);
+  border: 1px solid var(--rainier-border);
+  border-radius: var(--rainier-radius-card);
+  padding: 14px 16px;
+}
+.rainier-stat-num {
+  font-size: 26px;
+  font-weight: 600;
+  line-height: 1.1;
+  color: var(--rainier-color-text-1);
+}
+.rainier-stat-label {
+  font-size: 13px;
+  color: var(--rainier-color-text-2);
+  margin-top: 4px;
+}
+
 /* StatusBar */
 .rainier-statusbar-track {
   display: flex;

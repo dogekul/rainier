@@ -29,8 +29,10 @@ export function ProductModulesPage() {
   const [confirmDelete, setConfirmDelete] = useState<ProductModule | null>(null);
 
   return (
-    <Card>
-      <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
+    <div className="rainier-page">
+      <div className="rainier-page-head">
+        <h2 style={{ margin: 0 }}>产品模块</h2>
+        <div style={{ flex: 1 }} />
         <Button
           type="button"
           onClick={() => {
@@ -42,20 +44,22 @@ export function ProductModulesPage() {
           新建产品模块
         </Button>
       </div>
-      <ProductModuleTreeView
-        modules={list.items}
-        onEdit={(m) => {
-          setEditing(m);
-          setDrawerOpen(true);
-        }}
-        onDelete={(m) => setConfirmDelete(m)}
-      />
-      <Pagination
-        page={list.page}
-        size={list.size}
-        total={list.total}
-        onPageChange={list.setPage}
-      />
+      <Card>
+        <ProductModuleTreeView
+          modules={list.items}
+          onEdit={(m) => {
+            setEditing(m);
+            setDrawerOpen(true);
+          }}
+          onDelete={(m) => setConfirmDelete(m)}
+        />
+        <Pagination
+          page={list.page}
+          size={list.size}
+          total={list.total}
+          onPageChange={list.setPage}
+        />
+      </Card>
       <ProductModuleEditDrawer
         key={editing?.id ?? 'new'}
         open={drawerOpen}
@@ -83,6 +87,6 @@ export function ProductModulesPage() {
           void list.refetch();
         }}
       />
-    </Card>
+    </div>
   );
 }

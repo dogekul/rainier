@@ -2,6 +2,8 @@ export { StatusBar } from './StatusBar';
 export type { StatusBarProps, StatusBarSegment } from './StatusBar';
 export { DashboardCard } from './DashboardCard';
 export type { DashboardCardProps } from './DashboardCard';
+export { StatTiles } from './StatTiles';
+export type { StatTile, StatTilesProps } from './StatTiles';
 export { StatusChip } from './StatusChip';
 export type { StatusChipProps } from './StatusChip';
 export { OwnerChip } from './OwnerChip';

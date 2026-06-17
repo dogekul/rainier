@@ -6,6 +6,7 @@ import { Drawer } from '../../components/ui/Drawer';
 import { Input } from '../../components/ui/Input';
 import { Pagination } from '../../components/ui/Pagination';
 import { Table, type TableColumn } from '../../components/ui/Table';
+import { StatusChip } from '../../components/board';
 import {
   createDemand,
   deleteDemand,
@@ -71,7 +72,7 @@ export function DemandsPage() {
   const columns: TableColumn<Demand>[] = [
     { key: 'title', title: '主题', render: (r) => r.title },
     { key: 'submitterUserId', title: '提交人', render: (r) => r.submitterUserId },
-    { key: 'status', title: '状态', render: (r) => r.status },
+    { key: 'status', title: '状态', render: (r) => <StatusChip status={r.status} /> },
     { key: 'priority', title: '优先级', render: (r) => r.priority },
     { key: 'source', title: '来源', render: (r) => r.source },
     {
@@ -98,8 +99,10 @@ export function DemandsPage() {
   ];
 
   return (
-    <Card>
-      <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
+    <div className="rainier-page">
+      <div className="rainier-page-head">
+        <h2 style={{ margin: 0 }}>诉求</h2>
+        <div style={{ flex: 1 }} />
         <Button
           type="button"
           onClick={() => {
@@ -111,13 +114,15 @@ export function DemandsPage() {
           新建诉求
         </Button>
       </div>
-      <Table<Demand> columns={columns} dataSource={list.items} rowKey="id" />
-      <Pagination
-        page={list.page}
-        size={list.size}
-        total={list.total}
-        onPageChange={list.setPage}
-      />
+      <Card>
+        <Table<Demand> columns={columns} dataSource={list.items} rowKey="id" />
+        <Pagination
+          page={list.page}
+          size={list.size}
+          total={list.total}
+          onPageChange={list.setPage}
+        />
+      </Card>
       <Drawer
         open={drawerOpen}
         title={editing ? '编辑诉求' : '新建诉求'}
@@ -244,6 +249,6 @@ export function DemandsPage() {
           void list.refetch();
         }}
       />
-    </Card>
+    </div>
   );
 }

@@ -1,5 +1,6 @@
 import type { ProductModule } from '../../api/productModule';
 import { Button } from '../../components/ui/Button';
+import { StatusChip } from '../../components/board';
 
 export interface ModuleTreeNode extends ProductModule {
   children: ModuleTreeNode[];
@@ -46,7 +47,7 @@ function TreeNodeRow({ node, depth, onEdit, onDelete }: TreeNodeRowProps) {
       >
         <span style={{ fontFamily: 'monospace', fontSize: 12 }}>{node.code}</span>
         <span style={{ fontWeight: depth === 0 ? 600 : 400 }}>{node.name}</span>
-        <span style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }}>{node.status}</span>
+        <StatusChip status={node.status} />
         <span style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }}>
           {node.productName ? `${node.productName}` : ''}
         </span>

@@ -78,8 +78,10 @@ export function UserRolesPage() {
   ];
 
   return (
-    <Card>
-      <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
+    <div className="rainier-page">
+      <div className="rainier-page-head">
+        <h2 style={{ margin: 0 }}>用户角色</h2>
+        <div style={{ flex: 1 }} />
         <Button
           type="button"
           onClick={() => setDrawerOpen(true)}
@@ -88,13 +90,15 @@ export function UserRolesPage() {
           新建用户角色
         </Button>
       </div>
-      <Table<UserRoleLink> columns={columns} dataSource={list.items} rowKey="id" />
-      <Pagination
-        page={list.page}
-        size={list.size}
-        total={list.total}
-        onPageChange={list.setPage}
-      />
+      <Card>
+        <Table<UserRoleLink> columns={columns} dataSource={list.items} rowKey="id" />
+        <Pagination
+          page={list.page}
+          size={list.size}
+          total={list.total}
+          onPageChange={list.setPage}
+        />
+      </Card>
       <Drawer open={drawerOpen} title="新建用户角色" onClose={() => setDrawerOpen(false)}>
         <div style={{ marginBottom: 12 }}>
           <label style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }}>用户</label>
@@ -175,6 +179,6 @@ export function UserRolesPage() {
           void list.refetch();
         }}
       />
-    </Card>
+    </div>
   );
 }

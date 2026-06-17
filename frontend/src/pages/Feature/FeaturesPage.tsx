@@ -4,6 +4,7 @@ import { Card } from '../../components/ui/Card';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import { Pagination } from '../../components/ui/Pagination';
 import { Table, type TableColumn } from '../../components/ui/Table';
+import { StatusChip } from '../../components/board';
 import {
   createFeature,
   deleteFeature,
@@ -37,7 +38,7 @@ export function FeaturesPage() {
       render: (f) =>
         f.moduleName ? `${f.moduleName}（${f.moduleCode ?? ''}）` : '—',
     },
-    { key: 'status', title: '状态', render: (f) => f.status },
+    { key: 'status', title: '状态', render: (f) => <StatusChip status={f.status} /> },
     {
       key: 'owner',
       title: '负责人',
@@ -76,8 +77,10 @@ export function FeaturesPage() {
   ];
 
   return (
-    <Card>
-      <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
+    <div className="rainier-page">
+      <div className="rainier-page-head">
+        <h2 style={{ margin: 0 }}>功能</h2>
+        <div style={{ flex: 1 }} />
         <Button
           type="button"
           onClick={() => {
@@ -89,16 +92,18 @@ export function FeaturesPage() {
           新建功能
         </Button>
       </div>
-      <Table<Feature> columns={columns} dataSource={list.items} rowKey="id" />
-      {sprintsPanelFor != null && (
-        <FeatureSprintsPanel key={sprintsPanelFor} featureId={sprintsPanelFor} />
-      )}
-      <Pagination
-        page={list.page}
-        size={list.size}
-        total={list.total}
-        onPageChange={list.setPage}
-      />
+      <Card>
+        <Table<Feature> columns={columns} dataSource={list.items} rowKey="id" />
+        {sprintsPanelFor != null && (
+          <FeatureSprintsPanel key={sprintsPanelFor} featureId={sprintsPanelFor} />
+        )}
+        <Pagination
+          page={list.page}
+          size={list.size}
+          total={list.total}
+          onPageChange={list.setPage}
+        />
+      </Card>
       <FeatureEditDrawer
         key={editing?.id ?? 'new'}
         open={drawerOpen}
@@ -126,6 +131,6 @@ export function FeaturesPage() {
           void list.refetch();
         }}
       />
-    </Card>
+    </div>
   );
 }

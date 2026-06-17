@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { StatusChip } from '../../components/board';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
@@ -37,7 +38,7 @@ export function OrganizationsPage() {
   const columns: TableColumn<Organization>[] = [
     { key: 'code', title: '编码', render: (r) => r.code },
     { key: 'name', title: '名称', render: (r) => r.name },
-    { key: 'type', title: '类型', render: (r) => r.type },
+    { key: 'type', title: '类型', render: (r) => <StatusChip status={r.type} /> },
     { key: 'wholeName', title: '全路径', render: (r) => r.wholeName ?? '' },
     {
       key: 'actions',
@@ -63,8 +64,10 @@ export function OrganizationsPage() {
   ];
 
   return (
-    <Card>
-      <div style={{ display: 'flex', gap: 12, marginBottom: 16, alignItems: 'center' }}>
+    <div className="rainier-page">
+      <div className="rainier-page-head">
+        <h2 style={{ margin: 0 }}>组织节点</h2>
+        <div style={{ flex: 1 }} />
         <Input
           label="搜索"
           placeholder="按 code / name / wholeName"
@@ -77,7 +80,6 @@ export function OrganizationsPage() {
         <Button type="button" onClick={() => list.setSearch(searchInput)}>
           查询
         </Button>
-        <div style={{ flex: 1 }} />
         <Button
           type="button"
           onClick={() => {
@@ -88,13 +90,15 @@ export function OrganizationsPage() {
           新建
         </Button>
       </div>
-      <Table<Organization> columns={columns} dataSource={list.items} rowKey="id" />
-      <Pagination
-        page={list.page}
-        size={list.size}
-        total={list.total}
-        onPageChange={list.setPage}
-      />
+      <Card>
+        <Table<Organization> columns={columns} dataSource={list.items} rowKey="id" />
+        <Pagination
+          page={list.page}
+          size={list.size}
+          total={list.total}
+          onPageChange={list.setPage}
+        />
+      </Card>
       <OrganizationEditDrawer
         open={drawerOpen}
         editing={editing}
@@ -131,7 +135,7 @@ export function OrganizationsPage() {
           void list.refetch();
         }}
       />
-    </Card>
+    </div>
   );
 }
 

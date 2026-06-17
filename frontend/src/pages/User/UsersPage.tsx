@@ -95,8 +95,10 @@ export function UsersPage() {
   ];
 
   return (
-    <Card>
-      <div style={{ display: 'flex', gap: 12, marginBottom: 16, alignItems: 'center' }}>
+    <div className="rainier-page">
+      <div className="rainier-page-head">
+        <h2 style={{ margin: 0 }}>用户</h2>
+        <div style={{ flex: 1 }} />
         <Input
           label="搜索"
           placeholder="按 login_name / name / code / email"
@@ -109,7 +111,6 @@ export function UsersPage() {
         <Button type="button" onClick={() => list.setSearch(searchInput)}>
           查询
         </Button>
-        <div style={{ flex: 1 }} />
         <Button
           type="button"
           onClick={() => {
@@ -121,13 +122,15 @@ export function UsersPage() {
           新建
         </Button>
       </div>
-      <Table<User> columns={columns} dataSource={list.items} rowKey="id" />
-      <Pagination
-        page={list.page}
-        size={list.size}
-        total={list.total}
-        onPageChange={list.setPage}
-      />
+      <Card>
+        <Table<User> columns={columns} dataSource={list.items} rowKey="id" />
+        <Pagination
+          page={list.page}
+          size={list.size}
+          total={list.total}
+          onPageChange={list.setPage}
+        />
+      </Card>
       <Drawer open={drawerOpen} title={editing ? '编辑用户' : '新建用户'} onClose={() => setDrawerOpen(false)}>
         <Input
           label="登录账号"
@@ -222,6 +225,6 @@ export function UsersPage() {
           void list.refetch();
         }}
       />
-    </Card>
+    </div>
   );
 }

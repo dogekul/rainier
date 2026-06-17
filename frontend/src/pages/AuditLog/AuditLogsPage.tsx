@@ -40,51 +40,57 @@ export function AuditLogsPage() {
   ];
 
   return (
-    <Card>
-      <div
-        style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap', alignItems: 'flex-end' }}
-        data-testid="audit-filters"
-      >
-        <Input label="操作人" value={actor} onChange={(e) => setActor(e.target.value)} />
-        <Input
-          label="实体类型"
-          value={entityType}
-          onChange={(e) => setEntityType(e.target.value)}
-        />
-        <Input label="实体ID" value={entityId} onChange={(e) => setEntityId(e.target.value)} />
-        <div style={{ marginBottom: 12 }}>
-          <label style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }}>动作</label>
-          <select
-            className="rainier-treeselect-trigger"
-            value={action}
-            onChange={(e) => setAction(e.target.value)}
-            data-testid="audit-action-select"
-          >
-            {ACTION_OPTIONS.map((a) => (
-              <option key={a} value={a}>
-                {a === '' ? '全部' : a}
-              </option>
-            ))}
-          </select>
-        </div>
-        <Button
-          type="button"
-          data-testid="audit-query-btn"
-          onClick={() => {
-            list.setPage(0);
-            void list.refetch();
-          }}
+    <div className="rainier-page">
+      <div className="rainier-page-head">
+        <h2 style={{ margin: 0 }}>审计日志</h2>
+        <div style={{ flex: 1 }} />
+        <div
+          style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'flex-end' }}
+          data-testid="audit-filters"
         >
-          查询
-        </Button>
+          <Input label="操作人" value={actor} onChange={(e) => setActor(e.target.value)} />
+          <Input
+            label="实体类型"
+            value={entityType}
+            onChange={(e) => setEntityType(e.target.value)}
+          />
+          <Input label="实体ID" value={entityId} onChange={(e) => setEntityId(e.target.value)} />
+          <div style={{ marginBottom: 12 }}>
+            <label style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }}>动作</label>
+            <select
+              className="rainier-select"
+              value={action}
+              onChange={(e) => setAction(e.target.value)}
+              data-testid="audit-action-select"
+            >
+              {ACTION_OPTIONS.map((a) => (
+                <option key={a} value={a}>
+                  {a === '' ? '全部' : a}
+                </option>
+              ))}
+            </select>
+          </div>
+          <Button
+            type="button"
+            data-testid="audit-query-btn"
+            onClick={() => {
+              list.setPage(0);
+              void list.refetch();
+            }}
+          >
+            查询
+          </Button>
+        </div>
       </div>
-      <Table<AuditLog> columns={columns} dataSource={list.items} rowKey="id" />
-      <Pagination
-        page={list.page}
-        size={list.size}
-        total={list.total}
-        onPageChange={list.setPage}
-      />
-    </Card>
+      <Card>
+        <Table<AuditLog> columns={columns} dataSource={list.items} rowKey="id" />
+        <Pagination
+          page={list.page}
+          size={list.size}
+          total={list.total}
+          onPageChange={list.setPage}
+        />
+      </Card>
+    </div>
   );
 }

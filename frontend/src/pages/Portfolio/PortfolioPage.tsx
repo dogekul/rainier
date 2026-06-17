@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { DashboardCard, EmptyState, StatusBar, StatusChip } from '../../components/board';
+import { DashboardCard, EmptyState, StatTiles, StatusChip } from '../../components/board';
 import { rygToTier, RYG_LABEL, type StatusTier } from '../../utils/board';
 import { getPortfolio, type PortfolioRow, type PortfolioScope } from '../../api/portfolio';
 
@@ -9,8 +9,6 @@ const SCOPES: { value: PortfolioScope; label: string }[] = [
   { value: 'led', label: '我带的团队' },
   { value: 'all', label: '全公司' },
 ];
-
-const TIER_ORDER: StatusTier[] = ['red', 'yellow', 'green', 'gray'];
 
 /**
  * v0.0.30 — 项目地图 (Portfolio map). One scoped red/yellow/green view over the
@@ -44,14 +42,9 @@ export function PortfolioPage() {
     };
   }, [scope]);
 
-  // RYG distribution for the summary bar.
+  // RYG distribution for the summary tiles.
   const counts: Record<StatusTier, number> = { red: 0, yellow: 0, green: 0, gray: 0 };
   for (const r of rows) counts[rygToTier(r.ryg)] += 1;
-  const segments = TIER_ORDER.filter((t) => counts[t] > 0).map((t) => ({
-    label: RYG_LABEL[t],
-    count: counts[t],
-    tier: t,
-  }));
 
   return (
     <div className="rainier-page">
@@ -83,9 +76,15 @@ export function PortfolioPage() {
         />
       ) : (
         <>
-          <DashboardCard title="健康分布" extra={`${rows.length} 个项目`} testId="portfolio-summary">
-            <StatusBar testId="portfolio-dist" segments={segments} />
-          </DashboardCard>
+          <StatTiles
+            testId="portfolio-summary"
+            tiles={[
+              { label: '红', value: counts.red, tier: 'red' },
+              { label: '黄', value: counts.yellow, tier: 'yellow' },
+              { label: '绿', value: counts.green, tier: 'green' },
+              { label: '灰', value: counts.gray, tier: 'gray' },
+            ]}
+          />
 
           <DashboardCard title="项目（红→绿排序）" testId="portfolio-list">
             <table className="rainier-list-table">

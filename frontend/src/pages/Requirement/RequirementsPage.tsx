@@ -16,6 +16,7 @@ import { PRIORITY_LABELS } from '../../api/demand';
 import { usePaginated } from '../../hooks/usePaginated';
 import { RequirementEditDrawer } from './RequirementEditDrawer';
 import { SprintListPanel } from './SprintListPanel';
+import { StatusChip } from '../../components/board';
 
 export function RequirementsPage() {
   const fetcher = useCallback(
@@ -81,7 +82,9 @@ export function RequirementsPage() {
     {
       key: 'status',
       title: '状态',
-      render: (r) => REQUIREMENT_STATUS_LABELS[r.status] ?? r.status,
+      render: (r) => (
+        <StatusChip status={r.status} label={REQUIREMENT_STATUS_LABELS[r.status] ?? r.status} />
+      ),
     },
     { key: 'priority', title: '优先级', render: (r) => PRIORITY_LABELS[r.priority] ?? r.priority },
     { key: 'complexity', title: '复杂度', render: (r) => r.complexity ?? '—' },
@@ -109,8 +112,10 @@ export function RequirementsPage() {
   ];
 
   return (
-    <Card>
-      <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
+    <div className="rainier-page">
+      <div className="rainier-page-head">
+        <h2 style={{ margin: 0 }}>需求</h2>
+        <div style={{ flex: 1 }} />
         <Button
           type="button"
           onClick={() => {
@@ -122,26 +127,28 @@ export function RequirementsPage() {
           新建需求
         </Button>
       </div>
-      <Table<Requirement>
-        columns={columns}
-        dataSource={list.items}
-        rowKey="id"
-        isExpanded={(r) => expanded.has(r.id)}
-        renderExpanded={(r) => (
-          <SprintListPanel
-            requirementId={r.id}
-            requirementCode={r.code}
-            requirementTitle={r.title}
-            onCountChange={onSprintCountChange}
-          />
-        )}
-      />
-      <Pagination
-        page={list.page}
-        size={list.size}
-        total={list.total}
-        onPageChange={list.setPage}
-      />
+      <Card>
+        <Table<Requirement>
+          columns={columns}
+          dataSource={list.items}
+          rowKey="id"
+          isExpanded={(r) => expanded.has(r.id)}
+          renderExpanded={(r) => (
+            <SprintListPanel
+              requirementId={r.id}
+              requirementCode={r.code}
+              requirementTitle={r.title}
+              onCountChange={onSprintCountChange}
+            />
+          )}
+        />
+        <Pagination
+          page={list.page}
+          size={list.size}
+          total={list.total}
+          onPageChange={list.setPage}
+        />
+      </Card>
       <RequirementEditDrawer
         open={drawerOpen}
         editing={editing}
@@ -168,6 +175,6 @@ export function RequirementsPage() {
           void list.refetch();
         }}
       />
-    </Card>
+    </div>
   );
 }

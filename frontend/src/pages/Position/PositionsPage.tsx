@@ -6,6 +6,7 @@ import { Drawer } from '../../components/ui/Drawer';
 import { Input } from '../../components/ui/Input';
 import { Pagination } from '../../components/ui/Pagination';
 import { Table, type TableColumn } from '../../components/ui/Table';
+import { StatusChip } from '../../components/board';
 import {
   createPosition,
   deletePosition,
@@ -56,7 +57,7 @@ export function PositionsPage() {
   const columns: TableColumn<Position>[] = [
     { key: 'code', title: '编码', render: (r) => r.code },
     { key: 'name', title: '名称', render: (r) => r.name },
-    { key: 'category', title: '类别', render: (r) => r.category },
+    { key: 'category', title: '类别', render: (r) => <StatusChip status={r.category} /> },
     { key: 'enabled', title: '启用', render: (r) => (r.enabled ? '是' : '否') },
     {
       key: 'actions',
@@ -82,8 +83,10 @@ export function PositionsPage() {
   ];
 
   return (
-    <Card>
-      <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
+    <div className="rainier-page">
+      <div className="rainier-page-head">
+        <h2 style={{ margin: 0 }}>岗位</h2>
+        <div style={{ flex: 1 }} />
         <Button
           type="button"
           onClick={() => {
@@ -95,13 +98,15 @@ export function PositionsPage() {
           新建岗位
         </Button>
       </div>
-      <Table<Position> columns={columns} dataSource={list.items} rowKey="id" />
-      <Pagination
-        page={list.page}
-        size={list.size}
-        total={list.total}
-        onPageChange={list.setPage}
-      />
+      <Card>
+        <Table<Position> columns={columns} dataSource={list.items} rowKey="id" />
+        <Pagination
+          page={list.page}
+          size={list.size}
+          total={list.total}
+          onPageChange={list.setPage}
+        />
+      </Card>
       <Drawer
         open={drawerOpen}
         title={editing ? '编辑岗位' : '新建岗位'}
@@ -185,6 +190,6 @@ export function PositionsPage() {
           void list.refetch();
         }}
       />
-    </Card>
+    </div>
   );
 }

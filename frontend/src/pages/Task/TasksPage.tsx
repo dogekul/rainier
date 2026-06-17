@@ -4,6 +4,7 @@ import { Card } from '../../components/ui/Card';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import { Pagination } from '../../components/ui/Pagination';
 import { Table, type TableColumn } from '../../components/ui/Table';
+import { StatusChip } from '../../components/board';
 import { createTask, deleteTask, listTasks, updateTask, type Task } from '../../api/task';
 import { usePaginated } from '../../hooks/usePaginated';
 import { TaskEditDrawer } from './TaskEditDrawer';
@@ -44,7 +45,7 @@ export function TasksPage() {
       render: (t) =>
         t.assigneeName ? `${t.assigneeName}（${t.assigneeLoginName ?? ''}）` : '待分配',
     },
-    { key: 'status', title: '状态', render: (t) => t.status },
+    { key: 'status', title: '状态', render: (t) => <StatusChip status={t.status} /> },
     { key: 'priority', title: '优先级', render: (t) => t.priority },
     { key: 'dueDate', title: '到期日', render: (t) => t.dueDate ?? '—' },
     {
@@ -71,8 +72,10 @@ export function TasksPage() {
   ];
 
   return (
-    <Card>
-      <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
+    <div className="rainier-page">
+      <div className="rainier-page-head">
+        <h2 style={{ margin: 0 }}>任务</h2>
+        <div style={{ flex: 1 }} />
         <Button
           type="button"
           onClick={() => {
@@ -84,13 +87,15 @@ export function TasksPage() {
           新建任务
         </Button>
       </div>
-      <Table<Task> columns={columns} dataSource={list.items} rowKey="id" />
-      <Pagination
-        page={list.page}
-        size={list.size}
-        total={list.total}
-        onPageChange={list.setPage}
-      />
+      <Card>
+        <Table<Task> columns={columns} dataSource={list.items} rowKey="id" />
+        <Pagination
+          page={list.page}
+          size={list.size}
+          total={list.total}
+          onPageChange={list.setPage}
+        />
+      </Card>
       <TaskEditDrawer
         key={editing?.id ?? 'new'}
         open={drawerOpen}
@@ -118,6 +123,6 @@ export function TasksPage() {
           void list.refetch();
         }}
       />
-    </Card>
+    </div>
   );
 }

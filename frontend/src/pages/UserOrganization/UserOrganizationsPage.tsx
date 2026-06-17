@@ -7,6 +7,7 @@ import { Input } from '../../components/ui/Input';
 import { Pagination } from '../../components/ui/Pagination';
 import { Table, type TableColumn } from '../../components/ui/Table';
 import { TreeSelect, type TreeNode } from '../../components/ui/TreeSelect';
+import { StatusChip } from '../../components/board';
 import { getOrganizationTree } from '../../api/organization';
 import { listUsers, type User } from '../../api/user';
 import {
@@ -78,7 +79,7 @@ export function UserOrganizationsPage() {
     {
       key: 'status',
       title: '状态',
-      render: (r) => (r.leftAt ? '已离职' : '在岗'),
+      render: (r) => <StatusChip status={r.leftAt ? '已离职' : '在岗'} />,
     },
     {
       key: 'actions',
@@ -104,8 +105,10 @@ export function UserOrganizationsPage() {
   ];
 
   return (
-    <Card>
-      <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
+    <div className="rainier-page">
+      <div className="rainier-page-head">
+        <h2 style={{ margin: 0 }}>用户-组织关系</h2>
+        <div style={{ flex: 1 }} />
         <Button
           type="button"
           onClick={() => {
@@ -117,13 +120,15 @@ export function UserOrganizationsPage() {
           新建归属
         </Button>
       </div>
-      <Table<UserOrganization> columns={columns} dataSource={list.items} rowKey="id" />
-      <Pagination
-        page={list.page}
-        size={list.size}
-        total={list.total}
-        onPageChange={list.setPage}
-      />
+      <Card>
+        <Table<UserOrganization> columns={columns} dataSource={list.items} rowKey="id" />
+        <Pagination
+          page={list.page}
+          size={list.size}
+          total={list.total}
+          onPageChange={list.setPage}
+        />
+      </Card>
       <Drawer
         open={drawerOpen}
         title={editing ? '编辑归属' : '新建归属'}
@@ -240,6 +245,6 @@ export function UserOrganizationsPage() {
           void list.refetch();
         }}
       />
-    </Card>
+    </div>
   );
 }

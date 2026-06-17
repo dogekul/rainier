@@ -3,6 +3,7 @@ import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { Pagination } from '../../components/ui/Pagination';
 import { Table, type TableColumn } from '../../components/ui/Table';
+import { StatusChip } from '../../components/board';
 import { listSprints, type Sprint } from '../../api/sprint';
 import { usePaginated } from '../../hooks/usePaginated';
 import { StoryListPanel } from '../Requirement/StoryListPanel';
@@ -50,7 +51,7 @@ export function SprintsPage() {
       title: '需求',
       render: (s) => `${s.requirementTitle ?? ''}（${s.requirementCode ?? ''}）`,
     },
-    { key: 'status', title: '状态', render: (s) => s.status },
+    { key: 'status', title: '状态', render: (s) => <StatusChip status={s.status} /> },
     {
       key: 'owner',
       title: '负责人',
@@ -61,29 +62,35 @@ export function SprintsPage() {
   ];
 
   return (
-    <Card>
-      <Table<Sprint>
-        columns={columns}
-        dataSource={list.items}
-        rowKey="id"
-        isExpanded={(s) => expanded.has(s.id)}
-        renderExpanded={(s) => (
-          <StoryListPanel
-            sprintId={s.id}
-            sprintCode={s.code}
-            sprintName={s.name}
-            requirementCode={s.requirementCode ?? ''}
-            requirementTitle={s.requirementTitle ?? ''}
-            onCountChange={onStoryCountChange}
-          />
-        )}
-      />
-      <Pagination
-        page={list.page}
-        size={list.size}
-        total={list.total}
-        onPageChange={list.setPage}
-      />
-    </Card>
+    <div className="rainier-page">
+      <div className="rainier-page-head">
+        <h2 style={{ margin: 0 }}>Sprint</h2>
+        <div style={{ flex: 1 }} />
+      </div>
+      <Card>
+        <Table<Sprint>
+          columns={columns}
+          dataSource={list.items}
+          rowKey="id"
+          isExpanded={(s) => expanded.has(s.id)}
+          renderExpanded={(s) => (
+            <StoryListPanel
+              sprintId={s.id}
+              sprintCode={s.code}
+              sprintName={s.name}
+              requirementCode={s.requirementCode ?? ''}
+              requirementTitle={s.requirementTitle ?? ''}
+              onCountChange={onStoryCountChange}
+            />
+          )}
+        />
+        <Pagination
+          page={list.page}
+          size={list.size}
+          total={list.total}
+          onPageChange={list.setPage}
+        />
+      </Card>
+    </div>
   );
 }

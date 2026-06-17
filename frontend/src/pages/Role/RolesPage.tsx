@@ -74,8 +74,10 @@ export function RolesPage() {
   ];
 
   return (
-    <Card>
-      <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
+    <div className="rainier-page">
+      <div className="rainier-page-head">
+        <h2 style={{ margin: 0 }}>角色</h2>
+        <div style={{ flex: 1 }} />
         <Button
           type="button"
           onClick={() => {
@@ -87,13 +89,15 @@ export function RolesPage() {
           新建角色
         </Button>
       </div>
-      <Table<Role> columns={columns} dataSource={list.items} rowKey="id" />
-      <Pagination
-        page={list.page}
-        size={list.size}
-        total={list.total}
-        onPageChange={list.setPage}
-      />
+      <Card>
+        <Table<Role> columns={columns} dataSource={list.items} rowKey="id" />
+        <Pagination
+          page={list.page}
+          size={list.size}
+          total={list.total}
+          onPageChange={list.setPage}
+        />
+      </Card>
       <Drawer
         open={drawerOpen}
         title={editing ? '编辑角色' : '新建角色'}
@@ -174,6 +178,6 @@ export function RolesPage() {
           void list.refetch();
         }}
       />
-    </Card>
+    </div>
   );
 }
