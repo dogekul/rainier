@@ -1,10 +1,7 @@
 .rainier-table {
   width: 100%;
   border-collapse: collapse;
-  background: var(--rainier-bg-card);
-  border-radius: var(--rainier-radius-card);
-  box-shadow: var(--rainier-shadow-card);
-  overflow: hidden;
+  background: transparent;
   font-family: var(--rainier-font);
 }
 

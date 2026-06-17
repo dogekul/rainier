@@ -8,10 +8,10 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 56px;
+  height: 52px;
   padding: 0 20px;
   background-color: var(--rainier-bg-card);
-  box-shadow: var(--rainier-shadow-card);
+  border-bottom: 1px solid var(--rainier-border);
   z-index: 5;
 }
 
@@ -159,4 +159,10 @@
   min-width: 0;
   padding: 24px;
   background: var(--rainier-bg-page);
+}
+
+/* v0.0.35 — cap content width on EVERY page (dashboards + CRUD) so nothing sprawls edge-to-edge. */
+.rainier-shell-content {
+  max-width: 1240px;
+  margin: 0 auto;
 }

@@ -179,7 +179,9 @@ export function AppLayout() {
           </aside>
         )}
         <main className="rainier-shell-main">
-          <Outlet />
+          <div className="rainier-shell-content">
+            <Outlet />
+          </div>
         </main>
       </div>
     </div>
