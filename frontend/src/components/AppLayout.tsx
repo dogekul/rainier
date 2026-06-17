@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, NavLink, Outlet } from 'react-router-dom';
 import { isElevated, useAuthStore } from '../store/auth';
+import { NavIcon } from './NavIcon';
 import './AppLayout.css';
 
 export interface NavItem {
@@ -8,6 +9,8 @@ export interface NavItem {
   label: string;
   /** react-router NavLink `end` — needed for "/" so it isn't active on every route. */
   end?: boolean;
+  /** v0.0.34 — NavIcon name. */
+  icon?: string;
 }
 
 export interface NavGroup {
@@ -28,24 +31,24 @@ export const navGroups: NavGroup[] = [
     key: 'workbench',
     title: '工作台',
     items: [
-      { to: '/', label: '我的工作台', end: true },
-      { to: '/demand-submit', label: '提个诉求' },
-      { to: '/team', label: '团队负责人面板' },
+      { to: '/', label: '我的工作台', end: true, icon: 'home' },
+      { to: '/demand-submit', label: '提个诉求', icon: 'edit' },
+      { to: '/team', label: '团队负责人面板', icon: 'users' },
     ],
   },
   {
     key: 'dashboards',
     title: '数据看板',
-    items: [{ to: '/portfolio', label: '项目地图' }],
+    items: [{ to: '/portfolio', label: '项目地图', icon: 'map' }],
   },
   {
     key: 'org',
     title: '组织',
     requiresAdmin: true,
     items: [
-      { to: '/org/organizations', label: '组织节点' },
-      { to: '/org/users', label: '用户' },
-      { to: '/org/user-organizations', label: '用户-组织关系' },
+      { to: '/org/organizations', label: '组织节点', icon: 'sitemap' },
+      { to: '/org/users', label: '用户', icon: 'user' },
+      { to: '/org/user-organizations', label: '用户-组织关系', icon: 'link' },
     ],
   },
   {
@@ -53,22 +56,22 @@ export const navGroups: NavGroup[] = [
     title: '产品',
     requiresAdmin: true,
     items: [
-      { to: '/pm/products', label: '产品' },
-      { to: '/pm/product-modules', label: '产品模块' },
-      { to: '/pm/features', label: '功能' },
+      { to: '/pm/products', label: '产品', icon: 'box' },
+      { to: '/pm/product-modules', label: '产品模块', icon: 'layers' },
+      { to: '/pm/features', label: '功能', icon: 'star' },
     ],
   },
   {
     key: 'pm',
     title: '需求管理',
     items: [
-      { to: '/pm/cockpit', label: '项目驾驶舱' },
-      { to: '/pm/projects', label: '项目' },
-      { to: '/pm/sprints', label: 'Sprint' },
-      { to: '/pm/tasks', label: '任务' },
-      { to: '/pm/demands', label: '诉求' },
-      { to: '/pm/requirements', label: '需求' },
-      { to: '/pm/demand-requirements', label: '诉求-需求关联' },
+      { to: '/pm/cockpit', label: '项目驾驶舱', icon: 'gauge' },
+      { to: '/pm/projects', label: '项目', icon: 'folder' },
+      { to: '/pm/sprints', label: 'Sprint', icon: 'loop' },
+      { to: '/pm/tasks', label: '任务', icon: 'check' },
+      { to: '/pm/demands', label: '诉求', icon: 'inbox' },
+      { to: '/pm/requirements', label: '需求', icon: 'doc' },
+      { to: '/pm/demand-requirements', label: '诉求-需求关联', icon: 'link' },
     ],
   },
   {
@@ -76,16 +79,16 @@ export const navGroups: NavGroup[] = [
     title: '人事配置',
     requiresAdmin: true,
     items: [
-      { to: '/hr/positions', label: '岗位' },
-      { to: '/hr/roles', label: '角色' },
-      { to: '/hr/user-roles', label: '用户角色' },
+      { to: '/hr/positions', label: '岗位', icon: 'badge' },
+      { to: '/hr/roles', label: '角色', icon: 'key' },
+      { to: '/hr/user-roles', label: '用户角色', icon: 'user' },
     ],
   },
   {
     key: 'sys',
     title: '系统',
     requiresAdmin: true,
-    items: [{ to: '/sys/audit-logs', label: '审计日志' }],
+    items: [{ to: '/sys/audit-logs', label: '审计日志', icon: 'shield' }],
   },
 ];
 
@@ -166,7 +169,8 @@ export function AppLayout() {
                         }
                         data-testid={`appshell-nav-${item.to}`}
                       >
-                        {item.label}
+                        <NavIcon name={item.icon} />
+                        <span className="rainier-shell-sider-item-label">{item.label}</span>
                       </NavLink>
                     ))}
                 </div>
