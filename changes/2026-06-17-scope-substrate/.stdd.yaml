@@ -1,0 +1,28 @@
+change:
+  id: 2026-06-17-scope-substrate
+  title: v0.0.28-scope-substrate — project↔org edge + ScopeService + PortfolioService(RYG) + /api/me/portfolio
+  baseline: {tag: v0.0.27-auth-baseline-polish}
+  type: backend-substrate
+  parent_effort: structural-wave-2 (角色链路路线图 #1-#4)
+
+phase:
+  current: build
+  understand: {status: completed, artifact: proposal.md}
+  spec: {status: completed}
+  build: {status: completed, metrics: {backend_tests: 395}}
+  verify: {status: pending}   # whole-wave review before push
+  deliver: {status: pending}
+
+long_range:
+  enabled: true
+  mode: full_auto
+  pre_auth: {git_ops: allow_up_to_commit_and_tag, gate_2: auto_proceed, gate_3: auto_proceed_no_push}
+
+scope:
+  type: backend-substrate
+  capabilities_new: [entity-portfolio]
+  capabilities_modified: [entity-project]
+  new_tables: 0
+  new_columns: [rainier_project.organization_id]   # nullable, ddl-auto safe
+  new_endpoints: [GET /api/me/portfolio]
+  serves_roles: [PM, 开发负责人, 团队负责人, 领域负责人, 部门负责人, 高管, PMO, 小组负责人]

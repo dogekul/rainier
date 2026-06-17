@@ -19,6 +19,8 @@ public class ProjectDetail {
   private String ownerName;
 
   private String ownerLoginName;
+  /** v0.0.28 — optional org node for portfolio scoping. */
+  private Long organizationId;
   private LocalDate startDate;
   private LocalDate endDate;
   private Boolean enabled;
@@ -38,6 +40,7 @@ public class ProjectDetail {
     dto.description = p.getDescription();
     dto.status = p.getStatus();
     dto.ownerUserId = p.getOwnerUserId();
+    dto.organizationId = p.getOrganizationId();
     dto.startDate = p.getStartDate();
     dto.endDate = p.getEndDate();
     dto.enabled = p.getEnabled();
@@ -71,6 +74,10 @@ public class ProjectDetail {
 
   public Long getOwnerUserId() {
     return ownerUserId;
+  }
+
+  public Long getOrganizationId() {
+    return organizationId;
   }
 
   public String getOwnerName() {

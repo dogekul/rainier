@@ -45,6 +45,13 @@ public class Project extends BaseEntity {
   @Column(name = "owner_user_id", nullable = false)
   private Long ownerUserId;
 
+  /**
+   * v0.0.28: optional edge to an organization node (department/domain/team) so portfolios can be
+   * scoped by org subtree. Nullable — legacy/unscoped projects carry no org.
+   */
+  @Column(name = "organization_id")
+  private Long organizationId;
+
   @Column(name = "start_date")
   private LocalDate startDate;
 
@@ -84,6 +91,14 @@ public class Project extends BaseEntity {
 
   public void setDescription(String description) {
     this.description = description;
+  }
+
+  public Long getOrganizationId() {
+    return organizationId;
+  }
+
+  public void setOrganizationId(Long organizationId) {
+    this.organizationId = organizationId;
   }
 
   public String getStatus() {

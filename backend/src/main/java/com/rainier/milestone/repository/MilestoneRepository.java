@@ -2,6 +2,7 @@
 package com.rainier.milestone.repository;
 
 import com.rainier.milestone.domain.Milestone;
+import java.util.Collection;
 import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
@@ -17,6 +18,9 @@ public interface MilestoneRepository
 
   /** Active milestones of a project — used by the project-delete cascade soft-delete. */
   List<Milestone> findByProjectId(Long projectId);
+
+  /** v0.0.28 portfolio fan-out — active milestones across a set of projects. */
+  List<Milestone> findByProjectIdIn(Collection<Long> projectIds);
 
   long countByProjectId(Long projectId);
 }

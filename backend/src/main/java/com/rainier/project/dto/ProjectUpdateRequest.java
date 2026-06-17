@@ -25,6 +25,9 @@ public class ProjectUpdateRequest {
   /** v0.0.8: owner IS mutable (admin can transfer ownership). */
   @NotNull private Long ownerUserId;
 
+  /** v0.0.28 — optional on update; null clears the org edge. */
+  private Long organizationId;
+
   private LocalDate startDate;
   private LocalDate endDate;
   private Boolean enabled;
@@ -63,6 +66,14 @@ public class ProjectUpdateRequest {
 
   public void setOwnerUserId(Long ownerUserId) {
     this.ownerUserId = ownerUserId;
+  }
+
+  public Long getOrganizationId() {
+    return organizationId;
+  }
+
+  public void setOrganizationId(Long organizationId) {
+    this.organizationId = organizationId;
   }
 
   public LocalDate getStartDate() {

@@ -28,6 +28,9 @@ public class ProjectCreateRequest {
    */
   @NotNull private Long ownerUserId;
 
+  /** v0.0.28 — optional org node (department/domain/team) for portfolio scoping. */
+  private Long organizationId;
+
   private LocalDate startDate;
   private LocalDate endDate;
   private Boolean enabled;
@@ -74,6 +77,14 @@ public class ProjectCreateRequest {
 
   public void setOwnerUserId(Long ownerUserId) {
     this.ownerUserId = ownerUserId;
+  }
+
+  public Long getOrganizationId() {
+    return organizationId;
+  }
+
+  public void setOrganizationId(Long organizationId) {
+    this.organizationId = organizationId;
   }
 
   public LocalDate getStartDate() {

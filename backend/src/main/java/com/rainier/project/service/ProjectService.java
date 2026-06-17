@@ -84,6 +84,7 @@ public class ProjectService {
     p.setDescription(req.getDescription());
     p.setStatus(status);
     p.setOwnerUserId(req.getOwnerUserId());
+    p.setOrganizationId(req.getOrganizationId());
     p.setStartDate(req.getStartDate());
     p.setEndDate(req.getEndDate());
     p.setEnabled(req.getEnabled() == null ? Boolean.TRUE : req.getEnabled());
@@ -159,6 +160,7 @@ public class ProjectService {
     if (req.getProjectType() != null) {
       p.setProjectType(req.getProjectType());
     }
+    p.setOrganizationId(req.getOrganizationId());
     p.setStartDate(req.getStartDate());
     p.setEndDate(req.getEndDate());
     // enabled stays null-guarded — DB column is NOT NULL bit(1); silently swallowing a malformed
