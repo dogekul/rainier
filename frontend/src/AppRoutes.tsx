@@ -5,6 +5,7 @@ import DemandsPage from './pages/Demand';
 import DemandRequirementsPage from './pages/DemandRequirement';
 import FeaturesPage from './pages/Feature';
 import CockpitPage from './pages/Cockpit';
+import TeamLeadPage from './pages/TeamLead';
 import Workbench from './pages/Workbench';
 import Login from './pages/Login';
 import AuditLogsPage from './pages/AuditLog';
@@ -29,6 +30,7 @@ export function AppRoutes() {
       <Route element={<ProtectedRoute />}>
         <Route element={<AppLayout />}>
           <Route path="/" element={<Workbench />} />
+          <Route path="/team" element={<TeamLeadPage />} />
           <Route path="/org" element={<Navigate to="/org/organizations" replace />} />
           <Route path="/org/organizations" element={<OrganizationsPage />} />
           <Route path="/org/users" element={<UsersPage />} />

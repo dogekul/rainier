@@ -27,7 +27,10 @@ export const navGroups: NavGroup[] = [
   {
     key: 'workbench',
     title: '工作台',
-    items: [{ to: '/', label: '我的工作台', end: true }],
+    items: [
+      { to: '/', label: '我的工作台', end: true },
+      { to: '/team', label: '团队负责人面板' },
+    ],
   },
   {
     key: 'org',
