@@ -2,6 +2,7 @@
 package com.rainier.userorganization.repository;
 
 import com.rainier.userorganization.domain.UserOrganization;
+import com.rainier.userorganization.domain.UserOrgRole;
 import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
@@ -22,6 +23,14 @@ public interface UserOrganizationRepository
   long countByOrganizationIdAndLeftAtIsNull(Long organizationId);
 
   long countByUserIdAndLeftAtIsNull(Long userId);
+
+  // v0.0.24 self-scoped team endpoints (active assignment = leftAt IS NULL).
+  List<UserOrganization> findByUserIdAndRoleAndLeftAtIsNull(Long userId, UserOrgRole role);
+
+  boolean existsByUserIdAndOrganizationIdAndRoleAndLeftAtIsNull(
+      Long userId, Long organizationId, UserOrgRole role);
+
+  List<UserOrganization> findByOrganizationIdAndLeftAtIsNull(Long organizationId);
 
   /** Demote all primary assignments for a user except a given keepId. */
   @Modifying

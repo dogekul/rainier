@@ -27,7 +27,13 @@ import org.springframework.web.filter.OncePerRequestFilter;
 public class SecurityFilter extends OncePerRequestFilter {
 
   private static final String ME_PATH = "/api/auth/me";
+  private static final String SELF_SCOPE_PREFIX = "/api/me/";
   private static final String BEARER_PREFIX = "Bearer ";
+
+  /** Paths that resolve the Bearer token into the {@code rainier.username} request attribute. */
+  private static boolean needsIdentity(String uri) {
+    return ME_PATH.equals(uri) || (uri != null && uri.startsWith(SELF_SCOPE_PREFIX));
+  }
 
   private final AuthService authService;
 
@@ -42,7 +48,7 @@ public class SecurityFilter extends OncePerRequestFilter {
       @NonNull FilterChain chain)
       throws ServletException, IOException {
 
-    if (ME_PATH.equals(request.getRequestURI())) {
+    if (needsIdentity(request.getRequestURI())) {
       String header = request.getHeader("Authorization");
       if (header != null && header.startsWith(BEARER_PREFIX)) {
         String token = header.substring(BEARER_PREFIX.length());

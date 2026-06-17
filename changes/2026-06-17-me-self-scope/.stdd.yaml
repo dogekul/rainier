@@ -1,0 +1,26 @@
+change:
+  id: 2026-06-17-me-self-scope
+  title: v0.0.24-me-self-scope — token-scoped /api/me/{led-teams,team-members} with HEAD re-check (403)
+  baseline: {tag: v0.0.23-pm-cockpit}
+  type: backend-self-scope
+  parent_effort: structural-v1.0
+
+phase:
+  current: build
+  understand: {status: completed, artifact: proposal.md}
+  spec: {status: completed, artifacts: [spec.md]}
+  build: {status: completed, metrics: {backend_tests: 377}}
+  verify: {status: pending}   # full multi-agent adversarial review at end-of-v1.0 (authz-sensitive)
+  deliver: {status: pending}
+
+long_range:
+  enabled: true
+  mode: full_auto
+  pre_auth: {git_ops: allow_up_to_commit_and_tag, gate_2: auto_proceed, gate_3: auto_proceed_no_push}
+
+scope:
+  type: backend-self-scope
+  capabilities_modified: [entity-user-organization, auth-placeholder]
+  new_tables: 0
+  new_endpoints: [GET /api/me/led-teams, GET /api/me/team-members]
+  authz_note: token-gated (SecurityFilter identity), NOT admin-gated; HEAD re-check → 403 is the guard
