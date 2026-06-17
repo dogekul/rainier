@@ -1,6 +1,41 @@
 # Capability: entity-user-organization
 
+> Change log:
+> - 2026-06-17 (v0.0.24-me-self-scope) — added two **self-scoped, token-gated (NOT admin-gated)** read
+>   endpoints for the team-lead panel: `GET /api/me/led-teams` → the caller's active HEAD orgs
+>   `[{organizationId, organizationName, organizationType}]` (role=HEAD AND leftAt IS NULL); `GET
+>   /api/me/team-members?organizationId=` → active members `[{userId, name, loginName}]` of a team the
+>   caller HEADs, with a server-side HEAD re-check → **403** otherwise (so the panel can't read arbitrary
+>   teams). v1 = direct members only (no recursive subtree). `UserOrganizationRepository` +3 derived
+>   queries (active HEAD list / active-HEAD exists / active members). The org-subtree recursion for
+>   portfolio scope=led lives in [[entity-portfolio]] `ScopeService`, not here.
+
 ## ADDED Requirements
+
+### Requirement: self-scoped team queries (v0.0.24)
+
+后端 SHALL 通过 `GET /api/me/led-teams` 返回当前用户作为 active HEAD 的组织,通过
+`GET /api/me/team-members?organizationId=` 返回该团队的 active 成员——但仅当调用者是该组织的 active HEAD,
+否则 SHALL 返回 403。无 token SHALL 返回 401。
+
+#### Scenario: HEAD 查自己带的团队成员
+
+- **GIVEN** alice 是团队 T 的 active HEAD,T 有 active 成员 bob/carol 和一个已离开(leftAt 非空)的 gone
+- **WHEN** alice 携 token `GET /api/me/team-members?organizationId=T`
+- **THEN** SHALL 返回 alice/bob/carol,不含 gone
+
+#### Scenario: 非 HEAD 被拒
+
+- **GIVEN** bob 是团队 T 的 MEMBER(非 HEAD)
+- **WHEN** bob `GET /api/me/team-members?organizationId=T`
+- **THEN** SHALL 返回 403
+
+#### Scenario: led-teams 仅含 active HEAD
+
+- **GIVEN** alice 是 T 的 HEAD;bob 仅是 MEMBER
+- **WHEN** 各自 `GET /api/me/led-teams`
+- **THEN** alice SHALL 得 [T];bob SHALL 得 []
+
 
 ### Requirement: 创建用户↔组织归属
 

@@ -10,6 +10,11 @@
 >   disabled users excluded). Gated by `app.security.admin-authz.enabled` (true prod / false test profile).
 >   `AdminAuthzBootstrap` elevates `app.security.bootstrap-admin-role` (default PMO) at startup when no
 >   admin role exists (anti-lockout).
+> - 2026-06-17 (v0.0.27-auth-baseline-polish) — added the IDENTITY baseline below the authz layer:
+>   `SecurityFilter` (which runs BEFORE this interceptor) now gates every `/api/**` for a valid token
+>   when `app.security.require-all-users-token.enabled=true`, so a missing token yields 401 (identity)
+>   before this interceptor's 403 (authz). The two layers are distinct: identity (SecurityFilter) then
+>   authorization (AdminAuthorizationInterceptor). See [[auth-placeholder]].
 
 > Admin-endpoint authorization: token + elevation (any role adminAccess=true) gate admin operations.
 > Gated by `app.security.admin-authz.enabled`. Reuses v0.0.20 `Role.adminAccess`.

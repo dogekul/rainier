@@ -21,6 +21,10 @@
 >   existing Requirement→UserRole→Task 409 order is unchanged; once those pass, milestones are
 >   soft-deleted (same `@Transactional`) before the project. A blocked delete rolls back leaving
 >   milestones active. See the ADDED Requirement at the end of this file + capability `entity-milestone`.
+> - 2026-06-17 (v0.0.28-scope-substrate) — Project gains a **nullable `organization_id`** column (+
+>   Create/Update/Detail) so projects can be tagged to a department/domain/team node for portfolio
+>   scoping. ddl-auto safe (nullable); legacy rows NULL. Consumed by `ScopeService` (scope=led) — see
+>   capability [[entity-portfolio]]. `ProjectRepository` +`findByOwnerUserId`/`findByOrganizationIdIn`.
 
 ## Requirements
 

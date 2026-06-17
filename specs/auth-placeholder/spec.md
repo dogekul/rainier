@@ -8,6 +8,16 @@
 > - 2026-06-15 (v0.0.20-role-nav) — each `roles[]` element gains `adminAccess` (reads
 >   `Role.adminAccess`, coalesced NULL→false; never null in the response). Drives the frontend
 >   `isElevated` role-scoped navigation + admin route guards.
+> - 2026-06-17 (v0.0.24-me-self-scope) — `SecurityFilter` now resolves the Bearer token →
+>   `rainier.username` request attribute for `/api/me/*` too (not just `/api/auth/me`), so the new
+>   self-scoped endpoints (`/api/me/led-teams`, `/api/me/team-members`, `/api/me/portfolio`) get
+>   identity; no token → controller 401. See [[entity-user-organization]] / [[entity-portfolio]].
+> - 2026-06-17 (v0.0.27-auth-baseline-polish) — `SecurityFilter` resolves identity for ANY path and,
+>   when `app.security.require-all-users-token.enabled=true`, gates EVERY `/api/**`: missing/invalid
+>   token → uniform JSON 401 before any controller (whitelist: `POST /api/auth/login` + `GET
+>   /api/health`; matrix-param safe via UrlPathHelper). Runs BEFORE `AdminAuthorizationInterceptor`,
+>   so 401 (identity) precedes 403 (authz). Flag true in prod, false in the test profile. See
+>   [[backend-authz]].
 
 ## ADDED Requirements
 
