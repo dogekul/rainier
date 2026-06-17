@@ -1,0 +1,83 @@
+change:
+  id: 2026-06-16-admin-authz
+  title: v0.0.21-admin-authz — backend admin-endpoint authorization (follow-on B)
+  baseline: {commit: a15ef66, tag: v0.0.20-role-nav}
+  type: security-hardening
+  parent_change: 2026-06-15-role-nav
+
+phase:
+  current: archived
+  archived_at: '2026-06-17'
+  understand:
+    status: completed
+    confirmed_at: '2026-06-16'
+    artifact: proposal.md
+    gate1_decisions:
+      d1_mechanism: HandlerInterceptor + WebMvcConfigurer (broad /api/** + AdminPaths.requiresAdmin; UrlPathHelper lookup path)
+      d2_tiers:
+        tier_a_all_methods: [organizations, user-organizations, positions, roles, user-roles, audit-logs, products]
+        tier_b_writes_only_get_open: [users, features, product-modules]
+      d3_status: {no_or_invalid_token: 401, authenticated_non_admin: 403, options_preflight: allow}
+      d4_elevation_source: Role.adminAccess (role-based, same source as frontend); new ElevationService.isElevated(username) (+disabled-user excluded)
+      d5_test_strategy: flag_gated   # app.security.admin-authz.enabled true(prod)/false(test); dedicated AdminAuthorizationTest + E2E
+      d6_bootstrap: auto_elevate     # startup runner elevates bootstrap-admin-role (default PMO) when no admin role exists
+  spec:
+    status: completed
+    confirmed_at: '2026-06-16'        # Gate 2 auto-proceed (user: 全自动到phase5)
+    artifacts: [design.md, specs/backend-authz/spec.md, test-plan.md]
+  slice: {status: completed, completed_at: '2026-06-16', artifacts: [slices.md, tasks.md]}
+  build:
+    status: completed
+    completed_at: '2026-06-16'
+    metrics: {backend_tests: 371, frontend_tests: 106, e2e_status: green}
+  verify:
+    status: completed
+    completed_at: '2026-06-16'
+    artifacts: [test-report.md, design-adjustments.md, pending-adjustments.md]
+    metrics:
+      backend_tests_total: 371          # 354 baseline + 17 new (14 authz + 3 bootstrap)
+      frontend_tests_total: 106         # unchanged (no frontend change)
+      review_round1: {critical: 1, high: 0, medium: 4, low: 9}   # C1 = matrix-param bypass
+      review_post_fix: {critical: 0, high: 0, medium: 1}          # M4 bootstrap-dup accepted (app-level code uniqueness)
+      failure_modes_hits: 1             # C1 runtime-behavior bypass — fixed + E2E-verified
+      e2e_status: green
+      tables: 19                        # no new table/column (reuses rainier_role.admin_access)
+    gate3_confirmed_at: '2026-06-17'      # user: push (confirm Gate 3 + authorize push)
+  deliver:
+    status: completed
+    completed_at: '2026-06-17'
+    tag: v0.0.21-admin-authz
+    pushed: true                          # user explicitly said: push
+    artifacts:
+      - archive/2026-06-16-admin-authz/
+      - specs/backend-authz/spec.md       # NEW capability — copied whole
+    spec_merge: {new_capabilities: 1, modified_capabilities: 0}
+    metrics: {backend_tests_total: 371, frontend_tests_total: 106, tables: 19, e2e_status: green}
+
+long_range:
+  enabled: true
+  mode: full_auto
+  pre_auth_completed: true
+  pre_auth_timestamp: '2026-06-16'
+  pre_auth:
+    decisions:
+      design_deviation: {minor: auto_record, major: auto_record_continue}
+      technical_blocker: workaround
+      iteration: {max_rounds: 10}
+      git_ops: allow_up_to_commit_and_tag    # push NOT pre-authorized (ask)
+      gate_2: auto_proceed                    # user: 全自动到phase5
+    operations: {directory: allow, file_write: allow, command: allow, script: allow, network: allow, file_read: allow, git_readonly: allow}
+    gates: {gate_3: require_user_confirmation}   # STOP at end of Phase 5 — no deliver/push
+  user_directive: '后端鉴权B做 + 全自动到phase5'
+
+scope:
+  type: security-hardening
+  capabilities_new: [backend-authz]
+  capabilities_modified: []
+  new_tables: 0
+  new_columns: []
+  reuses: rainier_role.admin_access (from v0.0.20)
+  explicitly_excluded: [fine_grained_permissions, global_auth_baseline_all_endpoints, audit_actor_real_username, real_identity_provider]
+
+baseline_metrics: {backend_tests: 354, frontend_tests: 106, tables: 19}
+standing_constraint: 测试和修复不删改已有业务数据；唯一有意数据变更 = bootstrap 首启把 PMO.admin_access NULL→true(合法首管理员 seed, 幂等有日志, 仅无 admin 时); 其它存量不动; E2E 验证 401/403/200 + 全员端点不被误伤.

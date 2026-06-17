@@ -21,6 +21,14 @@ spring:
   flyway:
     enabled: false
 
+app:
+  security:
+    # v0.0.21: admin authz OFF in the default test profile so the ~39 legacy admin controller tests
+    # run unauthenticated unchanged. AdminAuthorizationTest / AdminAuthzBootstrapTest flip it on via
+    # @TestPropertySource. The bootstrap runner is also gated on this, so it no-ops in tests.
+    admin-authz:
+      enabled: false
+
 rainier:
   product-module:
     depth:

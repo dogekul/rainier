@@ -44,6 +44,13 @@ app:
       # DO NOT USE IN PROD — replace via SPRING env override.
       secret: "rainier-dev-only-jwt-secret-must-be-at-least-256-bits-long-changeme-changeme"
       expiration-hours: 24
+    # v0.0.21: gate admin endpoints (token + elevation). Disabled in the test profile so legacy
+    # admin controller tests run unauthenticated; the dedicated AdminAuthorizationTest flips it on.
+    admin-authz:
+      enabled: true
+    # On startup, if NO role has adminAccess=true, elevate this role code so the system isn't
+    # locked out (granting the first admin via PUT /api/roles would itself need admin).
+    bootstrap-admin-role: PMO
   cors:
     # Comma-separated list bound to List&lt;String&gt; in CorsConfig via Spring's default converter.
     allowed-origins: "http://localhost:5173,http://localhost"

@@ -38,6 +38,11 @@ public class GlobalExceptionHandler {
     return body(HttpStatus.UNAUTHORIZED, ex.getMessage(), null);
   }
 
+  @ExceptionHandler(ForbiddenException.class)
+  public ResponseEntity<Map<String, Object>> handleForbidden(ForbiddenException ex) {
+    return body(HttpStatus.FORBIDDEN, ex.getMessage(), null);
+  }
+
   @ExceptionHandler(NotFoundException.class)
   public ResponseEntity<Map<String, Object>> handleNotFound(NotFoundException ex) {
     return body(HttpStatus.NOT_FOUND, ex.getMessage(), null);
