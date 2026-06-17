@@ -53,6 +53,7 @@ export const navGroups: NavGroup[] = [
     key: 'pm',
     title: '需求管理',
     items: [
+      { to: '/pm/cockpit', label: '项目驾驶舱' },
       { to: '/pm/projects', label: '项目' },
       { to: '/pm/sprints', label: 'Sprint' },
       { to: '/pm/tasks', label: '任务' },
