@@ -1,0 +1,46 @@
+change:
+  id: 2026-06-17-real-auth
+  title: v0.0.38-real-auth — BCrypt credential verification (flag-gated) + default-password backfill + login_name unique
+  baseline: {tag: v0.0.37-all-pages-polish, commit: 626275b}
+  type: security
+  closes: "CRITICAL: mock login = self-asserted identity / impersonation"
+
+status: archived   # v0.0.38-real-auth delivered + tagged + pushed 2026-06-17 (Gate 3 confirmed)
+
+phase:
+  current: delivered
+  understand:
+    status: completed
+    confirmed_at: '2026-06-17'
+    gate1_decisions:
+      d2_existing_users: bootstrap_backfill_default_password   # app.security.default-password=rainier123
+      d6_rollout: flag_gated   # app.security.real-auth.enabled true prod / false test
+      d1_storage: User.password_hash (BCrypt, spring-security-crypto)
+      d4_uniqueness: app-level existsByLoginName only   # D4 ADJUSTED: DB unique dropped (soft-delete conflict)
+  spec: {status: completed, artifact: proposal.md}
+  build: {status: completed}
+  verify:
+    status: completed
+    artifact: test-report.md
+    metrics: {backend: 421/421, new_tests: 6, e2e: 6/6, business_data: intact}
+    confirmed_at: '2026-06-17'   # Gate 3 user-confirmed ("确认并push")
+  deliver:
+    status: completed
+    archived_to: archive/2026-06-17-real-auth
+    specs_merged: [auth-placeholder, entity-user]
+    tag: v0.0.38-real-auth
+
+long_range:
+  enabled: true
+  mode: full_auto
+  pre_auth: {git_ops: allow_up_to_commit_and_tag, gate_2: auto_proceed, gate_3: require_user_confirmation}
+  user_directive: '真实鉴权 (Gate1: 默认密码回填 + 开关门控)'
+
+scope:
+  type: security
+  capabilities_modified: [auth-placeholder, entity-user]
+  new_tables: 0
+  new_columns: [rainier_user.password_hash]
+  new_deps: [spring-security-crypto]
+  flag: app.security.real-auth.enabled (true prod / false test)
+  default_password: rainier123 (app.security.default-password)

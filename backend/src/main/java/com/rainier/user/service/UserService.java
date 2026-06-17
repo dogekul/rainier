@@ -15,8 +15,10 @@ import com.rainier.user.dto.UserUpdateRequest;
 import com.rainier.user.repository.UserRepository;
 import com.rainier.userorganization.repository.UserOrganizationRepository;
 import java.util.stream.Collectors;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
@@ -35,14 +37,20 @@ public class UserService {
   private final UserRepository repo;
   private final UserOrganizationRepository userOrgRepo;
   private final PositionRepository positionRepo;
+  private final PasswordEncoder passwordEncoder;
+  private final String defaultPassword;
 
   public UserService(
       UserRepository repo,
       UserOrganizationRepository userOrgRepo,
-      PositionRepository positionRepo) {
+      PositionRepository positionRepo,
+      PasswordEncoder passwordEncoder,
+      @Value("${app.security.default-password:rainier123}") String defaultPassword) {
     this.repo = repo;
     this.userOrgRepo = userOrgRepo;
     this.positionRepo = positionRepo;
+    this.passwordEncoder = passwordEncoder;
+    this.defaultPassword = defaultPassword;
   }
 
   @Transactional
@@ -67,6 +75,9 @@ public class UserService {
     u.setIsInternal(req.getIsInternal() == null ? Boolean.TRUE : req.getIsInternal());
     u.setEnabled(req.getEnabled() == null ? Boolean.TRUE : req.getEnabled());
     u.setPositionId(req.getPositionId());
+    // v0.0.38: hash the chosen password, or the configured default when omitted.
+    String raw = nonBlank(req.getPassword()) ? req.getPassword() : defaultPassword;
+    u.setPasswordHash(passwordEncoder.encode(raw));
     return enrich(repo.saveAndFlush(u));
   }
 

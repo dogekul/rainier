@@ -56,6 +56,14 @@ app:
     # unauthenticated mockMvc tests stay green; AuthBaselineTest flips it on.
     require-all-users-token:
       enabled: true
+    # v0.0.38: real credential verification at login (BCrypt). When true, login looks up the user and
+    # verifies the password; unknown user / wrong password → 401. Disabled in the test profile so the
+    # legacy "any password" login tests stay green; RealAuthLoginTest flips it on.
+    real-auth:
+      enabled: true
+    # Default password backfilled to password-less users at startup (when real-auth is on) so existing
+    # accounts can log in. CHANGE in prod via SPRING env override.
+    default-password: rainier123
   cors:
     # Comma-separated list bound to List&lt;String&gt; in CorsConfig via Spring's default converter.
     allowed-origins: "http://localhost:5173,http://localhost"

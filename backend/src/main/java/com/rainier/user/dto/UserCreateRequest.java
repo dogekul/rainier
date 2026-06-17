@@ -27,6 +27,10 @@ public class UserCreateRequest {
   private Boolean enabled;
   private Long positionId;
 
+  /** v0.0.38 — optional initial password; omitted → the configured default (app.security.default-password). */
+  @Size(max = 100)
+  private String password;
+
   public String getLoginName() {
     return loginName;
   }
@@ -81,5 +85,13 @@ public class UserCreateRequest {
 
   public void setPositionId(Long positionId) {
     this.positionId = positionId;
+  }
+
+  public String getPassword() {
+    return password;
+  }
+
+  public void setPassword(String password) {
+    this.password = password;
   }
 }

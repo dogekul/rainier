@@ -32,6 +32,10 @@ app:
     # mockMvc tests stay green. AuthBaselineTest flips it on via @TestPropertySource.
     require-all-users-token:
       enabled: false
+    # v0.0.38: real auth OFF in the default test profile so the legacy "any password" login tests stay
+    # green. RealAuthLoginTest flips it on via @TestPropertySource.
+    real-auth:
+      enabled: false
 
 rainier:
   product-module:

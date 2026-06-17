@@ -159,3 +159,45 @@
 - **AND** body.positionId SHALL 为 null
 - **AND** body.positionName SHALL 为 null
 - **AND** body.positionCategory SHALL 为 null
+
+
+
+## MODIFIED Requirements (from change 2026-06-17-real-auth / v0.0.38)
+
+### Requirement: User 密码哈希字段位
+
+后端 SHALL 在 `rainier_user` 表加 `password_hash VARCHAR(100) NULL` 列，存储 BCrypt 哈希（不存明文，响应中
+SHALL 不序列化该字段）。`POST /api/users` 接受可选 `password`（≤100 字符）：非空 → 以 BCrypt 编码后写入；空 →
+落 `app.security.default-password`（默认 `rainier123`）的 BCrypt 哈希。启动时（`app.security.real-auth.enabled=true`）
+`RealAuthPasswordBackfill` SHALL 给所有 `password_hash` 为空的用户回填默认密码哈希，幂等。
+
+#### Scenario: 创建用户不带 password 落默认密码哈希
+
+- **GIVEN** `app.security.default-password=rainier123`
+- **WHEN** `POST /api/users` body `{"loginName":"alice","name":"Alice"}`（无 password）
+- **THEN** SHALL 返回 201
+- **AND** 该用户 `password_hash` SHALL 非空且为 BCrypt（`$2a$` 前缀）
+- **AND** `password_hash` SHALL `matches("rainier123")`
+- **AND** 响应 body SHALL 不含 `password` 或 `passwordHash` 字段
+
+#### Scenario: 启动回填给无密码用户设默认密码
+
+- **GIVEN** `app.security.real-auth.enabled=true`，存在 `password_hash` 为空的存量用户 legacy
+- **WHEN** `RealAuthPasswordBackfill` 在启动时运行
+- **THEN** legacy 的 `password_hash` SHALL 变为非空 BCrypt
+- **AND** 其 `password_hash` SHALL `matches("rainier123")`
+- **AND** 再次运行回填 SHALL 不改动已有非空哈希（幂等）
+
+### Requirement: login_name 唯一性为 app 层（软删兼容）
+
+后端 SHALL 在 service 层经 `existsByLoginName` 保证活跃用户 `login_name` 唯一，重名创建返回 409。**设计调整**：
+不在 `rainier_user.login_name` 加 DB unique 约束 —— `@SQLDelete` 软删模型下普通 unique 索引仍可见
+`del_flag=1` 行，会错误地阻止「软删后重建同名登录」并破坏 `deleteAll` 重播。`@Where(del_flag=0)` 使
+`existsByLoginName`/`findByLoginName` 只见活跃行，故 app 层唯一性无歧义。
+
+#### Scenario: 软删后可重建同名登录
+
+- **GIVEN** 用户 `loginName="alice"` 已被软删（`del_flag=1`）
+- **WHEN** `POST /api/users` body `{"loginName":"alice","name":"New Alice"}`
+- **THEN** SHALL 返回 201（不被软删行的残留索引阻塞）
+- **AND** `findByLoginName("alice")` SHALL 解析到新建的活跃用户

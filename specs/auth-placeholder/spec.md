@@ -18,6 +18,16 @@
 >   /api/health`; matrix-param safe via UrlPathHelper). Runs BEFORE `AdminAuthorizationInterceptor`,
 >   so 401 (identity) precedes 403 (authz). Flag true in prod, false in the test profile. See
 >   [[backend-authz]].
+> - 2026-06-17 (v0.0.38-real-auth) — `POST /api/auth/login` gains REAL BCrypt credential verification
+>   (flag `app.security.real-auth.enabled`, true prod / false test). When on: resolves the login via
+>   `findByLoginName`, requires `enabled=true` + a non-null `password_hash`, and `PasswordEncoder.matches`
+>   the supplied password; unknown user / disabled / wrong password all → uniform **401** ("invalid
+>   username or password", no leak of which login names exist). When off: legacy mock issuer (any
+>   non-blank creds) — so the test profile and all legacy login tests stay green. Closes the CRITICAL
+>   self-asserted-identity / impersonation hole that previously let any caller mint a token for any
+>   subject. Password storage + backfill live in [[entity-user]]. `SecurityPostureWarning` loudly WARNs
+>   on startup when the posture is the insecure dev default (real-auth off / shared default password /
+>   dev JWT secret) — fails OPEN with a loud signal, not silently.
 
 ## ADDED Requirements
 
@@ -106,3 +116,39 @@
 - **WHEN** `GET /api/auth/me`
 - **THEN** 对应 `roles[].adminAccess` SHALL 为 `false`
 - **AND** 该字段 SHALL 永不为 null
+
+## MODIFIED Requirements (from change 2026-06-17-real-auth / v0.0.38)
+
+### Requirement: 用户登录（真实凭证校验，flag-gated）
+
+当 `app.security.real-auth.enabled=true` 时，后端 SHALL 对 `POST /api/auth/login` 做真实凭证校验：按
+`login_name` 解析用户，要求 `enabled=true` 且 `password_hash` 非空，并以 BCrypt `matches` 校验密码；任一不满足
+SHALL 返回 401，且对「未知用户 / 已禁用 / 密码错误」返回**相同**的错误消息（不泄露登录名是否存在）。`username`/
+`password` 非空校验（400）先于凭证校验。当 flag 关闭时保留 mock 行为（任意非空凭证发 token），用于测试 profile。
+本需求取代「用户登录（mock JWT）」中「接受任意非空 username 和 password」在 flag-on 下的语义。
+
+#### Scenario: flag 开启 + 正确密码登录成功
+
+- **GIVEN** `app.security.real-auth.enabled=true`，存在 `enabled=true` 用户 alice，其 `password_hash` 为 `s3cret` 的 BCrypt
+- **WHEN** 客户端 `POST /api/auth/login` body `{"username":"alice","password":"s3cret"}`
+- **THEN** 系统 SHALL 返回 HTTP 200
+- **AND** 响应 body SHALL 含非空 `token` 与 `user.username="alice"`
+
+#### Scenario: flag 开启 + 错误密码拒绝
+
+- **GIVEN** `app.security.real-auth.enabled=true`，存在用户 alice（`password_hash` 为 `s3cret`）
+- **WHEN** 客户端 `POST /api/auth/login` body `{"username":"alice","password":"nope"}`
+- **THEN** 系统 SHALL 返回 HTTP 401
+
+#### Scenario: flag 开启 + 未知用户拒绝（不泄露存在性）
+
+- **GIVEN** `app.security.real-auth.enabled=true`，数据库无 `login_name="ghost"` 的活跃用户
+- **WHEN** 客户端 `POST /api/auth/login` body `{"username":"ghost","password":"whatever"}`
+- **THEN** 系统 SHALL 返回 HTTP 401
+- **AND** 错误消息 SHALL 与「错误密码」场景一致（不区分用户是否存在）
+
+#### Scenario: flag 开启 + 禁用用户即使密码正确也拒绝
+
+- **GIVEN** `app.security.real-auth.enabled=true`，用户 bob `enabled=false`，`password_hash` 为 `s3cret`
+- **WHEN** 客户端 `POST /api/auth/login` body `{"username":"bob","password":"s3cret"}`
+- **THEN** 系统 SHALL 返回 HTTP 401

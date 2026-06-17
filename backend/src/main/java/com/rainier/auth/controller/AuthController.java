@@ -9,7 +9,11 @@ import com.rainier.auth.service.AuthService;
 import com.rainier.auth.service.MeService;
 import com.rainier.common.exception.BadRequestException;
 import com.rainier.common.exception.UnauthorizedException;
+import com.rainier.user.domain.User;
+import com.rainier.user.repository.UserRepository;
 import javax.servlet.http.HttpServletRequest;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -30,10 +34,21 @@ public class AuthController {
 
   private final AuthService authService;
   private final MeService meService;
+  private final UserRepository userRepo;
+  private final PasswordEncoder passwordEncoder;
+  private final boolean realAuthEnabled;
 
-  public AuthController(AuthService authService, MeService meService) {
+  public AuthController(
+      AuthService authService,
+      MeService meService,
+      UserRepository userRepo,
+      PasswordEncoder passwordEncoder,
+      @Value("${app.security.real-auth.enabled:false}") boolean realAuthEnabled) {
     this.authService = authService;
     this.meService = meService;
+    this.userRepo = userRepo;
+    this.passwordEncoder = passwordEncoder;
+    this.realAuthEnabled = realAuthEnabled;
   }
 
   @PostMapping(path = "/login", produces = "application/json", consumes = "application/json")
@@ -43,6 +58,17 @@ public class AuthController {
     }
     if (isBlank(req.getPassword())) {
       throw new BadRequestException("password is required");
+    }
+    // v0.0.38: real credential verification when enabled. Unknown user OR wrong password → 401 (same
+    // message either way, to avoid leaking which login names exist). Flag off → mock issuer (any creds).
+    if (realAuthEnabled) {
+      User user = userRepo.findByLoginName(req.getUsername()).orElse(null);
+      if (user == null
+          || !Boolean.TRUE.equals(user.getEnabled())
+          || user.getPasswordHash() == null
+          || !passwordEncoder.matches(req.getPassword(), user.getPasswordHash())) {
+        throw new UnauthorizedException("invalid username or password");
+      }
     }
     String token = authService.issueToken(req.getUsername());
     return new LoginResponse(token, new UserDto(req.getUsername()));

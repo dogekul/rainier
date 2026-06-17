@@ -14,6 +14,9 @@ import org.hibernate.annotations.Where;
  * <p>Soft delete enabled — see {@link com.rainier.common.persistence.BaseEntity} and design.md §6.
  */
 @Entity
+// v0.0.38: NO DB unique on login_name — a plain unique index conflicts with the soft-delete model
+// (@SQLDelete keeps the row with del_flag=1, so the index would block recreating a login after delete).
+// Uniqueness is enforced at the service layer via existsByLoginName, which honors @Where(del_flag=0).
 @Table(name = "rainier_user")
 @SQLDelete(
     sql = "UPDATE rainier_user SET del_flag = 1, update_time = CURRENT_TIMESTAMP(6) WHERE id = ?")
@@ -41,6 +44,10 @@ public class User extends BaseEntity {
   /** v0.0.7: optional FK to {@code rainier_position(id)} — see entity-user MODIFIED spec. */
   @Column(name = "position_id")
   private Long positionId;
+
+  /** v0.0.38: BCrypt password hash. Nullable (legacy rows backfilled at startup); never serialized. */
+  @Column(name = "password_hash", length = 100)
+  private String passwordHash;
 
   public String getLoginName() {
     return loginName;
@@ -96,5 +103,13 @@ public class User extends BaseEntity {
 
   public void setPositionId(Long positionId) {
     this.positionId = positionId;
+  }
+
+  public String getPasswordHash() {
+    return passwordHash;
+  }
+
+  public void setPasswordHash(String passwordHash) {
+    this.passwordHash = passwordHash;
   }
 }
