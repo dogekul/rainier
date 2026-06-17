@@ -5,9 +5,15 @@
   --rainier-color-text-3: #8F959E;
   --rainier-bg-page: #F5F6F7;
   --rainier-bg-card: #FFFFFF;
+  /* v0.0.33 — neutral border + hover/selected tints for a calmer, denser feishu look. */
+  --rainier-border: #E5E6EB;
+  --rainier-border-strong: #C9CDD4;
+  --rainier-bg-hover: #F7F8FA;
+  --rainier-bg-selected: #EFF4FF;
   --rainier-radius-button: 6px;
   --rainier-radius-card: 8px;
-  --rainier-shadow-card: 0 4px 16px 0 rgba(0, 0, 0, 0.08);
+  /* Lighter, less-floaty card elevation (was a heavy 16px blur). */
+  --rainier-shadow-card: 0 1px 2px rgba(0, 0, 0, 0.04), 0 1px 4px rgba(0, 0, 0, 0.04);
   --rainier-font: PingFang SC, -apple-system, "Helvetica Neue", Arial, sans-serif;
   /* v0.0.22 board-kit — 4-tier status colors shared by every v1.0 dashboard. */
   --rainier-status-red: #F54A45;
@@ -37,4 +43,101 @@ html,
 body,
 #root {
   height: 100%;
+}
+
+/* v0.0.33 design-system polish ------------------------------------------------ */
+
+a {
+  color: var(--rainier-color-primary);
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
+
+h2 {
+  font-size: 20px;
+  font-weight: 600;
+}
+h3 {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+/* Page wrapper: cap width + vertical rhythm so content isn't sparse edge-to-edge. */
+.rainier-page {
+  max-width: 1240px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* Page header row — title + controls on one line; the title never wraps. */
+.rainier-page-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.rainier-page-head > h2 {
+  margin: 0;
+  white-space: nowrap;
+}
+
+/* Compact native <select> (the dashboard pickers/status selects). */
+.rainier-select {
+  appearance: none;
+  -webkit-appearance: none;
+  height: 32px;
+  padding: 0 30px 0 10px;
+  border: 1px solid var(--rainier-border);
+  border-radius: var(--rainier-radius-button);
+  background-color: var(--rainier-bg-card);
+  background-image: url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 4.5L6 8l3.5-3.5' stroke='%238F959E' stroke-width='1.3' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 9px center;
+  color: var(--rainier-color-text-1);
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 30px;
+  cursor: pointer;
+  max-width: 280px;
+  min-width: 96px;
+  transition: border-color 0.15s ease;
+}
+.rainier-select:hover {
+  border-color: var(--rainier-border-strong);
+}
+.rainier-select:focus {
+  border-color: var(--rainier-color-primary);
+  outline: none;
+}
+
+/* In-card list table (dashboards) — replaces the raw inline <table> pattern. */
+.rainier-list-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.rainier-list-table td {
+  padding: 9px 10px;
+  border-bottom: 1px solid #f2f3f5;
+  font-size: 14px;
+  vertical-align: middle;
+  color: var(--rainier-color-text-1);
+}
+.rainier-list-table tr:last-child td {
+  border-bottom: none;
+}
+.rainier-list-table tbody tr:hover td {
+  background: var(--rainier-bg-hover);
+}
+
+/* Card internal heading rhythm. */
+.rainier-card > h2:first-child,
+.rainier-card > h3:first-child {
+  margin-top: 0;
+}
+.rainier-card > h3 {
+  margin: 0 0 12px;
 }

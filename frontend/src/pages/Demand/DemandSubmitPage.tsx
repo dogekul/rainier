@@ -101,7 +101,7 @@ export function DemandSubmitPage() {
             <label className="rainier-input-wrap">
               <span className="rainier-input-label">优先级</span>
               <select
-                className="rainier-treeselect-trigger"
+                className="rainier-select"
                 value={priority}
                 onChange={(e) => setPriority(e.target.value as Priority)}
                 data-testid="demand-submit-priority"

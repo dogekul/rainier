@@ -185,12 +185,12 @@ export function CockpitPage() {
   ];
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+    <div className="rainier-page">
+      <div className="rainier-page-head">
         <h2 style={{ margin: 0 }}>项目驾驶舱</h2>
         <select
           data-testid="cockpit-project-select"
-          className="rainier-treeselect-trigger"
+          className="rainier-select"
           value={projectId ?? ''}
           onChange={(e) => setProjectId(Number(e.target.value))}
         >
@@ -315,7 +315,7 @@ export function CockpitPage() {
         {todoTasks.length === 0 ? (
           <p style={{ color: 'var(--rainier-color-text-2)', margin: 0 }}>暂无待办任务。</p>
         ) : (
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <table className="rainier-list-table">
             <tbody>
               {todoTasks.map((t) => (
                 <tr key={t.id} data-testid={`cockpit-todo-${t.id}`}>
@@ -324,7 +324,7 @@ export function CockpitPage() {
                   </td>
                   <td style={{ padding: '4px 8px' }}>
                     <select
-                      className="rainier-treeselect-trigger"
+                      className="rainier-select"
                       data-testid={`cockpit-todo-status-${t.id}`}
                       value={t.status}
                       onChange={(e) => void changeTaskStatus(t, e.target.value as TaskStatus)}
@@ -348,7 +348,7 @@ export function CockpitPage() {
         {reviewStories.length === 0 ? (
           <p style={{ color: 'var(--rainier-color-text-2)', margin: 0 }}>暂无待评审 Story。</p>
         ) : (
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <table className="rainier-list-table">
             <tbody>
               {reviewStories.map((s) => (
                 <tr key={s.id} data-testid={`cockpit-review-${s.id}`}>
@@ -357,7 +357,7 @@ export function CockpitPage() {
                   </td>
                   <td style={{ padding: '4px 8px' }}>
                     <select
-                      className="rainier-treeselect-trigger"
+                      className="rainier-select"
                       data-testid={`cockpit-review-status-${s.id}`}
                       value={s.status}
                       onChange={(e) => void changeStoryStatus(s, e.target.value as StoryStatus)}

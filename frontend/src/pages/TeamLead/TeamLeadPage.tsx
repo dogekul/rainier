@@ -101,13 +101,13 @@ export function TeamLeadPage() {
   const maxLoad = Math.max(1, ...loads.map((l) => l.openTasks));
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+    <div className="rainier-page">
+      <div className="rainier-page-head">
         <h2 style={{ margin: 0 }}>团队负责人面板</h2>
         {teams && teams.length > 1 && (
           <select
             data-testid="tl-team-select"
-            className="rainier-treeselect-trigger"
+            className="rainier-select"
             value={teamId ?? ''}
             onChange={(e) => setTeamId(Number(e.target.value))}
           >
@@ -127,7 +127,7 @@ export function TeamLeadPage() {
         {loads.length === 0 ? (
           <p style={{ color: 'var(--rainier-color-text-2)', margin: 0 }}>暂无成员或正在加载…</p>
         ) : (
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <table className="rainier-list-table">
             <tbody>
               {loads.map((m) => (
                 <tr key={m.userId} data-testid={`tl-member-${m.userId}`}>
@@ -160,7 +160,7 @@ export function TeamLeadPage() {
         {health.length === 0 ? (
           <p style={{ color: 'var(--rainier-color-text-2)', margin: 0 }}>暂无项目。</p>
         ) : (
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <table className="rainier-list-table">
             <tbody>
               {health.map((h) => (
                 <tr key={h.projectId} data-testid={`tl-project-${h.projectId}`}>

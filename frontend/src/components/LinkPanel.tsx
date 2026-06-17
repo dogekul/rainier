@@ -102,7 +102,7 @@ export function LinkPanel({ targetType, targetId }: LinkPanelProps) {
       )}
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 8 }}>
         <select
-          className="rainier-treeselect-trigger"
+          className="rainier-select"
           data-testid="link-add-type"
           value={linkType}
           onChange={(e) => setLinkType(e.target.value as LinkType)}

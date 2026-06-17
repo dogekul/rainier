@@ -54,12 +54,12 @@ export function PortfolioPage() {
   }));
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+    <div className="rainier-page">
+      <div className="rainier-page-head">
         <h2 style={{ margin: 0 }}>项目地图</h2>
         <select
           data-testid="portfolio-scope"
-          className="rainier-treeselect-trigger"
+          className="rainier-select"
           value={scope}
           onChange={(e) => setScope(e.target.value as PortfolioScope)}
         >
@@ -88,7 +88,7 @@ export function PortfolioPage() {
           </DashboardCard>
 
           <DashboardCard title="项目（红→绿排序）" testId="portfolio-list">
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <table className="rainier-list-table">
               <tbody>
                 {rows.map((r) => (
                   <tr key={r.projectId} data-testid={`portfolio-row-${r.projectId}`}>

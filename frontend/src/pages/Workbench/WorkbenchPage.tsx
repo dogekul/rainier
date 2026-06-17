@@ -97,7 +97,7 @@ export function WorkbenchPage() {
   }, [tasks, today]);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+    <div className="rainier-page">
       <Card>
         <h2 data-testid="workbench-greeting">你好，{ctx?.name ?? ctx?.username ?? '...'}</h2>
         <div
@@ -111,9 +111,10 @@ export function WorkbenchPage() {
               <span
                 key={i}
                 style={{
-                  padding: '2px 10px',
+                  padding: '3px 10px',
                   borderRadius: 12,
-                  background: 'var(--rainier-color-bg-2)',
+                  background: 'var(--rainier-bg-selected)',
+                  color: 'var(--rainier-color-primary)',
                   fontSize: 12,
                 }}
               >
@@ -130,7 +131,7 @@ export function WorkbenchPage() {
         {sortedTasks.length === 0 ? (
           <p style={{ color: 'var(--rainier-color-text-2)' }}>暂无指派给我的任务。</p>
         ) : (
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <table className="rainier-list-table">
             <tbody>
               {sortedTasks.map((t) => {
                 const flag = focusBucket(t, today).flag;
@@ -160,7 +161,7 @@ export function WorkbenchPage() {
                   </td>
                   <td style={{ padding: '4px 8px' }}>
                     <select
-                      className="rainier-treeselect-trigger"
+                      className="rainier-select"
                       data-testid={`my-task-status-${t.id}`}
                       value={t.status}
                       onChange={(e) => void changeTaskStatus(t, e.target.value as TaskStatus)}
