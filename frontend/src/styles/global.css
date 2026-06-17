@@ -9,6 +9,15 @@
   --rainier-radius-card: 8px;
   --rainier-shadow-card: 0 4px 16px 0 rgba(0, 0, 0, 0.08);
   --rainier-font: PingFang SC, -apple-system, "Helvetica Neue", Arial, sans-serif;
+  /* v0.0.22 board-kit — 4-tier status colors shared by every v1.0 dashboard. */
+  --rainier-status-red: #F54A45;
+  --rainier-status-red-bg: #FDECEC;
+  --rainier-status-yellow: #FAAD14;
+  --rainier-status-yellow-bg: #FFF7E6;
+  --rainier-status-green: #34C724;
+  --rainier-status-green-bg: #E8F7E8;
+  --rainier-status-gray: #8F959E;
+  --rainier-status-gray-bg: #F0F1F2;
 }
 
 * {

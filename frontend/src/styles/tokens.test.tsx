@@ -23,4 +23,14 @@ describe('design tokens on :root', () => {
     expect(style.getPropertyValue('--rainier-radius-button').trim()).toBe('6px');
     expect(style.getPropertyValue('--rainier-radius-card').trim()).toBe('8px');
   });
+
+  /** v0.0.22 board-kit: the 4-tier status colors are exposed on :root. */
+  it('exposes the 4-tier board status colors', () => {
+    render(<App />);
+    const style = getComputedStyle(document.documentElement);
+    expect(style.getPropertyValue('--rainier-status-red').trim().toUpperCase()).toBe('#F54A45');
+    expect(style.getPropertyValue('--rainier-status-yellow').trim().toUpperCase()).toBe('#FAAD14');
+    expect(style.getPropertyValue('--rainier-status-green').trim().toUpperCase()).toBe('#34C724');
+    expect(style.getPropertyValue('--rainier-status-gray').trim().toUpperCase()).toBe('#8F959E');
+  });
 });
