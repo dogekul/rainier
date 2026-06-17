@@ -30,8 +30,8 @@ describe('DemandSubmitPage', () => {
     expect(screen.getByTestId('demand-submit-submitter')).toHaveTextContent('业务张三');
     expect((screen.getByTestId('demand-submit-priority') as HTMLSelectElement).value).toBe('MEDIUM');
     expect(screen.getByTestId('demand-submit-title')).toBeInTheDocument();
-    // no submitter dropdown / status / source fields
-    expect(screen.queryByText(/来源/)).toBeNull();
+    // Only ONE <select> (优先级) — proving there is no submitter / status / source picker.
+    expect(screen.getAllByRole('combobox')).toHaveLength(1);
   });
 
   /** TC-DL-02: empty title → submit disabled. */

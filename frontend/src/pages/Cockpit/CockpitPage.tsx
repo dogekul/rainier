@@ -48,7 +48,7 @@ export function CockpitPage() {
     if (projectId == null && projects.length > 0) setProjectId(projects[0].id);
   }, [projects, projectId]);
 
-  const load = useCallback(async (pid: number) => {
+  const fetchData = useCallback(async (pid: number): Promise<CockpitData> => {
     const [requirements, sprints, stories, tasks, milestones] = await Promise.all([
       listRequirements({ projectId: pid, size: PAGE }),
       listSprints({ projectId: pid, size: PAGE }),
@@ -56,22 +56,40 @@ export function CockpitPage() {
       listTasks({ projectId: pid, size: PAGE }),
       listMilestones({ projectId: pid, size: PAGE }),
     ]);
-    setData({
+    return {
       requirements: requirements.content,
       sprints: sprints.content,
       stories: stories.content,
       tasks: tasks.content,
       milestones: milestones.content,
-    });
+    };
   }, []);
 
+  // Guard against the project-switch race: a slow earlier load must not overwrite a newer selection.
   useEffect(() => {
     if (projectId == null) return;
-    void load(projectId).catch(() => setData(EMPTY));
-  }, [projectId, load]);
+    let active = true;
+    void fetchData(projectId)
+      .then((d) => {
+        if (active) setData(d);
+      })
+      .catch(() => {
+        if (active) setData(EMPTY);
+      });
+    return () => {
+      active = false;
+    };
+  }, [projectId, fetchData]);
 
   const reload = () => {
-    if (projectId != null) void load(projectId).catch(() => undefined);
+    const pid = projectId;
+    if (pid == null) return;
+    void fetchData(pid)
+      .then((d) => {
+        // Only apply if the selection hasn't moved on since this reload started.
+        if (pid === projectId) setData(d);
+      })
+      .catch(() => undefined);
   };
 
   const changeTaskStatus = async (t: Task, status: TaskStatus) => {

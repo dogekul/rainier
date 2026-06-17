@@ -28,6 +28,10 @@ app:
     # @TestPropertySource. The bootstrap runner is also gated on this, so it no-ops in tests.
     admin-authz:
       enabled: false
+    # v0.0.27: identity baseline OFF in the default test profile so the legacy unauthenticated
+    # mockMvc tests stay green. AuthBaselineTest flips it on via @TestPropertySource.
+    require-all-users-token:
+      enabled: false
 
 rainier:
   product-module:

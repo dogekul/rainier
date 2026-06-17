@@ -51,6 +51,11 @@ app:
     # On startup, if NO role has adminAccess=true, elevate this role code so the system isn't
     # locked out (granting the first admin via PUT /api/roles would itself need admin).
     bootstrap-admin-role: PMO
+    # v0.0.27: require a valid Bearer token on ALL /api/** (identity baseline), not just /api/auth/me.
+    # Whitelist: POST /api/auth/login + GET /api/health. Disabled in the test profile so the legacy
+    # unauthenticated mockMvc tests stay green; AuthBaselineTest flips it on.
+    require-all-users-token:
+      enabled: true
   cors:
     # Comma-separated list bound to List&lt;String&gt; in CorsConfig via Spring's default converter.
     allowed-origins: "http://localhost:5173,http://localhost"
