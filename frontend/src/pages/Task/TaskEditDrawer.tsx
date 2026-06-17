@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Button } from '../../components/ui/Button';
 import { Drawer } from '../../components/ui/Drawer';
 import { Input } from '../../components/ui/Input';
+import { LinkPanel } from '../../components/LinkPanel';
 import { listProjects, type Project } from '../../api/project';
 import { listSprints, type Sprint } from '../../api/sprint';
 import { listStories, type Story } from '../../api/story';
@@ -272,6 +273,8 @@ export function TaskEditDrawer({
           {formError}
         </div>
       )}
+      {/* v0.0.31: relate external artifacts (PR/缺陷/用例…) once the task exists. */}
+      {editing && <LinkPanel targetType="TASK" targetId={editing.id} />}
       <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
         <Button type="button" variant="secondary" onClick={onClose}>
           取消

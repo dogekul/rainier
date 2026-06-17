@@ -1,0 +1,4 @@
+change: {id: 2026-06-17-link-panel, title: v0.0.31-link-panel — structured external-artifact links on Story/Task, baseline: {tag: v0.0.30-portfolio-map}, type: new-capability, parent_effort: structural-wave-2 (#6)}
+phase: {current: build, build: {status: completed, metrics: {backend_tests: 401, frontend_tests: 156}}, verify: {status: pending}, deliver: {status: pending}}
+long_range: {enabled: true, mode: full_auto, pre_auth: {git_ops: allow_up_to_commit_and_tag, gate_3: auto_proceed_no_push}}
+scope: {type: new-capability, capabilities_new: [entity-link], capabilities_modified: [frontend-scaffold], new_tables: [rainier_entity_link], serves_roles: [PO, 架构师, 测试负责人, 测试工程师, 开发工程师, AI Agent]}

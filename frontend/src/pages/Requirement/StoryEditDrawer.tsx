@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Button } from '../../components/ui/Button';
 import { Drawer } from '../../components/ui/Drawer';
 import { Input } from '../../components/ui/Input';
+import { LinkPanel } from '../../components/LinkPanel';
 import { listUsers, type User } from '../../api/user';
 import { useAuthStore } from '../../store/auth';
 import { PRIORITY_LABELS, type Priority } from '../../api/demand';
@@ -243,6 +244,8 @@ export function StoryEditDrawer({
           {formError}
         </div>
       )}
+      {/* v0.0.31: relate the PRD / 设计稿 once the Story exists (PO's core action). */}
+      {editing && <LinkPanel targetType="STORY" targetId={editing.id} />}
       <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
         <Button type="button" variant="secondary" onClick={onClose}>
           取消

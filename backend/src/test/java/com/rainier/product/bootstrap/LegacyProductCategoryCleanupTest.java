@@ -63,8 +63,9 @@ class LegacyProductCategoryCleanupTest {
                 "SELECT LOWER(TABLE_NAME) FROM INFORMATION_SCHEMA.TABLES"
                     + " WHERE LOWER(TABLE_NAME) LIKE 'rainier_%'")
             .getResultList();
-    // v0.0.15 added rainier_audit_log (18); v0.0.17 added rainier_milestone → 19 tables.
-    assertEquals(19, rows.size(), "v0.0.17 schema must have exactly 19 rainier_* tables: " + rows);
+    // v0.0.15 added rainier_audit_log (18); v0.0.17 added rainier_milestone → 19;
+    // v0.0.31 added rainier_entity_link → 20 tables.
+    assertEquals(20, rows.size(), "schema must have exactly 20 rainier_* tables: " + rows);
     assertFalse(rows.contains("rainier_product_category"));
     assertTrue(rows.contains("rainier_product"));
     assertTrue(rows.contains("rainier_product_module"));
