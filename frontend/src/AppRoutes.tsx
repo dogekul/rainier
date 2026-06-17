@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import { AppLayout } from './components/AppLayout';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import DemandsPage from './pages/Demand';
+import { DemandSubmitPage } from './pages/Demand/DemandSubmitPage';
 import DemandRequirementsPage from './pages/DemandRequirement';
 import FeaturesPage from './pages/Feature';
 import CockpitPage from './pages/Cockpit';
@@ -31,6 +32,7 @@ export function AppRoutes() {
         <Route element={<AppLayout />}>
           <Route path="/" element={<Workbench />} />
           <Route path="/team" element={<TeamLeadPage />} />
+          <Route path="/demand-submit" element={<DemandSubmitPage />} />
           <Route path="/org" element={<Navigate to="/org/organizations" replace />} />
           <Route path="/org/organizations" element={<OrganizationsPage />} />
           <Route path="/org/users" element={<UsersPage />} />
