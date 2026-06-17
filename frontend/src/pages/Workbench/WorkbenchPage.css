@@ -1,0 +1,164 @@
+/* v0.0.36 — 我的工作台 home, 飞书项目 / Linear "My Work" style. */
+
+.wb-hello {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.wb-hello h2 {
+  margin: 0;
+}
+.wb-roles {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.wb-role-chip {
+  padding: 3px 10px;
+  border-radius: 12px;
+  background: var(--rainier-bg-selected);
+  color: var(--rainier-color-primary);
+  font-size: 12px;
+}
+
+/* KPI tiles */
+.wb-kpis {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+.wb-kpi {
+  background: var(--rainier-bg-card);
+  border: 1px solid var(--rainier-border);
+  border-radius: var(--rainier-radius-card);
+  padding: 14px 16px;
+}
+.wb-kpi-num {
+  font-size: 26px;
+  font-weight: 600;
+  line-height: 1.1;
+  color: var(--rainier-color-text-1);
+}
+.wb-kpi-label {
+  font-size: 13px;
+  color: var(--rainier-color-text-2);
+  margin-top: 4px;
+}
+.wb-kpi.is-red .wb-kpi-num {
+  color: var(--rainier-status-red);
+}
+.wb-kpi.is-yellow .wb-kpi-num {
+  color: var(--rainier-status-yellow);
+}
+
+/* two-column body */
+.wb-grid {
+  display: grid;
+  grid-template-columns: 1.7fr 1fr;
+  gap: 14px;
+  align-items: start;
+}
+.wb-col {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+@media (max-width: 900px) {
+  .wb-grid {
+    grid-template-columns: 1fr;
+  }
+  .wb-kpis {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.wb-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.wb-card-head h3 {
+  margin: 0;
+}
+.wb-count {
+  font-size: 12px;
+  color: var(--rainier-color-text-3);
+}
+.wb-empty {
+  color: var(--rainier-color-text-2);
+  font-size: 14px;
+  margin: 4px 0;
+}
+
+/* dense task rows */
+.wb-task {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 4px;
+  border-bottom: 1px solid #f2f3f5;
+}
+.wb-task:last-child {
+  border-bottom: none;
+}
+.wb-task:hover {
+  background: var(--rainier-bg-hover);
+}
+.wb-flag {
+  padding: 1px 6px;
+  border-radius: 8px;
+  font-size: 11px;
+  flex-shrink: 0;
+}
+.wb-task-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.wb-task-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+.wb-proj-chip {
+  font-size: 12px;
+  color: var(--rainier-color-text-2);
+  background: var(--rainier-bg-hover);
+  padding: 1px 8px;
+  border-radius: 8px;
+  max-width: 130px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.wb-due {
+  font-size: 12px;
+  color: var(--rainier-color-text-3);
+  min-width: 70px;
+  text-align: right;
+}
+
+/* secondary list rows (stories / projects) */
+.wb-list-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 4px;
+  border-bottom: 1px solid #f2f3f5;
+}
+.wb-list-row:last-child {
+  border-bottom: none;
+}
+.wb-list-row-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

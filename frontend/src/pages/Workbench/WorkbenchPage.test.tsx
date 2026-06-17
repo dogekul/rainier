@@ -118,7 +118,7 @@ describe('WorkbenchPage', () => {
     await waitFor(() => expect(screen.getByTestId('my-task-12')).toBeInTheDocument());
     expect(screen.getByTestId('my-task-flag-12')).toHaveTextContent('逾期');
     // overdue task (12) renders before the no-due task (11)
-    const html = screen.getByText('我的任务（今日聚焦）').closest('div')?.innerHTML ?? '';
+    const html = screen.getByTestId('wb-tasks').innerHTML;
     expect(html.indexOf('my-task-12')).toBeLessThan(html.indexOf('my-task-11'));
   });
 
