@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { DashboardCard, EmptyState, StatusBar, StatusChip } from '../../components/board';
-import { groupByStatus, isOverdue, todayISO } from '../../utils/board';
+import { groupByStatus, isOverdue, rygToTier, RYG_LABEL, todayISO } from '../../utils/board';
 import { useAuthStore } from '../../store/auth';
 import { listTasks, updateTask, type Task, type TaskStatus } from '../../api/task';
 import { listStories, updateStory, type Story, type StoryStatus } from '../../api/story';
 import { listSprints, type Sprint } from '../../api/sprint';
 import { listRequirements, type Requirement } from '../../api/requirement';
 import { listMilestones, type Milestone } from '../../api/milestone';
+import { getPortfolio, type PortfolioRow } from '../../api/portfolio';
 
 const TASK_STATUS_OPTIONS: TaskStatus[] = ['TODO', 'IN_PROGRESS', 'DONE', 'BLOCKED', 'CANCELLED'];
 const STORY_STATUS_OPTIONS: StoryStatus[] = [
@@ -41,12 +42,28 @@ export function CockpitPage() {
   const projects = useMemo(() => user?.projects ?? [], [user]);
   const [projectId, setProjectId] = useState<number | null>(projects[0]?.id ?? null);
   const [data, setData] = useState<CockpitData>(EMPTY);
+  const [portfolio, setPortfolio] = useState<PortfolioRow[]>([]);
   const today = todayISO();
 
   // Smart default: once the user context hydrates, select the first project if none chosen yet.
   useEffect(() => {
     if (projectId == null && projects.length > 0) setProjectId(projects[0].id);
   }, [projects, projectId]);
+
+  // v0.0.29: cross-project health strip — all my projects at a glance (server-side RYG), worst-first.
+  useEffect(() => {
+    let active = true;
+    void getPortfolio('mine')
+      .then((rows) => {
+        if (active) setPortfolio(rows);
+      })
+      .catch(() => {
+        if (active) setPortfolio([]);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const fetchData = useCallback(async (pid: number): Promise<CockpitData> => {
     const [requirements, sprints, stories, tasks, milestones] = await Promise.all([
@@ -184,6 +201,57 @@ export function CockpitPage() {
           ))}
         </select>
       </div>
+
+      {/* v0.0.29: cross-project health strip — all my projects, worst-first; click to drill in below */}
+      {portfolio.length > 1 && (
+        <DashboardCard
+          title="我的项目（健康总览）"
+          extra={`${portfolio.length} 个项目`}
+          testId="cockpit-portfolio"
+        >
+          <div
+            style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 8 }}
+          >
+            {portfolio.map((row) => {
+              const selected = row.projectId === projectId;
+              return (
+                <button
+                  key={row.projectId}
+                  type="button"
+                  data-testid={`cockpit-portfolio-${row.projectId}`}
+                  onClick={() => setProjectId(row.projectId)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    padding: '8px 10px',
+                    borderRadius: 8,
+                    border: selected
+                      ? '1px solid var(--rainier-color-primary)'
+                      : '1px solid var(--rainier-status-gray-bg)',
+                    background: selected ? 'var(--rainier-bg-2, #f5f8ff)' : 'var(--rainier-bg-card)',
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                  }}
+                >
+                  <StatusChip
+                    status=""
+                    tier={rygToTier(row.ryg)}
+                    label={RYG_LABEL[rygToTier(row.ryg)]}
+                    testId={`cockpit-portfolio-ryg-${row.projectId}`}
+                  />
+                  <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {row.projectName}
+                  </span>
+                  <span style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }}>
+                    逾期 {row.overdueTasks}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </DashboardCard>
+      )}
 
       {/* 5 status-distribution cards */}
       <div

@@ -1,10 +1,10 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { DashboardCard, EmptyState, StatusBar, StatusChip } from '../../components/board';
-import { isOverdue, todayISO } from '../../utils/board';
-import { isOpenTaskStatus, loadTier, ryg, RYG_ORDER, type RygTier } from '../../utils/ryg';
-import { useAuthStore } from '../../store/auth';
+import { rygToTier, RYG_LABEL } from '../../utils/board';
+import { isOpenTaskStatus, loadTier } from '../../utils/ryg';
 import { listLedTeams, listTeamMembers, type LedTeam } from '../../api/teamLead';
+import { getPortfolio, type PortfolioRow } from '../../api/portfolio';
 import { listTasks } from '../../api/task';
 import { listStories } from '../../api/story';
 
@@ -17,28 +17,18 @@ interface MemberLoad {
   openStories: number;
 }
 
-interface ProjectHealth {
-  projectId: number;
-  label: string;
-  tier: RygTier;
-  openCount: number;
-  overdueCount: number;
-}
-
 /**
  * v0.0.25 — 团队负责人面板 (Team-Lead Panel). For an org HEAD: per-member open-work load + a
- * red/yellow/green ranking of the lead's projects, by pure rules (no AI). Consumes the v0.0.24
- * self-scoped /api/me/* endpoints + reused list endpoints. All-users (a lead is not an admin).
+ * red/yellow/green ranking of the team's projects, by pure rules (no AI).
+ *
+ * <p>v0.0.29: the project RYG now uses GET /api/me/portfolio?scope=led — the projects under the orgs
+ * the lead HEADs (and their org-subtree), NOT the lead's personal projects. This fixes the mis-scope.
  */
 export function TeamLeadPage() {
-  const user = useAuthStore((s) => s.user);
-  const projects = useMemo(() => user?.projects ?? [], [user]);
-  const today = todayISO();
-
   const [teams, setTeams] = useState<LedTeam[] | null>(null);
   const [teamId, setTeamId] = useState<number | null>(null);
   const [loads, setLoads] = useState<MemberLoad[]>([]);
-  const [health, setHealth] = useState<ProjectHealth[]>([]);
+  const [health, setHealth] = useState<PortfolioRow[]>([]);
 
   // Which teams do I lead? Auto-select the sole team (0 clicks) or default to the first.
   useEffect(() => {
@@ -87,34 +77,20 @@ export function TeamLeadPage() {
     };
   }, [teamId]);
 
-  // Project RYG ranking over the lead's projects (independent of the selected team).
-  const loadHealth = useCallback(async () => {
-    const rows = await Promise.all(
-      projects.map(async (p) => {
-        const tasks = (await listTasks({ projectId: p.id, size: PAGE })).content;
-        const open = tasks.filter((t) => isOpenTaskStatus(t.status));
-        const overdue = open.filter((t) => isOverdue(t.dueDate, today));
-        const anyBlocked = open.some((t) => t.status === 'BLOCKED');
-        return {
-          projectId: p.id,
-          label: `${p.code} ${p.name}`,
-          tier: ryg({ openCount: open.length, overdueCount: overdue.length, anyBlocked }),
-          openCount: open.length,
-          overdueCount: overdue.length,
-        };
-      }),
-    );
-    rows.sort((a, b) => RYG_ORDER[a.tier] - RYG_ORDER[b.tier]);
-    setHealth(rows);
-  }, [projects, today]);
-
+  // Project RYG over the TEAM's footprint (orgs I lead + subtree), server-computed + worst-first sorted.
   useEffect(() => {
-    if (projects.length === 0) {
-      setHealth([]);
-      return;
-    }
-    void loadHealth().catch(() => setHealth([]));
-  }, [projects, loadHealth]);
+    let active = true;
+    void getPortfolio('led')
+      .then((rows) => {
+        if (active) setHealth(rows);
+      })
+      .catch(() => {
+        if (active) setHealth([]);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   if (teams != null && teams.length === 0) {
     return (
@@ -123,14 +99,6 @@ export function TeamLeadPage() {
   }
 
   const maxLoad = Math.max(1, ...loads.map((l) => l.openTasks));
-  const tierLabel: Record<RygTier, string> = { red: '红', yellow: '黄', green: '绿', gray: '灰' };
-  // Map a RYG tier to a representative status so StatusChip picks the right colour.
-  const tierStatus: Record<RygTier, string> = {
-    red: 'BLOCKED',
-    yellow: 'IN_PROGRESS',
-    green: 'DONE',
-    gray: 'DRAFT',
-  };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -198,18 +166,21 @@ export function TeamLeadPage() {
                 <tr key={h.projectId} data-testid={`tl-project-${h.projectId}`}>
                   <td style={{ padding: '6px 8px', width: 60 }}>
                     <StatusChip
-                      status={tierStatus[h.tier]}
-                      label={tierLabel[h.tier]}
+                      status=""
+                      tier={rygToTier(h.ryg)}
+                      label={RYG_LABEL[rygToTier(h.ryg)]}
                       testId={`tl-project-tier-${h.projectId}`}
                     />
                   </td>
                   <td style={{ padding: '6px 8px' }}>
-                    <Link to={`/pm/tasks?projectId=${h.projectId}`}>{h.label}</Link>
+                    <Link to={`/pm/tasks?projectId=${h.projectId}`}>
+                      {h.projectCode} {h.projectName}
+                    </Link>
                   </td>
                   <td
                     style={{ padding: '6px 8px', width: 180, color: 'var(--rainier-color-text-2)' }}
                   >
-                    开放 {h.openCount} · 逾期 {h.overdueCount}
+                    开放 {h.openTasks} · 逾期 {h.overdueTasks}
                   </td>
                 </tr>
               ))}

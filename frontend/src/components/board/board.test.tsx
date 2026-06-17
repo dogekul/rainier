@@ -77,6 +77,13 @@ describe('board-kit components', () => {
     expect(screen.getByTestId('owner-chip')).toHaveTextContent('黎立');
   });
 
+  /** TC-BK-C05b: StatusChip honors an explicit tier (e.g. an RYG verdict) over status. */
+  it('colors StatusChip by an explicit tier (TC-BK-C05b)', () => {
+    render(<StatusChip status="" tier="red" label="红" />);
+    expect(screen.getByTestId('status-chip')).toHaveAttribute('data-tier', 'red');
+    expect(screen.getByTestId('status-chip')).toHaveTextContent('红');
+  });
+
   /** TC-BK-C06: EmptyState fires its single CTA onClick. */
   it('fires the EmptyState CTA onClick (TC-BK-C06)', () => {
     const onClick = vi.fn();

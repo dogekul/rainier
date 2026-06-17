@@ -20,6 +20,20 @@ export function statusColor(status: string | null | undefined): StatusTier {
   return 'yellow';
 }
 
+/** v0.0.29: map a server RYG verdict (RED/YELLOW/GREEN/GRAY) to a board tier. */
+export function rygToTier(ryg: string): StatusTier {
+  const r = (ryg || '').toLowerCase();
+  return r === 'red' || r === 'yellow' || r === 'green' ? r : 'gray';
+}
+
+/** Chinese one-char label for an RYG tier. */
+export const RYG_LABEL: Record<StatusTier, string> = {
+  red: '红',
+  yellow: '黄',
+  green: '绿',
+  gray: '灰',
+};
+
 export interface StatusCount {
   status: string;
   count: number;

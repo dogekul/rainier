@@ -56,6 +56,14 @@ vi.mock('../../api/task', async (orig) => ({
   updateTask: vi.fn().mockResolvedValue({ id: 21 }),
 }));
 
+vi.mock('../../api/portfolio', async (orig) => ({
+  ...(await orig<typeof import('../../api/portfolio')>()),
+  getPortfolio: vi.fn().mockResolvedValue([
+    { projectId: 9, projectCode: 'PRJ-9', projectName: '采购', projectStatus: 'ACTIVE', organizationId: null, openTasks: 5, overdueTasks: 2, blockedTasks: 1, overdueMilestones: 0, ryg: 'RED' },
+    { projectId: 8, projectCode: 'PRJ-8', projectName: '物流', projectStatus: 'ACTIVE', organizationId: null, openTasks: 3, overdueTasks: 0, blockedTasks: 0, overdueMilestones: 0, ryg: 'GREEN' },
+  ]),
+}));
+
 function renderCockpit() {
   return render(
     <MemoryRouter>
@@ -149,6 +157,19 @@ describe('CockpitPage', () => {
     await waitFor(() => expect(taskApi.listTasks).toHaveBeenCalledWith(expect.objectContaining({ projectId: 9 })));
     fireEvent.change(screen.getByTestId('cockpit-project-select'), { target: { value: '8' } });
     await waitFor(() => expect(taskApi.listTasks).toHaveBeenCalledWith(expect.objectContaining({ projectId: 8 })));
+  });
+
+  /** TC-COCK-08: cross-project strip renders worst-first; clicking a card drills into that project. */
+  it('renders the cross-project health strip and drills in on click (TC-COCK-08)', async () => {
+    renderCockpit();
+    await waitFor(() => expect(screen.getByTestId('cockpit-portfolio')).toBeInTheDocument());
+    expect(screen.getByTestId('cockpit-portfolio-ryg-9')).toHaveAttribute('data-tier', 'red');
+    expect(screen.getByTestId('cockpit-portfolio-ryg-8')).toHaveAttribute('data-tier', 'green');
+    // click the 物流 (id 8) card → cockpit selects project 8 + reloads scoped to it
+    fireEvent.click(screen.getByTestId('cockpit-portfolio-8'));
+    await waitFor(() =>
+      expect(taskApi.listTasks).toHaveBeenCalledWith(expect.objectContaining({ projectId: 8 })),
+    );
   });
 
   /** TC-COCK-07: no projects → friendly empty state, no list calls. */

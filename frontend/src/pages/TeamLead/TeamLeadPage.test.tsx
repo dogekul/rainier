@@ -57,6 +57,15 @@ vi.mock('../../api/story', async (orig) => ({
   ),
 }));
 
+// v0.0.29: project RYG now comes from GET /api/me/portfolio?scope=led (team footprint), server-sorted.
+vi.mock('../../api/portfolio', async (orig) => ({
+  ...(await orig<typeof import('../../api/portfolio')>()),
+  getPortfolio: vi.fn().mockResolvedValue([
+    { projectId: 9, projectCode: 'P9', projectName: '采购', projectStatus: 'ACTIVE', organizationId: 6, openTasks: 10, overdueTasks: 4, blockedTasks: 0, overdueMilestones: 0, ryg: 'RED' },
+    { projectId: 8, projectCode: 'P8', projectName: '物流', projectStatus: 'ACTIVE', organizationId: 6, openTasks: 0, overdueTasks: 0, blockedTasks: 0, overdueMilestones: 0, ryg: 'GRAY' },
+  ]),
+}));
+
 function renderTL() {
   return render(
     <MemoryRouter>

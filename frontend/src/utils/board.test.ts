@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { groupByStatus, isOverdue, statusColor, todayISO } from './board';
+import { groupByStatus, isOverdue, rygToTier, statusColor, todayISO } from './board';
 
 describe('board utils', () => {
   /** TC-BK-U01: statusColor maps every entity status to the intended tier. */
@@ -50,5 +50,14 @@ describe('board utils', () => {
   it('formats a date as YYYY-MM-DD (TC-BK-U04)', () => {
     expect(todayISO(new Date(2026, 0, 5))).toBe('2026-01-05');
     expect(todayISO(new Date(2026, 11, 31))).toBe('2026-12-31');
+  });
+
+  /** TC-BK-U05: rygToTier maps a server RYG verdict to a board tier (v0.0.29). */
+  it('maps server RYG to a board tier (TC-BK-U05)', () => {
+    expect(rygToTier('RED')).toBe('red');
+    expect(rygToTier('YELLOW')).toBe('yellow');
+    expect(rygToTier('GREEN')).toBe('green');
+    expect(rygToTier('GRAY')).toBe('gray');
+    expect(rygToTier('whatever')).toBe('gray');
   });
 });
