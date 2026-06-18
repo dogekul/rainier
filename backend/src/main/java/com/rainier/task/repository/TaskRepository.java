@@ -19,4 +19,7 @@ public interface TaskRepository extends JpaRepository<Task, Long>, JpaSpecificat
 
   /** v0.0.28 portfolio fan-out — active tasks across a set of projects. */
   List<Task> findByProjectIdIn(Collection<Long> projectIds);
+
+  /** v0.0.40 me-profile — count tasks assigned to a user (del_flag=0 via @Where). */
+  long countByAssigneeUserId(Long assigneeUserId);
 }

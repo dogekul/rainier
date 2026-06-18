@@ -67,6 +67,23 @@ vi.mock('./api/reviews', async () => {
     getPendingReviews: vi.fn().mockResolvedValue([]),
   };
 });
+vi.mock('./api/profile', async () => {
+  const actual = await vi.importActual<typeof import('./api/profile')>('./api/profile');
+  return {
+    ...actual,
+    getMyProfile: vi.fn().mockResolvedValue({
+      userId: 1,
+      loginName: 'alice',
+      name: 'Alice',
+      positionName: null,
+      positionCategory: null,
+      memberships: [],
+      manager: null,
+      ownedStoryCount: 0,
+      assignedTaskCount: 0,
+    }),
+  };
+});
 
 describe('AppRoutes /pm/*', () => {
   beforeEach(() => {
@@ -118,6 +135,21 @@ describe('AppRoutes /pm/*', () => {
     expect(src.split('/pm/products').length - 1).toBeGreaterThanOrEqual(1);
     expect(src.split('/pm/product-categories').length - 1).toBe(0);
     expect(src.includes('ProductCategoriesPage')).toBe(false);
+  });
+
+  /** TC-FES-PROF-01/02 (v0.0.40): /profile route registered + mounts ProfilePage (all-users). */
+  it('registers /profile → ProfilePage (TC-FES-PROF-01/02)', async () => {
+    const path = resolve(__dirname, 'AppRoutes.tsx');
+    const src = readFileSync(path, 'utf-8');
+    expect(src.split('/profile').length - 1).toBeGreaterThanOrEqual(1);
+    render(
+      <MemoryRouter initialEntries={['/profile']}>
+        <AppRoutes />
+      </MemoryRouter>,
+    );
+    await waitFor(() => {
+      expect(screen.getByTestId('profile-identity')).toBeInTheDocument();
+    });
   });
 
   /** TC-FES-REV-01/02 (v0.0.39): /reviews route registered + mounts ReviewsPage (all-users). */

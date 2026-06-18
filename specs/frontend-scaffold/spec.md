@@ -26,6 +26,7 @@
 > - 2026-06-17 (v0.0.32-workbench-focus) — 工作台「我的任务」改今日聚焦:逾期→今天→有期限→无期限分桶(已完成沉底)+ 优先级 tiebreak + 逾期/今天 chip。
 > - 2026-06-17 (v0.0.33→37 UI 翻新) — 设计系统:`.rainier-select`(紧凑原生 select,取代撑满行的 treeselect-trigger)、`.rainier-page`/`.rainier-page-head`(限宽 1240 + 标题栏不换行)、`.rainier-list-table`(行分隔/悬停)、全局蓝色链接、Card 轻量化(细边框+轻投影+18/20 内边距)、状态色/边框 token。**侧边栏**每项线性图标(`NavIcon`,选中变蓝)。**全局**内容限宽(`.rainier-shell-content`)+ CRUD 表格去「卡中卡」(`.rainier-table` 去自带阴影圆角,本就在 Card 内)+ 顶栏细边框轻量化。**工作台**重做(KPI 磁贴 + 两栏)。**全部 16 个 CRUD 页**统一标题栏(`.rainier-page-head` h2 + 新建/筛选移右)+ Card 只剩 Table+Pagination + 状态列上 `StatusChip` + 页过滤 select 改 `.rainier-select`(多代理 workflow 统一改,testid 全保留)。`StatTiles` KPI 磁贴用于工作台/项目地图。
 > - 2026-06-18 (v0.0.39-review-queue) — `pages/Reviews/ReviewsPage`（标题「我的评审」）+ 路由 `/reviews` + 全员「数据看板」组第 2 项「评审看板」(icon `check`,/portfolio 旁,**不入 isAdminPath**)。消费 `GET /api/me/pending-reviews`:StatTiles(待评数) + 待评 Story 列表(优先级 StatusChip + 提交人 OwnerChip + 标题纯文本[无 Story 详情路由,避死链] + 通过/打回 `Button`)调 `POST /api/stories/{id}/review` 后 refetch + EmptyState。新 `api/reviews.ts`(getPendingReviews/submitReview)。navGuardConsistency 自动钉 /reviews 为全员。见 [[entity-story]]。
+> - 2026-06-18 (v0.0.40-me-profile) — `pages/Profile/ProfilePage`（标题「我的档案」）+ 路由 `/profile` + 全员「工作台」组第 2 项「我的档案」(icon `badge`,在「我的工作台」之后,**不入 isAdminPath**)。消费 `GET /api/me/profile`:身份 DashboardCard(OwnerChip + 岗位 + 直接上级) + 贡献 StatTiles(我负责的 Story 数/分配给我的任务数) + 组织身份列表(org 名 + 类型中文 + 角色 StatusChip + 主组织标记) + 无组织 EmptyState。新 `api/profile.ts`(getMyProfile)。navGuardConsistency 自动钉 /profile 为全员。见 [[me-profile]]。
 
 ## Requirements
 
@@ -785,3 +786,40 @@ EmptyState。「通过/打回」按钮 SHALL 调 `POST /api/stories/{id}/review`
 
 - **WHEN** 在 `/reviews` 挂载 AppRoutes
 - **THEN** SHALL 渲染「我的评审」页（reviews 容器可见）
+
+## ADDED Requirements (from change 2026-06-18-me-profile / v0.0.40)
+
+### Requirement: 「我的档案」落地页
+
+前端 SHALL 在 `/profile` 提供「我的档案」页（all-users），消费 `GET /api/me/profile`：渲染 身份卡（姓名/岗位/
+登录名）+ 贡献 StatTiles（我负责的 Story 数 / 分配给我的任务数）+ 组织身份列表（组织名 + 类型 + 角色 chip + primary
+标记）+ 直接上级（OwnerChip）；无组织关系时该区块显示 EmptyState。
+
+#### Scenario: 渲染身份与贡献
+
+- **GIVEN** `GET /api/me/profile` 返回 `{name:"Alice", positionName:"后端工程师", ownedStoryCount:3, assignedTaskCount:5, memberships:[...], manager:{name:"Bob"}}`
+- **WHEN** 用户打开 `/profile`
+- **THEN** 页面 SHALL 显示 "Alice" 与 "后端工程师"
+- **AND** SHALL 显示贡献磁贴 Story=3 / Task=5
+- **AND** SHALL 显示直接上级 "Bob"
+
+#### Scenario: 组织关系列表
+
+- **GIVEN** profile.memberships 含 1 项 `{organizationName:"采购小队", role:"MEMBER", isPrimary:true}`
+- **WHEN** `/profile` 渲染完成
+- **THEN** SHALL 显示 "采购小队" 与其角色标记
+
+### Requirement: 我的档案导航入口（all-users）
+
+前端 SHALL 在 AppLayout「工作台」组加入「我的档案」入口指向 `/profile`，且 `/profile` SHALL NOT 被 `isAdminPath`
+门控（普通用户可达）。`AppRoutes` SHALL 注册 `/profile` 路由。
+
+#### Scenario: /profile 为 all-users
+
+- **WHEN** 检查 `isAdminPath('/profile')`
+- **THEN** SHALL 返回 false
+
+#### Scenario: 路由已注册
+
+- **WHEN** 在 `/profile` 挂载 AppRoutes
+- **THEN** SHALL 渲染「我的档案」页（profile 容器可见）

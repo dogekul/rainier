@@ -8,6 +8,7 @@ import FeaturesPage from './pages/Feature';
 import CockpitPage from './pages/Cockpit';
 import TeamLeadPage from './pages/TeamLead';
 import PortfolioPage from './pages/Portfolio';
+import ProfilePage from './pages/Profile';
 import ReviewsPage from './pages/Reviews';
 import Workbench from './pages/Workbench';
 import Login from './pages/Login';
@@ -33,6 +34,7 @@ export function AppRoutes() {
       <Route element={<ProtectedRoute />}>
         <Route element={<AppLayout />}>
           <Route path="/" element={<Workbench />} />
+          <Route path="/profile" element={<ProfilePage />} />
           <Route path="/team" element={<TeamLeadPage />} />
           <Route path="/portfolio" element={<PortfolioPage />} />
           <Route path="/reviews" element={<ReviewsPage />} />

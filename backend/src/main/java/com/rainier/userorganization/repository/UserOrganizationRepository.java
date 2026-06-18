@@ -32,6 +32,9 @@ public interface UserOrganizationRepository
 
   List<UserOrganization> findByOrganizationIdAndLeftAtIsNull(Long organizationId);
 
+  /** v0.0.40 me-profile — all active (leftAt IS NULL) org memberships of a user. */
+  List<UserOrganization> findByUserIdAndLeftAtIsNull(Long userId);
+
   /** Demote all primary assignments for a user except a given keepId. */
   @Modifying
   @Query(

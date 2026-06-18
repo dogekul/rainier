@@ -32,6 +32,7 @@ export const navGroups: NavGroup[] = [
     title: '工作台',
     items: [
       { to: '/', label: '我的工作台', end: true, icon: 'home' },
+      { to: '/profile', label: '我的档案', icon: 'badge' },
       { to: '/demand-submit', label: '提个诉求', icon: 'edit' },
       { to: '/team', label: '团队负责人面板', icon: 'users' },
     ],
