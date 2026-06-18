@@ -34,6 +34,11 @@ public class StoryDetail {
   private Long ownerUserId;
   private String ownerName;
   private String ownerLoginName;
+  /** v0.0.39: review fields — reviewerUserId/reviewStatus from entity, reviewerName enriched. */
+  private Long reviewerUserId;
+
+  private String reviewStatus;
+  private String reviewerName;
   private String closeReason;
   private Instant createTime;
   private Instant updateTime;
@@ -54,6 +59,9 @@ public class StoryDetail {
     // requirementId populated by service.enrich via 2-stage join.
     dto.projectId = s.getProjectId();
     dto.ownerUserId = s.getOwnerUserId();
+    dto.reviewerUserId = s.getReviewerUserId();
+    dto.reviewStatus = s.getReviewStatus();
+    // reviewerName populated by service.enrich via user join.
     dto.closeReason = s.getCloseReason();
     dto.createTime = s.getCreateTime();
     dto.updateTime = s.getUpdateTime();
@@ -184,6 +192,22 @@ public class StoryDetail {
 
   public void setOwnerLoginName(String ownerLoginName) {
     this.ownerLoginName = ownerLoginName;
+  }
+
+  public Long getReviewerUserId() {
+    return reviewerUserId;
+  }
+
+  public String getReviewStatus() {
+    return reviewStatus;
+  }
+
+  public String getReviewerName() {
+    return reviewerName;
+  }
+
+  public void setReviewerName(String reviewerName) {
+    this.reviewerName = reviewerName;
   }
 
   public String getCloseReason() {

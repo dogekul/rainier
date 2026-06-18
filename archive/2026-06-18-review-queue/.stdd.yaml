@@ -1,0 +1,46 @@
+change:
+  id: 2026-06-18-review-queue
+  title: v0.0.39-review-queue — Story review fields (reviewerUserId/reviewStatus) + /api/me/pending-reviews + review action + 我的评审看板
+  baseline: {tag: v0.0.38-real-auth, commit: 4c9fd46}
+  type: feature
+  roadmap: "C-角色链路审计 #7 待评审泛化 + #8 首个消费落地页"
+
+status: archived   # v0.0.39-review-queue delivered + tagged + pushed 2026-06-18 (Gate 3 confirmed)
+
+phase:
+  current: delivered
+  understand:
+    status: completed
+    confirmed_at: '2026-06-18'
+    gate1_decisions:
+      r1_review_endpoint: dedicated_post   # POST /api/stories/{id}/review {decision}
+      r2_review_authz: all_users           # 细粒度评审权限留后续
+      r3_review_status: PENDING|APPROVED|REJECTED   # null=no review; APPROVED=放行
+      r4_landing_page: title=我的评审 / nav=评审看板 (中性, all-users 数据看板组)
+  spec: {status: completed, artifacts: [design.md, "specs/entity-story", "specs/frontend-scaffold", test-plan.md], gate_2: auto_proceed}
+  build: {status: completed}
+  verify:
+    status: completed
+    artifact: test-report.md
+    metrics: {backend: 435/435, frontend: 162/162, new_tests_backend: 14, new_tests_frontend: 5, e2e: 6/6, review: "C:0 H:0 confirmed-real:0", business_data: intact}
+    confirmed_at: '2026-06-18'   # Gate 3 user-confirmed ("需要一并push")
+  deliver:
+    status: completed
+    archived_to: archive/2026-06-18-review-queue
+    specs_merged: [entity-story, frontend-scaffold]
+    tag: v0.0.39-review-queue
+
+long_range:
+  enabled: true
+  mode: full_auto
+  pre_auth: {git_ops: allow_up_to_commit_and_tag, gate_2: auto_proceed, gate_3: require_user_confirmation}
+  user_directive: '下一链路 (#7 待评审泛化), Gate1 都按推荐走 (R1 专用端点/R2 all-users/R3 三态/R4 我的评审)'
+
+scope:
+  type: feature
+  capabilities_modified: [entity-story, frontend-scaffold]
+  capabilities_new: []
+  new_tables: 0
+  new_columns: [rainier_story.reviewer_user_id, rainier_story.review_status]
+  new_deps: []
+  new_apis: ["GET /api/me/pending-reviews (all-users)", "POST /api/stories/{id}/review (all-users)"]

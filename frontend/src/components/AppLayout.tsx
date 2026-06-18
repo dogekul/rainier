@@ -39,7 +39,10 @@ export const navGroups: NavGroup[] = [
   {
     key: 'dashboards',
     title: '数据看板',
-    items: [{ to: '/portfolio', label: '项目地图', icon: 'map' }],
+    items: [
+      { to: '/portfolio', label: '项目地图', icon: 'map' },
+      { to: '/reviews', label: '评审看板', icon: 'check' },
+    ],
   },
   {
     key: 'org',

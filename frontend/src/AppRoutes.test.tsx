@@ -60,6 +60,13 @@ vi.mock('./api/project', async () => {
     listProjects: vi.fn().mockResolvedValue({ content: [], total: 0, page: 0, size: 20 }),
   };
 });
+vi.mock('./api/reviews', async () => {
+  const actual = await vi.importActual<typeof import('./api/reviews')>('./api/reviews');
+  return {
+    ...actual,
+    getPendingReviews: vi.fn().mockResolvedValue([]),
+  };
+});
 
 describe('AppRoutes /pm/*', () => {
   beforeEach(() => {
@@ -111,6 +118,21 @@ describe('AppRoutes /pm/*', () => {
     expect(src.split('/pm/products').length - 1).toBeGreaterThanOrEqual(1);
     expect(src.split('/pm/product-categories').length - 1).toBe(0);
     expect(src.includes('ProductCategoriesPage')).toBe(false);
+  });
+
+  /** TC-FES-REV-01/02 (v0.0.39): /reviews route registered + mounts ReviewsPage (all-users). */
+  it('registers /reviews → ReviewsPage (TC-FES-REV-01/02)', async () => {
+    const path = resolve(__dirname, 'AppRoutes.tsx');
+    const src = readFileSync(path, 'utf-8');
+    expect(src.split('/reviews').length - 1).toBeGreaterThanOrEqual(1);
+    render(
+      <MemoryRouter initialEntries={['/reviews']}>
+        <AppRoutes />
+      </MemoryRouter>,
+    );
+    await waitFor(() => {
+      expect(screen.getByTestId('reviews-empty')).toBeInTheDocument();
+    });
   });
 
   /** TC-FES-AUD-004 (v0.0.15): /sys/audit-logs route registered + mounts AuditLogsPage. */

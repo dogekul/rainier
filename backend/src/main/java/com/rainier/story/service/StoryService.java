@@ -14,6 +14,7 @@ import com.rainier.requirement.domain.Requirement;
 import com.rainier.requirement.repository.RequirementRepository;
 import com.rainier.sprint.domain.Sprint;
 import com.rainier.sprint.repository.SprintRepository;
+import com.rainier.story.domain.ReviewStatus;
 import com.rainier.story.domain.Story;
 import com.rainier.story.domain.StoryStatus;
 import com.rainier.story.dto.StoryCreateRequest;
@@ -98,6 +99,7 @@ public class StoryService {
     if (req.getComplexity() != null && !Complexity.ALL.contains(req.getComplexity())) {
       throw new BadRequestException("invalid complexity: " + req.getComplexity());
     }
+    validateReviewFields(req.getReviewerUserId(), req.getReviewStatus());
     Story s = new Story();
     s.setCode(req.getCode());
     s.setTitle(req.getTitle());
@@ -111,7 +113,33 @@ public class StoryService {
     Requirement parentReq = requirementRepo.findById(sprint.getRequirementId()).orElse(null);
     s.setProjectId(parentReq == null ? null : parentReq.getProjectId());
     s.setOwnerUserId(req.getOwnerUserId());
+    s.setReviewerUserId(req.getReviewerUserId());
+    s.setReviewStatus(req.getReviewStatus());
     s.setCloseReason(req.getCloseReason());
+    return enrich(repo.saveAndFlush(s));
+  }
+
+  /** v0.0.39: validate optional review fields. reviewer must exist; reviewStatus must be in ALL. */
+  private void validateReviewFields(Long reviewerUserId, String reviewStatus) {
+    if (reviewerUserId != null && !userRepo.existsById(reviewerUserId)) {
+      throw new BadRequestException("reviewer user not found: id=" + reviewerUserId);
+    }
+    if (reviewStatus != null && !ReviewStatus.ALL.contains(reviewStatus)) {
+      throw new BadRequestException("invalid reviewStatus: " + reviewStatus);
+    }
+  }
+
+  /**
+   * v0.0.39: record a review decision on a Story. {@code decision} must be a terminal decision
+   * (APPROVED / REJECTED); the reviewer assignment is left untouched.
+   */
+  @Transactional
+  public StoryDetail review(Long id, String decision) {
+    if (decision == null || !ReviewStatus.DECISIONS.contains(decision)) {
+      throw new BadRequestException("invalid decision: " + decision);
+    }
+    Story s = getOrThrow(id);
+    s.setReviewStatus(decision);
     return enrich(repo.saveAndFlush(s));
   }
 
@@ -175,6 +203,8 @@ public class StoryService {
             .map(Story::getOwnerUserId)
             .filter(Objects::nonNull)
             .collect(Collectors.toCollection(HashSet::new));
+    // v0.0.39: reviewers join the same user batch so reviewerName enriches without extra queries.
+    stories.stream().map(Story::getReviewerUserId).filter(Objects::nonNull).forEach(userIds::add);
     Set<Long> sprintIds =
         stories.stream()
             .map(Story::getSprintId)
@@ -229,6 +259,12 @@ public class StoryService {
       dto.setOwnerName(u.getName());
       dto.setOwnerLoginName(u.getLoginName());
     }
+    if (s.getReviewerUserId() != null) {
+      User rv = userMap.get(s.getReviewerUserId());
+      if (rv != null) {
+        dto.setReviewerName(rv.getName());
+      }
+    }
     Sprint sprint = sprintMap.get(s.getSprintId());
     if (sprint != null) {
       dto.setSprintCode(sprint.getCode());
@@ -263,6 +299,7 @@ public class StoryService {
     if (req.getComplexity() != null && !Complexity.ALL.contains(req.getComplexity())) {
       throw new BadRequestException("invalid complexity: " + req.getComplexity());
     }
+    validateReviewFields(req.getReviewerUserId(), req.getReviewStatus());
     if (!req.getOwnerUserId().equals(s.getOwnerUserId())) {
       if (!userRepo.existsById(req.getOwnerUserId())) {
         throw new BadRequestException("owner user not found: id=" + req.getOwnerUserId());
@@ -281,6 +318,9 @@ public class StoryService {
     s.setStatus(req.getStatus());
     s.setPriority(req.getPriority());
     s.setComplexity(req.getComplexity());
+    // v0.0.39: reviewer fields are full-replace (part of the Story representation).
+    s.setReviewerUserId(req.getReviewerUserId());
+    s.setReviewStatus(req.getReviewStatus());
     s.setCloseReason(req.getCloseReason());
     // requirementId / projectId intentionally NOT touched — immutable after creation.
     return enrich(repo.saveAndFlush(s));
@@ -310,6 +350,9 @@ public class StoryService {
               dto.setOwnerName(u.getName());
               dto.setOwnerLoginName(u.getLoginName());
             });
+    if (s.getReviewerUserId() != null) {
+      userRepo.findById(s.getReviewerUserId()).ifPresent(rv -> dto.setReviewerName(rv.getName()));
+    }
     Sprint sprint = sprintRepo.findById(s.getSprintId()).orElse(null);
     if (sprint != null) {
       dto.setSprintCode(sprint.getCode());

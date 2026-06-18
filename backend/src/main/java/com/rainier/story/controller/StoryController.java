@@ -5,6 +5,7 @@ import com.rainier.common.web.PageParams;
 import com.rainier.common.web.PageResponse;
 import com.rainier.story.dto.StoryCreateRequest;
 import com.rainier.story.dto.StoryDetail;
+import com.rainier.story.dto.StoryReviewRequest;
 import com.rainier.story.dto.StoryUpdateRequest;
 import com.rainier.story.service.StoryService;
 import java.net.URI;
@@ -56,6 +57,12 @@ public class StoryController {
   @PutMapping("/{id}")
   public StoryDetail update(@PathVariable Long id, @Valid @RequestBody StoryUpdateRequest req) {
     return service.update(id, req);
+  }
+
+  /** v0.0.39: record a review decision (APPROVED / REJECTED) — the architect-board one-click action. */
+  @PostMapping("/{id}/review")
+  public StoryDetail review(@PathVariable Long id, @Valid @RequestBody StoryReviewRequest req) {
+    return service.review(id, req.getDecision());
   }
 
   @DeleteMapping("/{id}")

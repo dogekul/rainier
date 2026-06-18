@@ -74,6 +74,14 @@ public class Story extends BaseEntity {
   @Column(name = "owner_user_id", nullable = false)
   private Long ownerUserId;
 
+  /** v0.0.39: optional reviewer (soft FK→user). null = no review requested. */
+  @Column(name = "reviewer_user_id")
+  private Long reviewerUserId;
+
+  /** v0.0.39: review state — {@link com.rainier.story.domain.ReviewStatus}. null = no review. */
+  @Column(name = "review_status", length = 16)
+  private String reviewStatus;
+
   @Column(name = "close_reason", length = 500)
   private String closeReason;
 
@@ -155,6 +163,22 @@ public class Story extends BaseEntity {
 
   public void setOwnerUserId(Long ownerUserId) {
     this.ownerUserId = ownerUserId;
+  }
+
+  public Long getReviewerUserId() {
+    return reviewerUserId;
+  }
+
+  public void setReviewerUserId(Long reviewerUserId) {
+    this.reviewerUserId = reviewerUserId;
+  }
+
+  public String getReviewStatus() {
+    return reviewStatus;
+  }
+
+  public void setReviewStatus(String reviewStatus) {
+    this.reviewStatus = reviewStatus;
   }
 
   public String getCloseReason() {

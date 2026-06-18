@@ -25,6 +25,7 @@
 > - 2026-06-17 (v0.0.31-link-panel) — `api/link.ts` + `components/LinkPanel`(极简外链:类型 chip + url + 删除 + 一行新增 + 计数),接入 TaskEditDrawer(TASK)/StoryEditDrawer(STORY)编辑既有实体时显示。见 [[entity-link]]。
 > - 2026-06-17 (v0.0.32-workbench-focus) — 工作台「我的任务」改今日聚焦:逾期→今天→有期限→无期限分桶(已完成沉底)+ 优先级 tiebreak + 逾期/今天 chip。
 > - 2026-06-17 (v0.0.33→37 UI 翻新) — 设计系统:`.rainier-select`(紧凑原生 select,取代撑满行的 treeselect-trigger)、`.rainier-page`/`.rainier-page-head`(限宽 1240 + 标题栏不换行)、`.rainier-list-table`(行分隔/悬停)、全局蓝色链接、Card 轻量化(细边框+轻投影+18/20 内边距)、状态色/边框 token。**侧边栏**每项线性图标(`NavIcon`,选中变蓝)。**全局**内容限宽(`.rainier-shell-content`)+ CRUD 表格去「卡中卡」(`.rainier-table` 去自带阴影圆角,本就在 Card 内)+ 顶栏细边框轻量化。**工作台**重做(KPI 磁贴 + 两栏)。**全部 16 个 CRUD 页**统一标题栏(`.rainier-page-head` h2 + 新建/筛选移右)+ Card 只剩 Table+Pagination + 状态列上 `StatusChip` + 页过滤 select 改 `.rainier-select`(多代理 workflow 统一改,testid 全保留)。`StatTiles` KPI 磁贴用于工作台/项目地图。
+> - 2026-06-18 (v0.0.39-review-queue) — `pages/Reviews/ReviewsPage`（标题「我的评审」）+ 路由 `/reviews` + 全员「数据看板」组第 2 项「评审看板」(icon `check`,/portfolio 旁,**不入 isAdminPath**)。消费 `GET /api/me/pending-reviews`:StatTiles(待评数) + 待评 Story 列表(优先级 StatusChip + 提交人 OwnerChip + 标题纯文本[无 Story 详情路由,避死链] + 通过/打回 `Button`)调 `POST /api/stories/{id}/review` 后 refetch + EmptyState。新 `api/reviews.ts`(getPendingReviews/submitReview)。navGuardConsistency 自动钉 /reviews 为全员。见 [[entity-story]]。
 
 ## Requirements
 
@@ -741,3 +742,46 @@ SHALL 只见 工作台 + 需求管理；管理员 SHALL 见全 6 组。
 - **GIVEN** 用户打开 TasksPage 新建任务抽屉
 - **WHEN** 查看优先级下拉
 - **THEN** SHALL 含「最低」选项
+
+## ADDED Requirements (from change 2026-06-18-review-queue / v0.0.39)
+
+### Requirement: 「我的评审」落地页
+
+前端 SHALL 在 `/reviews` 提供「我的评审」页（all-users），消费 `GET /api/me/pending-reviews`：渲染待评审计数
+（StatTiles）+ 待评 Story 列表（每行 优先级 StatusChip + 提交人 OwnerChip + 标题 + 通过/打回 按钮）；空时显示
+EmptyState。「通过/打回」按钮 SHALL 调 `POST /api/stories/{id}/review` 后刷新列表。
+
+#### Scenario: 渲染待评审列表
+
+- **GIVEN** `GET /api/me/pending-reviews` 返回 2 条待评 Story
+- **WHEN** 用户打开 `/reviews`
+- **THEN** 页面 SHALL 渲染这 2 条 Story
+- **AND** SHALL 渲染待评审计数为 2
+
+#### Scenario: 通过评审后刷新
+
+- **GIVEN** `/reviews` 已渲染 1 条待评 Story
+- **WHEN** 用户点击该行「通过」按钮
+- **THEN** 前端 SHALL 调用 `submitReview(storyId, "APPROVED")`
+- **AND** SHALL 重新拉取 pending-reviews 列表
+
+#### Scenario: 空队列
+
+- **GIVEN** `GET /api/me/pending-reviews` 返回空数组
+- **WHEN** 用户打开 `/reviews`
+- **THEN** 页面 SHALL 显示 EmptyState（无待评审）
+
+### Requirement: 评审看板导航入口（all-users）
+
+前端 SHALL 在 AppLayout「数据看板」组加入「评审看板」入口指向 `/reviews`，且 `/reviews` SHALL NOT 被 `isAdminPath`
+门控（普通用户可达）。`AppRoutes` SHALL 注册 `/reviews` 路由。
+
+#### Scenario: /reviews 为 all-users
+
+- **WHEN** 检查 `isAdminPath('/reviews')`
+- **THEN** SHALL 返回 false
+
+#### Scenario: 路由已注册
+
+- **WHEN** 在 `/reviews` 挂载 AppRoutes
+- **THEN** SHALL 渲染「我的评审」页（reviews 容器可见）

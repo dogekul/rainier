@@ -39,6 +39,13 @@ public class StoryUpdateRequest {
 
   @NotNull private Long ownerUserId;
 
+  /** v0.0.39: optional reviewer (full-replace; validated to exist when non-null). */
+  private Long reviewerUserId;
+
+  /** v0.0.39: optional review state (full-replace; validated against ReviewStatus.ALL when non-null). */
+  @Size(max = 16)
+  private String reviewStatus;
+
   @Size(max = 500)
   private String closeReason;
 
@@ -104,6 +111,22 @@ public class StoryUpdateRequest {
 
   public void setOwnerUserId(Long ownerUserId) {
     this.ownerUserId = ownerUserId;
+  }
+
+  public Long getReviewerUserId() {
+    return reviewerUserId;
+  }
+
+  public void setReviewerUserId(Long reviewerUserId) {
+    this.reviewerUserId = reviewerUserId;
+  }
+
+  public String getReviewStatus() {
+    return reviewStatus;
+  }
+
+  public void setReviewStatus(String reviewStatus) {
+    this.reviewStatus = reviewStatus;
   }
 
   public String getCloseReason() {
