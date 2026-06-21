@@ -13,6 +13,7 @@ import ReviewsPage from './pages/Reviews';
 import Workbench from './pages/Workbench';
 import Login from './pages/Login';
 import AuditLogsPage from './pages/AuditLog';
+import CompliancePage from './pages/Compliance';
 import OrganizationsPage from './pages/Organization';
 import PositionsPage from './pages/Position';
 import ProductModulesPage from './pages/ProductModule';
@@ -60,6 +61,7 @@ export function AppRoutes() {
           <Route path="/hr/user-roles" element={<UserRolesPage />} />
           <Route path="/sys" element={<Navigate to="/sys/audit-logs" replace />} />
           <Route path="/sys/audit-logs" element={<AuditLogsPage />} />
+          <Route path="/sys/compliance" element={<CompliancePage />} />
         </Route>
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />

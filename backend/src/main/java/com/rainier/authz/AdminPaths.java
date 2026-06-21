@@ -31,6 +31,7 @@ public final class AdminPaths {
               "/api/roles",
               "/api/user-roles",
               "/api/audit-logs",
+              "/api/compliance",
               "/api/products"));
 
   static final List<String> TIER_B =

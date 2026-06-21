@@ -84,6 +84,16 @@ vi.mock('./api/profile', async () => {
     }),
   };
 });
+vi.mock('./api/compliance', async () => {
+  const actual = await vi.importActual<typeof import('./api/compliance')>('./api/compliance');
+  return {
+    ...actual,
+    getAuditSummary: vi
+      .fn()
+      .mockResolvedValue({ total: 0, byAction: [], byEntityType: [], recent: [] }),
+    getResidualPermissions: vi.fn().mockResolvedValue([]),
+  };
+});
 
 describe('AppRoutes /pm/*', () => {
   beforeEach(() => {
@@ -135,6 +145,21 @@ describe('AppRoutes /pm/*', () => {
     expect(src.split('/pm/products').length - 1).toBeGreaterThanOrEqual(1);
     expect(src.split('/pm/product-categories').length - 1).toBe(0);
     expect(src.includes('ProductCategoriesPage')).toBe(false);
+  });
+
+  /** TC-FES-COMP-01/02 (v0.0.41): /sys/compliance route registered + mounts CompliancePage. */
+  it('registers /sys/compliance → CompliancePage (TC-FES-COMP-01/02)', async () => {
+    const path = resolve(__dirname, 'AppRoutes.tsx');
+    const src = readFileSync(path, 'utf-8');
+    expect(src.split('/sys/compliance').length - 1).toBeGreaterThanOrEqual(1);
+    render(
+      <MemoryRouter initialEntries={['/sys/compliance']}>
+        <AppRoutes />
+      </MemoryRouter>,
+    );
+    await waitFor(() => {
+      expect(screen.getByTestId('compliance-summary')).toBeInTheDocument();
+    });
   });
 
   /** TC-FES-PROF-01/02 (v0.0.40): /profile route registered + mounts ProfilePage (all-users). */

@@ -27,6 +27,7 @@
 > - 2026-06-17 (v0.0.33→37 UI 翻新) — 设计系统:`.rainier-select`(紧凑原生 select,取代撑满行的 treeselect-trigger)、`.rainier-page`/`.rainier-page-head`(限宽 1240 + 标题栏不换行)、`.rainier-list-table`(行分隔/悬停)、全局蓝色链接、Card 轻量化(细边框+轻投影+18/20 内边距)、状态色/边框 token。**侧边栏**每项线性图标(`NavIcon`,选中变蓝)。**全局**内容限宽(`.rainier-shell-content`)+ CRUD 表格去「卡中卡」(`.rainier-table` 去自带阴影圆角,本就在 Card 内)+ 顶栏细边框轻量化。**工作台**重做(KPI 磁贴 + 两栏)。**全部 16 个 CRUD 页**统一标题栏(`.rainier-page-head` h2 + 新建/筛选移右)+ Card 只剩 Table+Pagination + 状态列上 `StatusChip` + 页过滤 select 改 `.rainier-select`(多代理 workflow 统一改,testid 全保留)。`StatTiles` KPI 磁贴用于工作台/项目地图。
 > - 2026-06-18 (v0.0.39-review-queue) — `pages/Reviews/ReviewsPage`（标题「我的评审」）+ 路由 `/reviews` + 全员「数据看板」组第 2 项「评审看板」(icon `check`,/portfolio 旁,**不入 isAdminPath**)。消费 `GET /api/me/pending-reviews`:StatTiles(待评数) + 待评 Story 列表(优先级 StatusChip + 提交人 OwnerChip + 标题纯文本[无 Story 详情路由,避死链] + 通过/打回 `Button`)调 `POST /api/stories/{id}/review` 后 refetch + EmptyState。新 `api/reviews.ts`(getPendingReviews/submitReview)。navGuardConsistency 自动钉 /reviews 为全员。见 [[entity-story]]。
 > - 2026-06-18 (v0.0.40-me-profile) — `pages/Profile/ProfilePage`（标题「我的档案」）+ 路由 `/profile` + 全员「工作台」组第 2 项「我的档案」(icon `badge`,在「我的工作台」之后,**不入 isAdminPath**)。消费 `GET /api/me/profile`:身份 DashboardCard(OwnerChip + 岗位 + 直接上级) + 贡献 StatTiles(我负责的 Story 数/分配给我的任务数) + 组织身份列表(org 名 + 类型中文 + 角色 StatusChip + 主组织标记) + 无组织 EmptyState。新 `api/profile.ts`(getMyProfile)。navGuardConsistency 自动钉 /profile 为全员。见 [[me-profile]]。
+> - 2026-06-18 (v0.0.41-admin-compliance) — `pages/Compliance/CompliancePage`（标题「合规仪表盘」）+ 路由 `/sys/compliance` + **admin**「系统」组第 2 项「合规仪表盘」(icon `gauge`,审计日志旁,经 `/sys` 前缀 isAdminPath 门控)。消费 `GET /api/compliance/audit-summary` + `/residual-permissions`:审计 StatTiles(事件总量 + 停用-残留权限用户数,残留>0 标红) + 停用-残留权限对账表(停用用户 + 角色数 + 角色名 + EmptyState) + 按动作/按实体类型分布 + 最近活动表。新 `api/compliance.ts`(getAuditSummary/getResidualPermissions)。navGuardConsistency 自动钉 /sys/compliance 为 admin。见 [[admin-compliance]]。
 
 ## Requirements
 
@@ -823,3 +824,40 @@ EmptyState。「通过/打回」按钮 SHALL 调 `POST /api/stories/{id}/review`
 
 - **WHEN** 在 `/profile` 挂载 AppRoutes
 - **THEN** SHALL 渲染「我的档案」页（profile 容器可见）
+
+## ADDED Requirements (from change 2026-06-18-admin-compliance / v0.0.41)
+
+### Requirement: 「合规仪表盘」页（admin）
+
+前端 SHALL 在 `/sys/compliance` 提供「合规仪表盘」页（admin），消费 `GET /api/compliance/audit-summary` +
+`GET /api/compliance/residual-permissions`：渲染 审计 StatTiles（事件总量 + 停用-残留权限用户数，残留>0 标红）+
+停用-残留权限对账表（停用用户 + 角色数 + 角色名，空时 EmptyState）+ 按动作/按实体类型分布 + 最近活动表。
+
+#### Scenario: 渲染审计聚合与残留对账
+
+- **GIVEN** audit-summary 返回 `{total:5, byAction:[{label:"CREATE",count:3}], recent:[1 条]}`，residual 返回 1 个停用用户 ghost（DEV）
+- **WHEN** 用户打开 `/sys/compliance`
+- **THEN** SHALL 显示审计总量 5
+- **AND** SHALL 显示残留行含 "ghost" 与 "DEV"
+- **AND** SHALL 显示按动作 "CREATE"
+
+#### Scenario: 无残留 → 空态
+
+- **GIVEN** residual-permissions 返回空数组
+- **WHEN** 用户打开 `/sys/compliance`
+- **THEN** SHALL 显示 EmptyState（无残留）
+
+### Requirement: 合规仪表盘导航入口（admin）
+
+前端 SHALL 在 AppLayout「系统」组加入「合规仪表盘」入口指向 `/sys/compliance`；`/sys/compliance` SHALL 被
+`isAdminPath` 门控（经 `/sys` 前缀，仅 admin 可达）。`AppRoutes` SHALL 注册 `/sys/compliance` 路由。
+
+#### Scenario: /sys/compliance 为 admin
+
+- **WHEN** 检查 `isAdminPath('/sys/compliance')`
+- **THEN** SHALL 返回 true
+
+#### Scenario: 路由已注册
+
+- **WHEN** 在 `/sys/compliance` 挂载 AppRoutes
+- **THEN** SHALL 渲染「合规仪表盘」页（compliance 容器可见）

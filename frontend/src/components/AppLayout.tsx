@@ -92,7 +92,10 @@ export const navGroups: NavGroup[] = [
     key: 'sys',
     title: '系统',
     requiresAdmin: true,
-    items: [{ to: '/sys/audit-logs', label: '审计日志', icon: 'shield' }],
+    items: [
+      { to: '/sys/audit-logs', label: '审计日志', icon: 'shield' },
+      { to: '/sys/compliance', label: '合规仪表盘', icon: 'gauge' },
+    ],
   },
 ];
 

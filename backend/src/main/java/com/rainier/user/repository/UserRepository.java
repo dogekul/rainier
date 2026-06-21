@@ -2,6 +2,7 @@
 package com.rainier.user.repository;
 
 import com.rainier.user.domain.User;
+import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
@@ -12,6 +13,9 @@ import org.springframework.stereotype.Repository;
 public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificationExecutor<User> {
 
   boolean existsByLoginName(String loginName);
+
+  /** v0.0.41 compliance — disabled (non-soft-deleted) users, for residual-permission reconciliation. */
+  List<User> findByEnabledFalse();
 
   /** v0.0.18: resolve the current user from the JWT subject (loginName) for GET /api/auth/me. */
   Optional<User> findByLoginName(String loginName);
