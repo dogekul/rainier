@@ -28,6 +28,7 @@
 > - 2026-06-18 (v0.0.39-review-queue) — `pages/Reviews/ReviewsPage`（标题「我的评审」）+ 路由 `/reviews` + 全员「数据看板」组第 2 项「评审看板」(icon `check`,/portfolio 旁,**不入 isAdminPath**)。消费 `GET /api/me/pending-reviews`:StatTiles(待评数) + 待评 Story 列表(优先级 StatusChip + 提交人 OwnerChip + 标题纯文本[无 Story 详情路由,避死链] + 通过/打回 `Button`)调 `POST /api/stories/{id}/review` 后 refetch + EmptyState。新 `api/reviews.ts`(getPendingReviews/submitReview)。navGuardConsistency 自动钉 /reviews 为全员。见 [[entity-story]]。
 > - 2026-06-18 (v0.0.40-me-profile) — `pages/Profile/ProfilePage`（标题「我的档案」）+ 路由 `/profile` + 全员「工作台」组第 2 项「我的档案」(icon `badge`,在「我的工作台」之后,**不入 isAdminPath**)。消费 `GET /api/me/profile`:身份 DashboardCard(OwnerChip + 岗位 + 直接上级) + 贡献 StatTiles(我负责的 Story 数/分配给我的任务数) + 组织身份列表(org 名 + 类型中文 + 角色 StatusChip + 主组织标记) + 无组织 EmptyState。新 `api/profile.ts`(getMyProfile)。navGuardConsistency 自动钉 /profile 为全员。见 [[me-profile]]。
 > - 2026-06-18 (v0.0.41-admin-compliance) — `pages/Compliance/CompliancePage`（标题「合规仪表盘」）+ 路由 `/sys/compliance` + **admin**「系统」组第 2 项「合规仪表盘」(icon `gauge`,审计日志旁,经 `/sys` 前缀 isAdminPath 门控)。消费 `GET /api/compliance/audit-summary` + `/residual-permissions`:审计 StatTiles(事件总量 + 停用-残留权限用户数,残留>0 标红) + 停用-残留权限对账表(停用用户 + 角色数 + 角色名 + EmptyState) + 按动作/按实体类型分布 + 最近活动表。新 `api/compliance.ts`(getAuditSummary/getResidualPermissions)。navGuardConsistency 自动钉 /sys/compliance 为 admin。见 [[admin-compliance]]。
+> - 2026-06-18 (v0.0.42-po-inbox) — `pages/Inbox/InboxPage`（标题「需求收件箱」）+ 路由 `/inbox` + 全员「工作台」组第 3 项「需求收件箱」(icon `inbox`,我的档案之后,**不入 isAdminPath**)。消费 `GET /api/me/inbox`:StatTiles(待处理诉求数/我的需求数) + 待处理诉求列表(优先级 chip + 标题→/pm/demands + 状态) + 我的需求列表(状态 chip + code+标题→/pm/requirements + 优先级 + 期望日期 + projectName) + 各区 EmptyState。新 `api/inbox.ts`(getInbox)。复用 PRIORITY_LABELS/REQUIREMENT_STATUS_LABELS。navGuardConsistency 自动钉 /inbox 为全员。见 [[me-inbox]]。
 
 ## Requirements
 
@@ -861,3 +862,39 @@ EmptyState。「通过/打回」按钮 SHALL 调 `POST /api/stories/{id}/review`
 
 - **WHEN** 在 `/sys/compliance` 挂载 AppRoutes
 - **THEN** SHALL 渲染「合规仪表盘」页（compliance 容器可见）
+
+## ADDED Requirements (from change 2026-06-18-po-inbox / v0.0.42)
+
+### Requirement: 「需求收件箱」落地页
+
+前端 SHALL 在 `/inbox` 提供「需求收件箱」页（all-users），消费 `GET /api/me/inbox`：渲染 StatTiles（待处理诉求数 /
+我的需求数）+ 待处理诉求列表（标题 + 优先级 chip + 状态，链接到 `/pm/demands`）+ 我的需求列表（code+标题 + 状态 chip +
+优先级 + 期望日期，链接到 `/pm/requirements`）；两区各自空态 EmptyState。
+
+#### Scenario: 渲染两区
+
+- **GIVEN** inbox 返回 1 条待处理诉求 + 1 条我的需求
+- **WHEN** 用户打开 `/inbox`
+- **THEN** SHALL 显示待处理诉求与我的需求各 1 行
+- **AND** SHALL 显示计数磁贴
+
+#### Scenario: 空收件箱
+
+- **GIVEN** inbox 返回两区皆空
+- **WHEN** 用户打开 `/inbox`
+- **THEN** SHALL 显示两区的 EmptyState
+
+### Requirement: 需求收件箱导航入口（all-users）
+
+前端 SHALL 在 AppLayout「工作台」组加入「需求收件箱」入口指向 `/inbox`，且 `/inbox` SHALL NOT 被 `isAdminPath`
+门控。`AppRoutes` SHALL 注册 `/inbox` 路由。
+
+#### Scenario: /inbox 为 all-users
+
+- **WHEN** 检查 `isAdminPath('/inbox')`
+- **THEN** SHALL 返回 false
+
+#### Scenario: 路由已注册
+
+- **WHEN** 在 `/inbox` 挂载 AppRoutes
+- **THEN** SHALL 渲染「需求收件箱」页（inbox 容器可见）

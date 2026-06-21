@@ -1,0 +1,46 @@
+change:
+  id: 2026-06-18-po-inbox
+  title: v0.0.42-po-inbox — GET /api/me/inbox (unconverted demands + my requirements) + 需求收件箱 page
+  baseline: {tag: v0.0.41-admin-compliance, commit: 55bf6a8}
+  type: feature
+  roadmap: "C-角色链路审计 §4 PO — 需求收件箱落地页"
+
+status: archived   # v0.0.42-po-inbox delivered + tagged + pushed 2026-06-18 (Gate3+push pre-auth)
+
+phase:
+  current: delivered
+  understand:
+    status: completed
+    confirmed_at: '2026-06-18'
+    gate1_decisions:
+      inbox_sections: unconverted_demands(global triage) + my_requirements(owner=me)
+      landing: dedicated_page /inbox (工作台 group, all-users)
+      unconverted_def: no demand-requirement link AND status not in {DONE,CLOSED}
+  spec: {status: completed, artifacts: [design.md, "specs/me-inbox", "specs/frontend-scaffold", test-plan.md], gate_2: auto_proceed}
+  build: {status: completed}
+  verify:
+    status: completed
+    artifact: test-report.md
+    metrics: {backend: 459/459, frontend: 175/175, new_tests_backend: 6, new_tests_frontend: 4, e2e: "3/3", review: "C:0 H:0 confirmed-real:0", business_data: intact}
+    confirmed_at: '2026-06-18'
+  deliver:
+    status: completed
+    archived_to: archive/2026-06-18-po-inbox
+    specs_merged: [me-inbox (NEW), frontend-scaffold]
+    tag: v0.0.42-po-inbox
+
+long_range:
+  enabled: true
+  mode: full_auto
+  pre_auth: {git_ops: allow_up_to_push, gate_2: auto_proceed, gate_3: auto_proceed_and_push}
+  user_directive: '开始吧 + 全自动到 P6 push (PO 收件箱); Gate3+push 预授权'
+
+scope:
+  type: feature
+  capabilities_new: [me-inbox]
+  capabilities_modified: [frontend-scaffold]
+  new_tables: 0
+  new_columns: []
+  new_deps: []
+  new_apis: ["GET /api/me/inbox (all-users)"]
+  new_repo_methods: [RequirementRepository.findByOwnerUserId]

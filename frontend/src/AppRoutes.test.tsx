@@ -94,6 +94,13 @@ vi.mock('./api/compliance', async () => {
     getResidualPermissions: vi.fn().mockResolvedValue([]),
   };
 });
+vi.mock('./api/inbox', async () => {
+  const actual = await vi.importActual<typeof import('./api/inbox')>('./api/inbox');
+  return {
+    ...actual,
+    getInbox: vi.fn().mockResolvedValue({ unconvertedDemands: [], myRequirements: [] }),
+  };
+});
 
 describe('AppRoutes /pm/*', () => {
   beforeEach(() => {
@@ -159,6 +166,21 @@ describe('AppRoutes /pm/*', () => {
     );
     await waitFor(() => {
       expect(screen.getByTestId('compliance-summary')).toBeInTheDocument();
+    });
+  });
+
+  /** TC-FES-INBOX-01/02 (v0.0.42): /inbox route registered + mounts InboxPage (all-users). */
+  it('registers /inbox → InboxPage (TC-FES-INBOX-01/02)', async () => {
+    const path = resolve(__dirname, 'AppRoutes.tsx');
+    const src = readFileSync(path, 'utf-8');
+    expect(src.split('/inbox').length - 1).toBeGreaterThanOrEqual(1);
+    render(
+      <MemoryRouter initialEntries={['/inbox']}>
+        <AppRoutes />
+      </MemoryRouter>,
+    );
+    await waitFor(() => {
+      expect(screen.getByTestId('inbox-summary')).toBeInTheDocument();
     });
   });
 
