@@ -1,0 +1,48 @@
+change:
+  id: 2026-06-18-ai-work-log
+  title: v0.0.43-ai-work-log — AI work log (PROPOSED/ACCEPTED/REJECTED + evidence) + 裁决 + seed + AI 工作日志 page
+  baseline: {tag: v0.0.42-po-inbox, commit: d08cefb}
+  type: feature
+  roadmap: "C-角色链路审计 §3 飞轮层启动 / §4 AI Agent — AI 工作日志(种子驱动壳)"
+
+status: archived   # v0.0.43-ai-work-log delivered + tagged + pushed 2026-06-18 (Gate3 reviewed)
+
+phase:
+  current: delivered
+  understand:
+    status: completed
+    confirmed_at: '2026-06-18'
+    gate1_decisions:
+      first_flywheel_slice: ai_work_log (seed-driven shell, no external integration)
+      state_machine: PROPOSED -> ACCEPTED|REJECTED (only from PROPOSED; reject needs reason)
+      evidence: required non-blank (AI proposals must cite evidence)
+      authz: all_users (fine-grained 分级授权 deferred to later flywheel step)
+      nav: new top-level AI group (all-users)
+  spec: {status: completed, artifacts: [design.md, "specs/ai-work-log", "specs/frontend-scaffold", test-plan.md], gate_2: auto_proceed}
+  build: {status: completed}
+  verify:
+    status: completed
+    artifact: test-report.md
+    metrics: {backend: 470/470, frontend: 180/180, new_tests_backend: 11, new_tests_frontend: 5, e2e: green, review: "C:0 H:0 confirmed-real:0", tables: 21, business_data: intact}
+    confirmed_at: '2026-06-18'   # Gate 3 user-reviewed ("push")
+  deliver:
+    status: completed
+    archived_to: archive/2026-06-18-ai-work-log
+    specs_merged: [ai-work-log (NEW), frontend-scaffold]
+    tag: v0.0.43-ai-work-log
+
+long_range:
+  enabled: true
+  mode: full_auto
+  pre_auth: {git_ops: allow_up_to_commit_and_tag, gate_2: auto_proceed, gate_3: require_user_confirmation}
+  user_directive: '启动飞轮层 全自动到 p5, 等我看完之后再 push (NO push at Gate 3)'
+
+scope:
+  type: feature
+  capabilities_new: [ai-work-log]
+  capabilities_modified: [frontend-scaffold]
+  new_tables: 1   # rainier_ai_work_log (20 -> 21)
+  new_columns: []
+  new_deps: []
+  new_apis: ["GET /api/ai-work-logs", "GET /api/ai-work-logs/{id}", "POST /api/ai-work-logs", "POST /api/ai-work-logs/{id}/decision"]
+  config: [app.demo.ai-work-log-seed.enabled]

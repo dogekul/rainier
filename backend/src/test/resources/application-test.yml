@@ -36,6 +36,11 @@ app:
     # green. RealAuthLoginTest flips it on via @TestPropertySource.
     real-auth:
       enabled: false
+  # v0.0.43: AI work log seed OFF in the default test profile so tests get a clean rainier_ai_work_log
+  # table; the dedicated AiWorkLogSeedTest flips it on via @TestPropertySource.
+  demo:
+    ai-work-log-seed:
+      enabled: false
 
 rainier:
   product-module:

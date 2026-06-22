@@ -29,6 +29,7 @@
 > - 2026-06-18 (v0.0.40-me-profile) — `pages/Profile/ProfilePage`（标题「我的档案」）+ 路由 `/profile` + 全员「工作台」组第 2 项「我的档案」(icon `badge`,在「我的工作台」之后,**不入 isAdminPath**)。消费 `GET /api/me/profile`:身份 DashboardCard(OwnerChip + 岗位 + 直接上级) + 贡献 StatTiles(我负责的 Story 数/分配给我的任务数) + 组织身份列表(org 名 + 类型中文 + 角色 StatusChip + 主组织标记) + 无组织 EmptyState。新 `api/profile.ts`(getMyProfile)。navGuardConsistency 自动钉 /profile 为全员。见 [[me-profile]]。
 > - 2026-06-18 (v0.0.41-admin-compliance) — `pages/Compliance/CompliancePage`（标题「合规仪表盘」）+ 路由 `/sys/compliance` + **admin**「系统」组第 2 项「合规仪表盘」(icon `gauge`,审计日志旁,经 `/sys` 前缀 isAdminPath 门控)。消费 `GET /api/compliance/audit-summary` + `/residual-permissions`:审计 StatTiles(事件总量 + 停用-残留权限用户数,残留>0 标红) + 停用-残留权限对账表(停用用户 + 角色数 + 角色名 + EmptyState) + 按动作/按实体类型分布 + 最近活动表。新 `api/compliance.ts`(getAuditSummary/getResidualPermissions)。navGuardConsistency 自动钉 /sys/compliance 为 admin。见 [[admin-compliance]]。
 > - 2026-06-18 (v0.0.42-po-inbox) — `pages/Inbox/InboxPage`（标题「需求收件箱」）+ 路由 `/inbox` + 全员「工作台」组第 3 项「需求收件箱」(icon `inbox`,我的档案之后,**不入 isAdminPath**)。消费 `GET /api/me/inbox`:StatTiles(待处理诉求数/我的需求数) + 待处理诉求列表(优先级 chip + 标题→/pm/demands + 状态) + 我的需求列表(状态 chip + code+标题→/pm/requirements + 优先级 + 期望日期 + projectName) + 各区 EmptyState。新 `api/inbox.ts`(getInbox)。复用 PRIORITY_LABELS/REQUIREMENT_STATUS_LABELS。navGuardConsistency 自动钉 /inbox 为全员。见 [[me-inbox]]。
+> - 2026-06-18 (v0.0.43-ai-work-log) — `pages/AiWorkLog/AiWorkLogsPage`（标题「AI 工作日志」）+ 路由 `/ai/work-logs` + **新顶级「AI」全员导航组**(icon `loop`,**不入 isAdminPath**)。消费 `GET /api/ai-work-logs`:StatTiles(待裁决/已采纳/已驳回) + 状态过滤 + 提议列表(agentType+action+summary+evidence + 状态 chip;PROPOSED 行带 采纳/驳回 `Button`,驳回经 window.prompt 取理由)调 `POST /api/ai-work-logs/{id}/decision` 后 refetch + EmptyState。新 `api/aiWorkLog.ts`(listAiWorkLogs/decideAiWorkLog)。navGuardConsistency 自动钉 /ai/work-logs 为全员。飞轮层底座。见 [[ai-work-log]]。
 
 ## Requirements
 
@@ -898,3 +899,46 @@ EmptyState。「通过/打回」按钮 SHALL 调 `POST /api/stories/{id}/review`
 
 - **WHEN** 在 `/inbox` 挂载 AppRoutes
 - **THEN** SHALL 渲染「需求收件箱」页（inbox 容器可见）
+
+## ADDED Requirements (from change 2026-06-18-ai-work-log / v0.0.43)
+
+### Requirement: 「AI 工作日志」落地页
+
+前端 SHALL 在 `/ai/work-logs` 提供「AI 工作日志」页（all-users），消费 `GET /api/ai-work-logs`：渲染 StatTiles
+（待裁决/已采纳/已驳回）+ 状态过滤 + 日志列表（agentType + action + summary + evidence + 状态 chip；PROPOSED 行带
+采纳/驳回 按钮，调 `POST /api/ai-work-logs/{id}/decision` 后刷新）+ EmptyState。
+
+#### Scenario: 渲染日志与裁决
+
+- **GIVEN** `GET /api/ai-work-logs` 返回 1 条 PROPOSED 日志
+- **WHEN** 用户打开 `/ai/work-logs`
+- **THEN** SHALL 显示该日志（agentType/summary/evidence）
+- **AND** SHALL 显示采纳/驳回按钮
+
+#### Scenario: 采纳后刷新
+
+- **GIVEN** 列表含 1 条 PROPOSED 日志
+- **WHEN** 用户点击「采纳」
+- **THEN** SHALL 调用 decideAiWorkLog(id, "ACCEPTED")
+- **AND** SHALL 重新拉取列表
+
+#### Scenario: 空列表
+
+- **GIVEN** `GET /api/ai-work-logs` 返回空
+- **WHEN** 用户打开 `/ai/work-logs`
+- **THEN** SHALL 显示 EmptyState
+
+### Requirement: AI 导航组（all-users）
+
+前端 SHALL 在 AppLayout 新增「AI」顶级导航组（all-users），含「AI 工作日志」指向 `/ai/work-logs`；
+`/ai/work-logs` SHALL NOT 被 `isAdminPath` 门控。`AppRoutes` SHALL 注册 `/ai/work-logs` 路由。
+
+#### Scenario: /ai/work-logs 为 all-users
+
+- **WHEN** 检查 `isAdminPath('/ai/work-logs')`
+- **THEN** SHALL 返回 false
+
+#### Scenario: 路由已注册
+
+- **WHEN** 在 `/ai/work-logs` 挂载 AppRoutes
+- **THEN** SHALL 渲染「AI 工作日志」页（ai-work-logs 容器可见）

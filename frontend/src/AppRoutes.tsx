@@ -14,6 +14,7 @@ import Workbench from './pages/Workbench';
 import Login from './pages/Login';
 import AuditLogsPage from './pages/AuditLog';
 import CompliancePage from './pages/Compliance';
+import AiWorkLogsPage from './pages/AiWorkLog';
 import InboxPage from './pages/Inbox';
 import OrganizationsPage from './pages/Organization';
 import PositionsPage from './pages/Position';
@@ -41,6 +42,7 @@ export function AppRoutes() {
           <Route path="/team" element={<TeamLeadPage />} />
           <Route path="/portfolio" element={<PortfolioPage />} />
           <Route path="/reviews" element={<ReviewsPage />} />
+          <Route path="/ai/work-logs" element={<AiWorkLogsPage />} />
           <Route path="/demand-submit" element={<DemandSubmitPage />} />
           <Route path="/org" element={<Navigate to="/org/organizations" replace />} />
           <Route path="/org/organizations" element={<OrganizationsPage />} />

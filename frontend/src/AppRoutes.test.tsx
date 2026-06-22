@@ -101,6 +101,13 @@ vi.mock('./api/inbox', async () => {
     getInbox: vi.fn().mockResolvedValue({ unconvertedDemands: [], myRequirements: [] }),
   };
 });
+vi.mock('./api/aiWorkLog', async () => {
+  const actual = await vi.importActual<typeof import('./api/aiWorkLog')>('./api/aiWorkLog');
+  return {
+    ...actual,
+    listAiWorkLogs: vi.fn().mockResolvedValue({ content: [], total: 0, page: 0, size: 100 }),
+  };
+});
 
 describe('AppRoutes /pm/*', () => {
   beforeEach(() => {
@@ -166,6 +173,21 @@ describe('AppRoutes /pm/*', () => {
     );
     await waitFor(() => {
       expect(screen.getByTestId('compliance-summary')).toBeInTheDocument();
+    });
+  });
+
+  /** TC-FES-AIW-01/02 (v0.0.43): /ai/work-logs route registered + mounts AiWorkLogsPage (all-users). */
+  it('registers /ai/work-logs → AiWorkLogsPage (TC-FES-AIW-01/02)', async () => {
+    const path = resolve(__dirname, 'AppRoutes.tsx');
+    const src = readFileSync(path, 'utf-8');
+    expect(src.split('/ai/work-logs').length - 1).toBeGreaterThanOrEqual(1);
+    render(
+      <MemoryRouter initialEntries={['/ai/work-logs']}>
+        <AppRoutes />
+      </MemoryRouter>,
+    );
+    await waitFor(() => {
+      expect(screen.getByTestId('ai-summary')).toBeInTheDocument();
     });
   });
 

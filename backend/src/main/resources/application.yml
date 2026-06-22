@@ -67,6 +67,11 @@ app:
   cors:
     # Comma-separated list bound to List&lt;String&gt; in CorsConfig via Spring's default converter.
     allowed-origins: "http://localhost:5173,http://localhost"
+  demo:
+    # v0.0.43: seed a few PROPOSED AI work logs on startup when the table is empty (flywheel shell demo
+    # data, no real AI). Disabled in the test profile so tests get a clean rainier_ai_work_log table.
+    ai-work-log-seed:
+      enabled: true
 
 logging:
   level:

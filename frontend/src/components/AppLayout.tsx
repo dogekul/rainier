@@ -47,6 +47,11 @@ export const navGroups: NavGroup[] = [
     ],
   },
   {
+    key: 'ai',
+    title: 'AI',
+    items: [{ to: '/ai/work-logs', label: 'AI 工作日志', icon: 'loop' }],
+  },
+  {
     key: 'org',
     title: '组织',
     requiresAdmin: true,
