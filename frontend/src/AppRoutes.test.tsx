@@ -123,6 +123,13 @@ vi.mock('./api/operation', async () => {
     listOperations: vi.fn().mockResolvedValue({ content: [], total: 0, page: 0, size: 200 }),
   };
 });
+vi.mock('./api/customer', async () => {
+  const actual = await vi.importActual<typeof import('./api/customer')>('./api/customer');
+  return {
+    ...actual,
+    listCustomers: vi.fn().mockResolvedValue({ content: [], total: 0, page: 0, size: 20 }),
+  };
+});
 
 describe('AppRoutes /pm/*', () => {
   beforeEach(() => {
@@ -191,10 +198,11 @@ describe('AppRoutes /pm/*', () => {
     });
   });
 
-  /** TC-FES-CRM-01 (v0.0.44): all four /crm/* routes registered + 商机看板 mounts (all-users). */
-  it('registers the four /crm/* routes (TC-FES-CRM-01)', async () => {
+  /** TC-FES-CRM-01 (v0.0.44/45): all five /crm/* routes registered + 商机看板 mounts (all-users). */
+  it('registers the five /crm/* routes (TC-FES-CRM-01)', async () => {
     const path = resolve(__dirname, 'AppRoutes.tsx');
     const src = readFileSync(path, 'utf-8');
+    expect(src.split('/crm/customers').length - 1).toBeGreaterThanOrEqual(1);
     expect(src.split('/crm/opportunities').length - 1).toBeGreaterThanOrEqual(1);
     expect(src.split('/crm/presale-flow').length - 1).toBeGreaterThanOrEqual(1);
     expect(src.split('/crm/delivery-flow').length - 1).toBeGreaterThanOrEqual(1);
@@ -205,6 +213,16 @@ describe('AppRoutes /pm/*', () => {
       </MemoryRouter>,
     );
     await waitFor(() => expect(screen.getByTestId('opp-summary')).toBeInTheDocument());
+  });
+
+  /** TC-FES-CRM-05 (v0.0.45): 客户 page mounts at /crm/customers. */
+  it('mounts CustomerPage at /crm/customers (TC-FES-CRM-05)', async () => {
+    render(
+      <MemoryRouter initialEntries={['/crm/customers']}>
+        <AppRoutes />
+      </MemoryRouter>,
+    );
+    await waitFor(() => expect(screen.getByTestId('customers-new-btn')).toBeInTheDocument());
   });
 
   it('mounts OperationBoard at /crm/operations', async () => {
@@ -239,6 +257,7 @@ describe('AppRoutes /pm/*', () => {
   /** TC-FES-CRM-04 (v0.0.44): all four /crm/* routes are all-users (NOT admin-gated). */
   it('keeps all /crm/* routes all-users — isAdminPath false (TC-FES-CRM-04)', () => {
     for (const p of [
+      '/crm/customers',
       '/crm/opportunities',
       '/crm/presale-flow',
       '/crm/delivery-flow',

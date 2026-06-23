@@ -65,8 +65,9 @@ class LegacyProductCategoryCleanupTest {
             .getResultList();
     // v0.0.15 added rainier_audit_log (18); v0.0.17 added rainier_milestone → 19;
     // v0.0.31 added rainier_entity_link → 20; v0.0.43 added rainier_ai_work_log → 21;
-    // v0.0.44 added rainier_opportunity + rainier_operation → 23 tables.
-    assertEquals(23, rows.size(), "schema must have exactly 23 rainier_* tables: " + rows);
+    // v0.0.44 added rainier_opportunity + rainier_operation → 23;
+    // v0.0.45 added rainier_opportunity_artifact → 24, + rainier_customer → 25 tables.
+    assertEquals(25, rows.size(), "schema must have exactly 25 rainier_* tables: " + rows);
     assertFalse(rows.contains("rainier_product_category"));
     assertTrue(rows.contains("rainier_product"));
     assertTrue(rows.contains("rainier_product_module"));

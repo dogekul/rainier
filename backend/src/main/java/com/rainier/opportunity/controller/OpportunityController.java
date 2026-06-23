@@ -5,14 +5,20 @@ import com.rainier.auth.controller.AuthController;
 import com.rainier.common.web.PageParams;
 import com.rainier.common.web.PageResponse;
 import com.rainier.opportunity.dto.OpportunityAdvanceRequest;
+import com.rainier.opportunity.dto.OpportunityArtifactCreateRequest;
+import com.rainier.opportunity.dto.OpportunityArtifactDetail;
 import com.rainier.opportunity.dto.OpportunityCreateRequest;
 import com.rainier.opportunity.dto.OpportunityDetail;
 import com.rainier.opportunity.dto.OpportunityInitiateRequest;
 import com.rainier.opportunity.dto.OpportunityUpdateRequest;
+import com.rainier.opportunity.service.OpportunityArtifactService;
 import com.rainier.opportunity.service.OpportunityService;
 import java.net.URI;
+import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -33,9 +39,12 @@ import org.springframework.web.bind.annotation.RestController;
 public class OpportunityController {
 
   private final OpportunityService service;
+  private final OpportunityArtifactService artifactService;
 
-  public OpportunityController(OpportunityService service) {
+  public OpportunityController(
+      OpportunityService service, OpportunityArtifactService artifactService) {
     this.service = service;
+    this.artifactService = artifactService;
   }
 
   @PostMapping
@@ -77,7 +86,38 @@ public class OpportunityController {
       HttpServletRequest request) {
     String decision = req == null ? null : req.getDecision();
     String note = req == null ? null : req.getNote();
-    return service.advance(id, decision, note, currentUser(request));
+    return service.advance(
+        id, decision, note, currentUser(request), req == null ? null : req.getArtifact());
+  }
+
+  /** v0.0.45 — list a 商机's 流转产出物 (append-only), most-recent first. */
+  @GetMapping("/{id}/artifacts")
+  public List<OpportunityArtifactDetail> artifacts(@PathVariable Long id) {
+    return artifactService.list(id);
+  }
+
+  /** v0.0.45 — independently add a 流转产出物 (e.g. preparing POC deliverables before advancing). */
+  @PostMapping("/{id}/artifacts")
+  public ResponseEntity<OpportunityArtifactDetail> addArtifact(
+      @PathVariable Long id, @Valid @RequestBody OpportunityArtifactCreateRequest req) {
+    OpportunityArtifactDetail created = artifactService.create(id, req);
+    return ResponseEntity.created(
+            URI.create("/api/opportunities/" + id + "/artifacts/" + created.getId()))
+        .body(created);
+  }
+
+  /** v0.0.45 — export one 产出物 as a Word .docx. */
+  @GetMapping("/{id}/artifacts/{artifactId}/export")
+  public ResponseEntity<byte[]> exportArtifact(
+      @PathVariable Long id, @PathVariable Long artifactId) {
+    byte[] docx = artifactService.export(id, artifactId);
+    String filename = "artifact-" + id + "-" + artifactId + ".docx";
+    return ResponseEntity.ok()
+        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+        .contentType(
+            MediaType.parseMediaType(
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document"))
+        .body(docx);
   }
 
   @PostMapping("/{id}/initiate")

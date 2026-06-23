@@ -1,0 +1,56 @@
+change:
+  id: 2026-06-23-gate-artifacts
+  title: v0.0.45-gate-artifacts — 流转产出物门禁（商机调研报告/决策评审纪要）+ Word 导出
+  baseline: {tag: v0.0.44-customer-flow, commit: e88c8ab}
+  type: feature
+  source: "用户：线索→商机 需《商机调研报告》；商机决策 需《决策评审纪要》然后流转"
+
+phase:
+  current: archived
+  archived_at: '2026-06-23'
+  deliver: {status: completed, gate_3: user_confirmed, tag: v0.0.45-gate-artifacts, specs_merged: "opportunity-artifact(NEW) + customer(NEW) + opportunity(MOD) + frontend-scaffold(MOD)"}
+  understand:
+    status: completed
+    confirmed_at: '2026-06-23'
+    gate0_decisions:
+      artifact_form: structured_text + word_export(.docx)
+      submit_model: combined (advance carries artifact; missing -> 400; atomic create+advance)
+      scope: 2 rules now (LEAD->商机 RESEARCH_REPORT; 商机 decision DECISION_MINUTES) + configurable mechanism
+    gate1_confirmed_defaults: [minutes-on-both-PASS-and-REJECT, artifact-immutable, view/export-on-商机看板]
+  spec: {status: completed, gate_2: auto_proceed}
+  slice: {status: completed}
+  build: {status: completed}
+  verify:
+    status: completed
+    artifact: test-report.md
+    metrics: {backend: 500/500 (temurin-8 全量实测; OpportunityArtifactTest 15/15), frontend: 223/223, new_tests_backend: 26, e2e: green (docker real-mysql + POI; 前后端均已重建; POC 多 title-less 链接→BIDDING), review: "4 reviewers + verify 17->confirmed 13 (C:0 H:0 M:7 L:6) 全处置", tables: 25, business_data: intact (5 user opps + 6 user customers id4-9 未动; throwaway opp32 已删; 4 test customers id10-13 待用户授权清理-classifier 拦截), fold_ins: "product-tag + customer-entity + 商机备注/表单顺序 + 详情(查看/编辑/推进) + POC多产出物门禁 + 推进时补充 + 链接类无标题/多份"}
+    awaiting: gate_3_user_review_then_commit   # NO push until user indicates
+
+long_range:
+  enabled: true
+  mode: full_auto
+  pre_auth: {git_ops: allow_up_to_commit_and_tag, gate_2: auto_proceed, gate_3: require_user_confirmation}
+  user_directive: '都确认，全自动到p5 (stop at Gate 3, NO push)'
+  slice: {status: completed}
+  build: {status: completed}
+  verify: {status: completed}
+  deliver: {status: completed}
+
+scope:
+  type: feature
+  capabilities_new: [opportunity-artifact, customer]
+  capabilities_modified: [opportunity, frontend-scaffold]
+  new_tables: 2   # rainier_opportunity_artifact + rainier_customer (23 -> 25)
+  new_columns: [rainier_opportunity.product_id, rainier_opportunity.customer_id]
+  new_deps: [poi-ooxml (Java-8 safe version)]
+  new_apis: ["GET /api/opportunities/{id}/artifacts", "GET /api/opportunities/{id}/artifacts/{artifactId}/export (.docx)", "POST /advance (+artifact)", "POST/PUT /opportunities (+productId +customerId)", "CRUD /api/customers"]
+  fold_ins:
+    - "2026-06-23 商机产品标签 (productId FK->Product, nullable, create/update + 校验, enrich productName, 售前流转下拉 + 看板卡片显示)"
+    - "2026-06-23 客户实体 (NEW customer capability: Customer CRUD + 客户管理页/导航; Opportunity +customerId 可空, 保留 customerName; 售前流转 datalist 组合框选/建; 同名 dedup)"
+    - "2026-06-23 商机备注 + 新建表单字段顺序 (Opportunity +note 可空; 售前流转新建抽屉 客户→标题→备注→产品→负责人→金额)"
+    - "2026-06-23 售前流转 商机详情抽屉 (per-row 详情 → 字段 + 产出物历史 + 导出 Word)"
+    - "2026-06-23 商机详情可编辑 + 可推进 (详情抽屉 → updateOpportunity 保存; 阶段/状态只读; 内置 推进/通过/否决 走 advance 门禁; +api updateOpportunity; +后端 update 测试)"
+    - "2026-06-23 详情默认只读 + 编辑按钮切换 (read-only view + 编辑/取消/保存修改); 产出物富文本预览 (NEW MarkdownView 安全 md->React 渲染器, 无依赖/无 XSS; 售前流转详情 预览 toggle + 商机看板产出物 富文本)"
+    - "2026-06-23 POC 多产出物门禁 (推介/POC→投标 需 讲解材料(链接,≥1)+甲方诉求清单(链接)+POC得分表(报告)+差距分析报告(报告) 全齐才放行; TransitionArtifactRules Map<stage,List>; 链接 vs 报告 kind (+link 列, isLink); NEW POST /artifacts 独立提交 + 详情「添加产出物」表单(类型→链接/正文); advance 缺产出物 400 + 前端 advError 提示; 链接类可点击打开, 报告类预览/导出)"
+    - "2026-06-23 推进时补充必需文档 (POC 推进→「补充产出物并推进」表单, 列出缺失必需类型, 按 kind 填链接/正文, 提交即创建缺失项+推进; STAGE_REQUIRED_ARTIFACTS 前端镜像; 前端 only 复用 POST+advance)"
+    - "2026-06-23 链接类材料无需标题 + 链接可添加多份 (后端 title 去 @NotBlank, service 用 ArtifactType.label 兜底; 前端补充表单/详情添加 链接类去标题输入 + 多行链接 + 添加链接, 提交时每条 link 各建一条无标题产出物, 报告类标题可空; 展示头 title==类型名不重复; OpportunityArtifactCreate.title 改可空; TC-OAR-015 + TC-POC-01/02 + TC-PAR-04 更新)"

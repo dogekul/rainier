@@ -10,6 +10,7 @@ public class OpportunityDetail {
   private Long id;
   private String customerName;
   private String title;
+  private String note;
   private Long amount;
   private String stage;
   private String status;
@@ -22,6 +23,9 @@ public class OpportunityDetail {
   private Long opsOwnerUserId;
   private String opsOwnerName;
   private Long projectId;
+  private Long productId;
+  private String productName;
+  private Long customerId;
   private String gateDecidedBy;
   private Instant createTime;
   private Instant updateTime;
@@ -31,6 +35,7 @@ public class OpportunityDetail {
     d.id = o.getId();
     d.customerName = o.getCustomerName();
     d.title = o.getTitle();
+    d.note = o.getNote();
     d.amount = o.getAmount();
     d.stage = o.getStage();
     d.status = o.getStatus();
@@ -39,6 +44,8 @@ public class OpportunityDetail {
     d.pmUserId = o.getPmUserId();
     d.opsOwnerUserId = o.getOpsOwnerUserId();
     d.projectId = o.getProjectId();
+    d.productId = o.getProductId();
+    d.customerId = o.getCustomerId();
     d.gateDecidedBy = o.getGateDecidedBy();
     d.createTime = o.getCreateTime();
     d.updateTime = o.getUpdateTime();
@@ -55,6 +62,10 @@ public class OpportunityDetail {
 
   public String getTitle() {
     return title;
+  }
+
+  public String getNote() {
+    return note;
   }
 
   public Long getAmount() {
@@ -119,6 +130,22 @@ public class OpportunityDetail {
 
   public Long getProjectId() {
     return projectId;
+  }
+
+  public Long getProductId() {
+    return productId;
+  }
+
+  public String getProductName() {
+    return productName;
+  }
+
+  public void setProductName(String productName) {
+    this.productName = productName;
+  }
+
+  public Long getCustomerId() {
+    return customerId;
   }
 
   public String getGateDecidedBy() {

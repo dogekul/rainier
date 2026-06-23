@@ -26,6 +26,10 @@ public class Opportunity extends BaseEntity {
   @Column(nullable = false, length = 200)
   private String title;
 
+  /** v0.0.45 — free-text 备注 captured at create (nullable). */
+  @Column(length = 2000)
+  private String note;
+
   /** Deal value (元) — pipeline value / 赢单金额. Nullable. */
   @Column private Long amount;
 
@@ -52,6 +56,14 @@ public class Opportunity extends BaseEntity {
   @Column(name = "project_id")
   private Long projectId;
 
+  /** v0.0.45 — optional 产品标签: the Product this opportunity targets (nullable, set at create or later). */
+  @Column(name = "product_id")
+  private Long productId;
+
+  /** v0.0.45 — optional 客户 entity link. customerName (above) is kept as the display label. */
+  @Column(name = "customer_id")
+  private Long customerId;
+
   /** Who recorded the most recent gate decision (商机/投标/合同/立项). */
   @Column(name = "gate_decided_by", length = 32)
   private String gateDecidedBy;
@@ -70,6 +82,14 @@ public class Opportunity extends BaseEntity {
 
   public void setTitle(String title) {
     this.title = title;
+  }
+
+  public String getNote() {
+    return note;
+  }
+
+  public void setNote(String note) {
+    this.note = note;
   }
 
   public Long getAmount() {
@@ -134,6 +154,22 @@ public class Opportunity extends BaseEntity {
 
   public void setProjectId(Long projectId) {
     this.projectId = projectId;
+  }
+
+  public Long getProductId() {
+    return productId;
+  }
+
+  public void setProductId(Long productId) {
+    this.productId = productId;
+  }
+
+  public Long getCustomerId() {
+    return customerId;
+  }
+
+  public void setCustomerId(Long customerId) {
+    this.customerId = customerId;
   }
 
   public String getGateDecidedBy() {

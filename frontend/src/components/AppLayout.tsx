@@ -50,6 +50,7 @@ export const navGroups: NavGroup[] = [
     key: 'crm',
     title: '客户',
     items: [
+      { to: '/crm/customers', label: '客户', icon: 'users' },
       { to: '/crm/opportunities', label: '商机看板', icon: 'gauge' },
       { to: '/crm/presale-flow', label: '售前流转', icon: 'edit' },
       { to: '/crm/delivery-flow', label: '实施流转', icon: 'check' },

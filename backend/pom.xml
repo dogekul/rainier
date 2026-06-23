@@ -90,6 +90,13 @@
       <groupId>org.springframework.security</groupId>
       <artifactId>spring-security-crypto</artifactId>
     </dependency>
+
+    <!-- v0.0.45 — Apache POI for 流转产出物 Word(.docx) export. 4.1.2 = last Java-8-safe minor. -->
+    <dependency>
+      <groupId>org.apache.poi</groupId>
+      <artifactId>poi-ooxml</artifactId>
+      <version>4.1.2</version>
+    </dependency>
   </dependencies>
 
   <build>

@@ -278,9 +278,14 @@ describe('AppLayout Sider (TC-FES-201)', () => {
    * TC-FES-CRM-NAV-001 (v0.0.44): the 客户 group has 4 all-users items in order
    * 商机看板 → 售前流转 → 实施流转 → 运营看板.
    */
-  it('renders the 客户 nav group with 4 items in order (TC-FES-CRM-NAV-001)', () => {
+  it('renders the 客户 nav group with 5 items in order (TC-FES-CRM-NAV-001)', () => {
     renderShell();
-    expect(screen.getByText('客户')).toBeInTheDocument();
+    // 客户 matches both the group title and the 客户 item — getAllByText finds both.
+    expect(screen.getAllByText('客户').length).toBeGreaterThanOrEqual(2);
+    expect(screen.getByTestId('appshell-nav-/crm/customers')).toHaveAttribute(
+      'href',
+      '/crm/customers',
+    );
     expect(screen.getByTestId('appshell-nav-/crm/opportunities')).toHaveAttribute(
       'href',
       '/crm/opportunities',
@@ -299,8 +304,9 @@ describe('AppLayout Sider (TC-FES-201)', () => {
     );
     expect(screen.getByText('售前流转')).toBeInTheDocument();
     expect(screen.getByText('实施流转')).toBeInTheDocument();
-    // order within the 客户 group
+    // order within the 客户 group (客户 first)
     const html = screen.getByTestId('appshell-sider').innerHTML;
+    expect(html.indexOf('/crm/customers')).toBeLessThan(html.indexOf('/crm/opportunities'));
     expect(html.indexOf('/crm/opportunities')).toBeLessThan(html.indexOf('/crm/presale-flow'));
     expect(html.indexOf('/crm/presale-flow')).toBeLessThan(html.indexOf('/crm/delivery-flow'));
     expect(html.indexOf('/crm/delivery-flow')).toBeLessThan(html.indexOf('/crm/operations'));

@@ -64,10 +64,22 @@ export const OPP_PRESALE_STAGES: OpportunityStage[] = OPP_PHASES[0].stages;
 /** 实施环节 stages (立项..验收) — drives the「实施流转」operation page. */
 export const OPP_DELIVERY_STAGES: OpportunityStage[] = OPP_PHASES[1].stages;
 
+/**
+ * v0.0.45 — transitions that require a 流转产出物 before advancing (mirrors backend TransitionArtifactRules,
+ * keyed by SOURCE stage). 线索→商机 needs《商机调研报告》; 商机决策 needs《决策评审纪要》.
+ */
+export const OPP_TRANSITION_ARTIFACT: Partial<
+  Record<OpportunityStage, { type: string; label: string }>
+> = {
+  LEAD: { type: 'RESEARCH_REPORT', label: '商机调研报告' },
+  OPPORTUNITY: { type: 'DECISION_MINUTES', label: '决策评审纪要' },
+};
+
 export interface Opportunity {
   id: number;
   customerName: string;
   title: string;
+  note?: string | null;
   amount?: number | null;
   stage: OpportunityStage;
   status: OpportunityStatus;
@@ -80,6 +92,9 @@ export interface Opportunity {
   opsOwnerUserId?: number | null;
   opsOwnerName?: string | null;
   projectId?: number | null;
+  productId?: number | null;
+  productName?: string | null;
+  customerId?: number | null;
   gateDecidedBy?: string | null;
   createTime?: string;
 }
@@ -87,11 +102,28 @@ export interface Opportunity {
 export interface OpportunityCreate {
   customerName: string;
   title: string;
+  note?: string;
   amount?: number;
   commercialOwnerUserId?: number;
   solutionOwnerUserId?: number;
   pmUserId?: number;
   opsOwnerUserId?: number;
+  productId?: number;
+  customerId?: number;
+}
+
+/** Edit an opportunity's attributes (not stage/status — those go through advance/initiate). */
+export interface OpportunityUpdate {
+  customerName: string;
+  title: string;
+  note?: string;
+  amount?: number;
+  commercialOwnerUserId?: number;
+  solutionOwnerUserId?: number;
+  pmUserId?: number;
+  opsOwnerUserId?: number;
+  productId?: number;
+  customerId?: number;
 }
 
 export interface OpportunityListParams {
@@ -114,13 +146,36 @@ export async function createOpportunity(body: OpportunityCreate): Promise<Opport
   return res.data;
 }
 
-/** Advance one stage. At a gate stage, pass decision PASS/REJECT (REJECT loses the deal). */
+export async function updateOpportunity(
+  id: number,
+  body: OpportunityUpdate,
+): Promise<Opportunity> {
+  const res = await client.put<Opportunity>(`/opportunities/${id}`, body);
+  return res.data;
+}
+
+/** Inline 流转产出物 carried by advance when the source stage requires one (v0.0.45). */
+export interface ArtifactInput {
+  title: string;
+  content: string;
+}
+
+/**
+ * Advance one stage. At a gate stage, pass decision PASS/REJECT (REJECT loses the deal). v0.0.45: when
+ * the source stage requires a 产出物 (see OPP_TRANSITION_ARTIFACT), pass `artifact` — the backend creates
+ * it + advances atomically (missing → 400).
+ */
 export async function advanceOpportunity(
   id: number,
   decision?: GateDecision,
   note?: string,
+  artifact?: ArtifactInput,
 ): Promise<Opportunity> {
-  const res = await client.post<Opportunity>(`/opportunities/${id}/advance`, { decision, note });
+  const res = await client.post<Opportunity>(`/opportunities/${id}/advance`, {
+    decision,
+    note,
+    artifact,
+  });
   return res.data;
 }
 

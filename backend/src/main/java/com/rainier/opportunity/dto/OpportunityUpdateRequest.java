@@ -18,11 +18,16 @@ public class OpportunityUpdateRequest {
   @Size(max = 200)
   private String title;
 
+  @Size(max = 2000)
+  private String note;
+
   private Long amount;
   private Long commercialOwnerUserId;
   private Long solutionOwnerUserId;
   private Long pmUserId;
   private Long opsOwnerUserId;
+  private Long productId;
+  private Long customerId;
 
   public String getCustomerName() {
     return customerName;
@@ -38,6 +43,14 @@ public class OpportunityUpdateRequest {
 
   public void setTitle(String title) {
     this.title = title;
+  }
+
+  public String getNote() {
+    return note;
+  }
+
+  public void setNote(String note) {
+    this.note = note;
   }
 
   public Long getAmount() {
@@ -78,5 +91,21 @@ public class OpportunityUpdateRequest {
 
   public void setOpsOwnerUserId(Long opsOwnerUserId) {
     this.opsOwnerUserId = opsOwnerUserId;
+  }
+
+  public Long getProductId() {
+    return productId;
+  }
+
+  public void setProductId(Long productId) {
+    this.productId = productId;
+  }
+
+  public Long getCustomerId() {
+    return customerId;
+  }
+
+  public void setCustomerId(Long customerId) {
+    this.customerId = customerId;
   }
 }

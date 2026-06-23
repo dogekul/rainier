@@ -15,6 +15,7 @@ import Login from './pages/Login';
 import AuditLogsPage from './pages/AuditLog';
 import CompliancePage from './pages/Compliance';
 import AiWorkLogsPage from './pages/AiWorkLog';
+import CustomerPage from './pages/Customer';
 import OpportunityBoardPage from './pages/Crm/OpportunityBoardPage';
 import PresaleFlowPage from './pages/Crm/PresaleFlowPage';
 import DeliveryFlowPage from './pages/Crm/DeliveryFlowPage';
@@ -47,6 +48,7 @@ export function AppRoutes() {
           <Route path="/portfolio" element={<PortfolioPage />} />
           <Route path="/reviews" element={<ReviewsPage />} />
           <Route path="/ai/work-logs" element={<AiWorkLogsPage />} />
+          <Route path="/crm/customers" element={<CustomerPage />} />
           <Route path="/crm/opportunities" element={<OpportunityBoardPage />} />
           <Route path="/crm/presale-flow" element={<PresaleFlowPage />} />
           <Route path="/crm/delivery-flow" element={<DeliveryFlowPage />} />

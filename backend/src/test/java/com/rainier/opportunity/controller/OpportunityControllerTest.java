@@ -2,21 +2,31 @@
 package com.rainier.opportunity.controller;
 
 import static org.hamcrest.Matchers.everyItem;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.rainier.opportunity.domain.ArtifactType;
 import com.rainier.opportunity.domain.Opportunity;
+import com.rainier.opportunity.domain.OpportunityArtifact;
 import com.rainier.opportunity.domain.OpportunityStage;
 import com.rainier.opportunity.domain.OpportunityStatus;
+import com.rainier.customer.domain.Customer;
+import com.rainier.customer.repository.CustomerRepository;
+import com.rainier.opportunity.repository.OpportunityArtifactRepository;
 import com.rainier.opportunity.repository.OpportunityRepository;
+import com.rainier.product.domain.Product;
+import com.rainier.product.repository.ProductRepository;
 import com.rainier.project.domain.Project;
 import com.rainier.project.repository.ProjectRepository;
 import com.rainier.user.domain.User;
 import com.rainier.user.repository.UserRepository;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,15 +44,30 @@ class OpportunityControllerTest {
 
   @Autowired private MockMvc mockMvc;
   @Autowired private OpportunityRepository repo;
+  @Autowired private OpportunityArtifactRepository artifactRepo;
   @Autowired private UserRepository userRepo;
   @Autowired private ProjectRepository projectRepo;
+  @Autowired private ProductRepository productRepo;
+  @Autowired private CustomerRepository customerRepo;
   @Autowired private ObjectMapper json;
 
   @BeforeEach
   void cleanDb() {
+    artifactRepo.deleteAll();
     repo.deleteAll();
     projectRepo.deleteAll();
+    productRepo.deleteAll();
+    customerRepo.deleteAll();
     userRepo.deleteAll();
+  }
+
+  private Long seedProduct(String code) {
+    Product p = new Product();
+    p.setCode(code);
+    p.setName(code + " 产品");
+    p.setStatus("ACTIVE");
+    p.setOwnerUserId(seedUser("owner-" + code));
+    return productRepo.saveAndFlush(p).getId();
   }
 
   private Long seedUser(String loginName) {
@@ -79,11 +104,13 @@ class OpportunityControllerTest {
     ObjectNode body = json.createObjectNode();
     body.put("customerName", "X 集团");
     body.put("title", "采购系统");
+    body.put("note", "首次接触，需求待澄清");
     mockMvc
         .perform(post("/api/opportunities").contentType(MediaType.APPLICATION_JSON).content(body.toString()))
         .andExpect(status().isCreated())
         .andExpect(jsonPath("$.stage").value("LEAD"))
-        .andExpect(jsonPath("$.status").value("OPEN"));
+        .andExpect(jsonPath("$.status").value("OPEN"))
+        .andExpect(jsonPath("$.note").value("首次接触，需求待澄清"));
   }
 
   /** TC-OPP-002: unknown owner → 400. */
@@ -98,14 +125,105 @@ class OpportunityControllerTest {
         .andExpect(status().isBadRequest());
   }
 
-  /** TC-OPP-003: non-gate advance (LEAD → OPPORTUNITY). */
+  /** TC-OPP-015: create with a 产品标签 → 201; productId persisted + productName enriched. */
+  @Test
+  void create_withProduct_linksAndEnriches() throws Exception {
+    Long product = seedProduct("PRD-1");
+    ObjectNode body = json.createObjectNode();
+    body.put("customerName", "X 集团");
+    body.put("title", "采购系统");
+    body.put("productId", product);
+    mockMvc
+        .perform(post("/api/opportunities").contentType(MediaType.APPLICATION_JSON).content(body.toString()))
+        .andExpect(status().isCreated())
+        .andExpect(jsonPath("$.productId").value(product))
+        .andExpect(jsonPath("$.productName").value("PRD-1 产品"));
+  }
+
+  /** TC-OPP-016: create with an unknown 产品 → 400. */
+  @Test
+  void create_unknownProduct_returns400() throws Exception {
+    ObjectNode body = json.createObjectNode();
+    body.put("customerName", "X");
+    body.put("title", "y");
+    body.put("productId", 999999L);
+    mockMvc
+        .perform(post("/api/opportunities").contentType(MediaType.APPLICATION_JSON).content(body.toString()))
+        .andExpect(status().isBadRequest());
+  }
+
+  /** TC-OPP-017: create选择已有客户 → links customerId + adopts its name. */
+  @Test
+  void create_withExistingCustomer_links() throws Exception {
+    Customer c = new Customer();
+    c.setName("中信集团");
+    Long cid = customerRepo.saveAndFlush(c).getId();
+    ObjectNode body = json.createObjectNode();
+    body.put("customerName", "随便写的名"); // ignored — entity name is authoritative
+    body.put("title", "采购系统");
+    body.put("customerId", cid);
+    mockMvc
+        .perform(post("/api/opportunities").contentType(MediaType.APPLICATION_JSON).content(body.toString()))
+        .andExpect(status().isCreated())
+        .andExpect(jsonPath("$.customerId").value(cid))
+        .andExpect(jsonPath("$.customerName").value("中信集团"));
+  }
+
+  /** TC-OPP-019: update edits note + links an existing customer (详情 再编辑). */
+  @Test
+  void update_editsNoteAndLinksCustomer() throws Exception {
+    Long id = seedOpp(OpportunityStage.OPPORTUNITY, OpportunityStatus.OPEN);
+    Customer c = new Customer();
+    c.setName("华峰制造");
+    Long cid = customerRepo.saveAndFlush(c).getId();
+    ObjectNode body = json.createObjectNode();
+    body.put("customerName", "随便");
+    body.put("title", "采购系统 V2");
+    body.put("note", "补充：预算已确认");
+    body.put("customerId", cid);
+    mockMvc
+        .perform(
+            put("/api/opportunities/" + id)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(body.toString()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.title").value("采购系统 V2"))
+        .andExpect(jsonPath("$.note").value("补充：预算已确认"))
+        .andExpect(jsonPath("$.customerId").value(cid))
+        .andExpect(jsonPath("$.customerName").value("华峰制造"));
+  }
+
+  /** TC-OPP-018: create填新客户名(无 customerId) → 自动新建客户 + 链 customerId. */
+  @Test
+  void create_withNewCustomerName_autoCreates() throws Exception {
+    ObjectNode body = json.createObjectNode();
+    body.put("customerName", "新世界客户");
+    body.put("title", "采购系统");
+    mockMvc
+        .perform(post("/api/opportunities").contentType(MediaType.APPLICATION_JSON).content(body.toString()))
+        .andExpect(status().isCreated())
+        .andExpect(jsonPath("$.customerName").value("新世界客户"))
+        .andExpect(jsonPath("$.customerId").isNumber());
+    assertEquals(1, customerRepo.findAll().size());
+    assertEquals("新世界客户", customerRepo.findAll().get(0).getName());
+  }
+
+  /** TC-OPP-003: non-gate advance (LEAD → OPPORTUNITY) — v0.0.45 requires 《商机调研报告》. */
   @Test
   void advance_nonGate() throws Exception {
     Long id = seedOpp(OpportunityStage.LEAD, OpportunityStatus.OPEN);
+    ObjectNode body = json.createObjectNode();
+    body.set("artifact", json.createObjectNode().put("title", "调研").put("content", "客户背景…"));
     mockMvc
-        .perform(post("/api/opportunities/" + id + "/advance"))
+        .perform(
+            post("/api/opportunities/" + id + "/advance")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(body.toString()))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.stage").value("OPPORTUNITY"));
+    List<OpportunityArtifact> arts = artifactRepo.findByOpportunityIdOrderByIdDesc(id);
+    assertEquals(1, arts.size());
+    assertEquals(ArtifactType.RESEARCH_REPORT, arts.get(0).getType());
   }
 
   /** TC-OPP-004: gate advance without decision → 400. */
@@ -117,12 +235,13 @@ class OpportunityControllerTest {
         .andExpect(status().isBadRequest());
   }
 
-  /** TC-OPP-005: gate PASS (OPPORTUNITY → POC). */
+  /** TC-OPP-005: gate PASS (OPPORTUNITY → POC) — v0.0.45 requires 《决策评审纪要》. */
   @Test
   void advance_gatePass() throws Exception {
     Long id = seedOpp(OpportunityStage.OPPORTUNITY, OpportunityStatus.OPEN);
     ObjectNode body = json.createObjectNode();
     body.put("decision", "PASS");
+    body.set("artifact", json.createObjectNode().put("title", "评审").put("content", "通过理由…"));
     mockMvc
         .perform(
             post("/api/opportunities/" + id + "/advance")
@@ -130,6 +249,10 @@ class OpportunityControllerTest {
                 .content(body.toString()))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.stage").value("POC"));
+    List<OpportunityArtifact> arts = artifactRepo.findByOpportunityIdOrderByIdDesc(id);
+    assertEquals(1, arts.size());
+    assertEquals(ArtifactType.DECISION_MINUTES, arts.get(0).getType());
+    assertEquals("PASS", arts.get(0).getDecision());
   }
 
   /** TC-OPP-006: gate REJECT → LOST. */

@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { StatTiles, StatusChip } from '../../components/board';
+import { Button } from '../../components/ui/Button';
+import { Drawer } from '../../components/ui/Drawer';
+import { MarkdownView } from '../../components/ui/MarkdownView';
 import {
   listOpportunities,
   OPP_GATE_STAGES,
@@ -8,6 +11,11 @@ import {
   type Opportunity,
   type OpportunityStage,
 } from '../../api/opportunity';
+import {
+  exportArtifactDocx,
+  listOpportunityArtifacts,
+  type OpportunityArtifact,
+} from '../../api/opportunityArtifact';
 
 /**
  * v0.0.44 — 商机看板 (READ-ONLY progress board). 给监控角色（待定）查看所有商机进展：售前/实施两段泳道 + 10 节点
@@ -16,6 +24,10 @@ import {
  */
 export function OpportunityBoard() {
   const [rows, setRows] = useState<Opportunity[]>([]);
+  // 产出物 read-only viewer (查看/导出 are read-only — not 流转 operations)
+  const [artifactsForId, setArtifactsForId] = useState<number | null>(null);
+  const [arts, setArts] = useState<OpportunityArtifact[]>([]);
+  const [artsLoading, setArtsLoading] = useState(false);
 
   const load = useCallback(() => {
     // size capped at 100 by PageParams; the board shows the active pipeline (most-recent first).
@@ -27,6 +39,18 @@ export function OpportunityBoard() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(() => {
+    if (artifactsForId == null) {
+      setArts([]);
+      return;
+    }
+    setArtsLoading(true);
+    listOpportunityArtifacts(artifactsForId)
+      .then(setArts)
+      .catch(() => setArts([]))
+      .finally(() => setArtsLoading(false));
+  }, [artifactsForId]);
 
   // 售前进行中 (OPEN) + 实施中 (WON) 在泳道列展示；丢单 (LOST) 仅滚动进磁贴。
   const active = rows.filter((r) => r.status !== 'LOST');
@@ -113,6 +137,24 @@ export function OpportunityBoard() {
                           {r.amount != null ? `¥${r.amount} · ` : ''}
                           {r.pmName ?? r.commercialOwnerName ?? '—'}
                         </div>
+                        {r.productName ? (
+                          <div
+                            style={{ fontSize: 11, color: 'var(--rainier-color-text-2)', marginTop: 2 }}
+                            data-testid={`opp-product-${r.id}`}
+                          >
+                            🏷 {r.productName}
+                          </div>
+                        ) : null}
+                        <div style={{ marginTop: 4 }}>
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            onClick={() => setArtifactsForId(r.id)}
+                            data-testid={`opp-artifacts-${r.id}`}
+                          >
+                            产出物
+                          </Button>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -122,6 +164,54 @@ export function OpportunityBoard() {
           </div>
         ))}
       </div>
+
+      {/* 产出物 read-only viewer + Word 导出 (查看/导出 are read-only, not 流转 operations) */}
+      <Drawer open={artifactsForId != null} title="产出物" onClose={() => setArtifactsForId(null)}>
+        {artsLoading ? (
+          <div style={{ color: 'var(--rainier-color-text-2)' }}>加载中…</div>
+        ) : arts.length === 0 ? (
+          <div data-testid="opp-artifacts-empty" style={{ color: 'var(--rainier-color-text-2)' }}>
+            暂无产出物
+          </div>
+        ) : (
+          arts.map((a) => (
+            <div
+              key={a.id}
+              data-testid={`opp-artifact-${a.id}`}
+              style={{
+                border: '1px solid var(--rainier-border)',
+                borderRadius: 6,
+                padding: '8px 10px',
+                marginBottom: 8,
+              }}
+            >
+              <div style={{ fontWeight: 600, fontSize: 13 }}>
+                {a.typeLabel}
+                {a.title && a.title !== a.typeLabel ? ` · ${a.title}` : ''}
+              </div>
+              <div style={{ fontSize: 12, color: 'var(--rainier-color-text-2)', marginBottom: 4 }}>
+                {a.stageFrom ?? '—'}
+                {a.decision ? ` · ${a.decision}` : ''} · {a.author ?? '—'}
+              </div>
+              {a.content ? (
+                <div style={{ marginBottom: 6 }}>
+                  <MarkdownView content={a.content} testId={`opp-artifact-md-${a.id}`} />
+                </div>
+              ) : null}
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() =>
+                  void exportArtifactDocx(a.opportunityId, a.id, `${a.typeLabel}-${a.id}.docx`)
+                }
+                data-testid={`opp-export-${a.id}`}
+              >
+                导出 Word
+              </Button>
+            </div>
+          ))
+        )}
+      </Drawer>
     </div>
   );
 }

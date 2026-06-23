@@ -1011,3 +1011,54 @@ EmptyState。「通过/打回」按钮 SHALL 调 `POST /api/stories/{id}/review`
 
 - **WHEN** 检查 `isAdminPath('/crm/opportunities')`、`isAdminPath('/crm/presale-flow')`、`isAdminPath('/crm/delivery-flow')`
 - **THEN** SHALL 全部返回 false
+
+## MODIFIED / ADDED Requirements (v0.0.45 gate-artifacts)
+
+> 合并自 change `2026-06-23-gate-artifacts`（Phase 6）。完整 fold-in（详情默认只读+编辑切换 / 富文本预览 MarkdownView /
+> 添加产出物 / 推进时补充 / 链接类无标题·多份 / 客户管理页）记录见 `archive/2026-06-23-gate-artifacts/test-report.md`。
+
+### Requirement: 「售前流转」产出物表单
+
+> v0.0.45 增量：要求产出物的转换，操作按钮先弹产出物表单，提交即流转。
+
+「售前流转」中，对来源阶段在 `OPP_TRANSITION_ARTIFACT` 内的行：线索行「推进」SHALL 弹《商机调研报告》表单（标题+正文），
+商机行「通过」/「否决」SHALL 弹《决策评审纪要》表单（标题+正文，记录对应 decision）；提交 SHALL 调
+`advanceOpportunity(id, decision?, note?, artifact)` 即「建产出物+流转」；标题/正文空 SHALL 表单报错且不提交。多产出物门禁
+（推介POC→投标）SHALL 弹「补充产出物并推进」表单：链接类可多份且无需标题、报告类填正文（标题可空），提交即逐条建缺失产出物后推进。
+
+#### Scenario: 线索推进弹报告表单
+
+- **GIVEN** 售前流转有一条 LEAD 商机
+- **WHEN** 用户点该行「推进」并填《商机调研报告》标题+正文后提交
+- **THEN** SHALL 调 `advanceOpportunity(id, undefined, …, {title,content})`
+
+#### Scenario: 商机通过弹纪要表单
+
+- **GIVEN** 售前流转有一条 OPPORTUNITY 商机
+- **WHEN** 用户点该行「通过」并填《决策评审纪要》后提交
+- **THEN** SHALL 调 `advanceOpportunity(id, 'PASS', …, {title,content})`
+
+### Requirement: 「商机看板」产出物查看 + 导出 Word
+
+「商机看板」（只读）SHALL 为每个商机提供「产出物」入口，打开只读抽屉列出该商机产出物（消费
+`GET /api/opportunities/{id}/artifacts`），每条提供「导出 Word」（带鉴权拉取 `.../export` 的 .docx 并下载）。看板 SHALL
+仍不提供任何**流转**操作控件（无新建/推进/通过/否决）。
+
+#### Scenario: 看板查看产出物并导出
+
+- **GIVEN** 某商机有产出物
+- **WHEN** 用户在商机看板点该商机「产出物」
+- **THEN** SHALL 打开抽屉列出产出物
+- **AND** 每条 SHALL 提供「导出 Word」入口；看板 SHALL NOT 渲染流转操作按钮（新建/推进/通过/否决）
+
+### Requirement: 客户管理页（all-users）
+
+> v0.0.45 fold-in：客户实体（见 [[customer]]）配套管理页 + 导航。
+
+前端 SHALL 在「客户」导航组新增「客户管理」→`/crm/customers`（CRUD 页，消费 `/api/customers`），导航组由 4 项扩为 5 项；
+`AppRoutes` SHALL 注册 `/crm/customers`。
+
+#### Scenario: 客户管理为 all-users
+
+- **WHEN** 检查 `isAdminPath('/crm/customers')`
+- **THEN** SHALL 返回 false
