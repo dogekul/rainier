@@ -27,6 +27,7 @@ public class OpportunityDetail {
   private String productName;
   private Long customerId;
   private String gateDecidedBy;
+  private Instant stageEnteredAt;
   private Instant createTime;
   private Instant updateTime;
 
@@ -47,6 +48,7 @@ public class OpportunityDetail {
     d.productId = o.getProductId();
     d.customerId = o.getCustomerId();
     d.gateDecidedBy = o.getGateDecidedBy();
+    d.stageEnteredAt = o.getStageEnteredAt();
     d.createTime = o.getCreateTime();
     d.updateTime = o.getUpdateTime();
     return d;
@@ -150,6 +152,10 @@ public class OpportunityDetail {
 
   public String getGateDecidedBy() {
     return gateDecidedBy;
+  }
+
+  public Instant getStageEnteredAt() {
+    return stageEnteredAt;
   }
 
   public Instant getCreateTime() {

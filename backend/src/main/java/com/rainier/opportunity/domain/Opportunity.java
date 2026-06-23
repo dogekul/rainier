@@ -2,6 +2,7 @@
 package com.rainier.opportunity.domain;
 
 import com.rainier.common.persistence.BaseEntity;
+import java.time.Instant;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Table;
@@ -67,6 +68,10 @@ public class Opportunity extends BaseEntity {
   /** Who recorded the most recent gate decision (商机/投标/合同/立项). */
   @Column(name = "gate_decided_by", length = 32)
   private String gateDecidedBy;
+
+  /** v0.0.47 — 进入当前阶段的时刻（停留时长预警的基础）：create 设为当下，advance 阶段变更时刷新。 */
+  @Column(name = "stage_entered_at")
+  private Instant stageEnteredAt;
 
   public String getCustomerName() {
     return customerName;
@@ -178,5 +183,13 @@ public class Opportunity extends BaseEntity {
 
   public void setGateDecidedBy(String gateDecidedBy) {
     this.gateDecidedBy = gateDecidedBy;
+  }
+
+  public Instant getStageEnteredAt() {
+    return stageEnteredAt;
+  }
+
+  public void setStageEnteredAt(Instant stageEnteredAt) {
+    this.stageEnteredAt = stageEnteredAt;
   }
 }

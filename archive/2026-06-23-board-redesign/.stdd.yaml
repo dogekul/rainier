@@ -1,0 +1,40 @@
+change:
+  id: 2026-06-23-board-redesign
+  title: v0.0.47-board-redesign — 商机看板改版（泳道带/漏斗/过滤/列表/停留预警 + stageEnteredAt）
+  baseline: {tag: v0.0.46-contract-artifacts, commit: bfe3224}
+  type: feature
+  source: "用户：商机看板布局不友好；全做 P0+P1+P2（含后端 stageEnteredAt 停留预警），跑到 Gate 3 验收"
+
+phase:
+  current: archived
+  understand:
+    status: completed
+    confirmed_at: '2026-06-23'   # 用户「全部一起干，把P2做完，直接干到phase 5等我验收」
+    gate1_decisions:
+      scope: P0+P1+P2 全量（含 P2 后端 stageEnteredAt）
+      mode: long_range full_auto，停在 Gate 3 验收
+  spec: {status: completed, gate_2: auto_proceed}
+  slice: {status: completed}
+  build: {status: completed}
+  verify:
+    status: completed
+    artifact: test-report.md
+    metrics: {backend: 515/515 (temurin-8), frontend: 245/245, new_tests_backend: 4, new_tests_frontend: 13, e2e: green (docker real-mysql; stageEnteredAt create/advance/reject + backfill 7/7 + bundle markers), review: "4 维度 + 对抗式 verify; 13 raw -> 确认 10 (C:0 H:0 M:4 L:6) 全修 + 证伪 3", tables: 25, new_column: rainier_opportunity.stage_entered_at, business_data: intact}
+    confirmed_at: '2026-06-23'   # Gate 3 用户「可以 进入P6」
+  deliver: {status: completed, archived_to: archive/2026-06-23-board-redesign, tag: v0.0.47-board-redesign, pushed: false}
+
+long_range:
+  enabled: true
+  mode: full_auto
+  pre_auth: {git_ops: allow_up_to_commit_and_tag, gate_2: auto_proceed, gate_3: require_user_confirmation}
+  user_directive: '全部一起干，把P2做完，直接干到phase 5等我验收 (stop at Gate 3)'
+
+scope:
+  type: feature
+  capabilities_modified: [opportunity, frontend-scaffold]
+  capabilities_new: []
+  new_tables: 0
+  new_columns: [rainier_opportunity.stage_entered_at]
+  new_deps: []
+  new_apis: []   # 复用 GET /opportunities + /{id}/artifacts
+  new_bootstrap: [OpportunityStageEnteredAtBackfill]

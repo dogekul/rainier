@@ -3,6 +3,9 @@ package com.rainier.opportunity.controller;
 
 import static org.hamcrest.Matchers.everyItem;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -11,6 +14,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.rainier.opportunity.bootstrap.OpportunityStageEnteredAtBackfill;
 import com.rainier.opportunity.domain.ArtifactType;
 import com.rainier.opportunity.domain.Opportunity;
 import com.rainier.opportunity.domain.OpportunityArtifact;
@@ -26,7 +30,10 @@ import com.rainier.project.domain.Project;
 import com.rainier.project.repository.ProjectRepository;
 import com.rainier.user.domain.User;
 import com.rainier.user.repository.UserRepository;
+import java.time.Instant;
 import java.util.List;
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -50,6 +57,8 @@ class OpportunityControllerTest {
   @Autowired private ProductRepository productRepo;
   @Autowired private CustomerRepository customerRepo;
   @Autowired private ObjectMapper json;
+  @Autowired private OpportunityStageEnteredAtBackfill stageEnteredAtBackfill;
+  @PersistenceContext private EntityManager em;
 
   @BeforeEach
   void cleanDb() {
@@ -220,6 +229,99 @@ class OpportunityControllerTest {
         .andExpect(jsonPath("$.customerId").isNumber());
     assertEquals(1, customerRepo.findAll().size());
     assertEquals("新世界客户", customerRepo.findAll().get(0).getName());
+  }
+
+  /** TC-OSEA-01: create records stageEnteredAt (停留计时起点). */
+  @Test
+  void create_recordsStageEnteredAt() throws Exception {
+    ObjectNode body = json.createObjectNode();
+    body.put("customerName", "X 集团");
+    body.put("title", "采购系统");
+    mockMvc
+        .perform(post("/api/opportunities").contentType(MediaType.APPLICATION_JSON).content(body.toString()))
+        .andExpect(status().isCreated())
+        .andExpect(jsonPath("$.stageEnteredAt").isNotEmpty());
+    List<Opportunity> all = repo.findAll();
+    assertEquals(1, all.size());
+    assertNotNull(all.get(0).getStageEnteredAt());
+  }
+
+  /** TC-OSEA-02: a stage-advancing PASS refreshes stageEnteredAt forward (计时归零). */
+  @Test
+  void advance_refreshesStageEnteredAt() throws Exception {
+    Long id = seedOpp(OpportunityStage.SURVEY, OpportunityStatus.WON); // 非关口、无产出物门禁
+    Instant t0 = Instant.now().minusSeconds(3600);
+    Opportunity seeded = repo.findById(id).get();
+    seeded.setStageEnteredAt(t0);
+    repo.saveAndFlush(seeded);
+    mockMvc
+        .perform(
+            post("/api/opportunities/" + id + "/advance")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.stage").value("REQUIREMENT"));
+    em.clear();
+    Opportunity after = repo.findById(id).get();
+    assertNotNull(after.getStageEnteredAt());
+    assertTrue(after.getStageEnteredAt().isAfter(t0), "advance should refresh stageEnteredAt forward");
+  }
+
+  /** TC-OSEA-03: a gate REJECT (stage unchanged → 丢单) does NOT refresh stageEnteredAt. */
+  @Test
+  void reject_doesNotRefreshStageEnteredAt() throws Exception {
+    Long id = seedOpp(OpportunityStage.BIDDING, OpportunityStatus.OPEN);
+    Instant t0 = Instant.now().minusSeconds(3600);
+    Opportunity seeded = repo.findById(id).get();
+    seeded.setStageEnteredAt(t0);
+    repo.saveAndFlush(seeded);
+    ObjectNode body = json.createObjectNode();
+    body.put("decision", "REJECT");
+    mockMvc
+        .perform(
+            post("/api/opportunities/" + id + "/advance")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(body.toString()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.status").value("LOST"));
+    em.clear();
+    Opportunity after = repo.findById(id).get();
+    // unchanged ≈ t0 (an hour ago); a refresh would land near now → assert it stays well in the past
+    assertTrue(
+        after.getStageEnteredAt().isBefore(Instant.now().minusSeconds(60)),
+        "REJECT (no stage change) must not refresh stageEnteredAt");
+  }
+
+  /** TC-OSEA-04: backfill fills NULL stage_entered_at FROM update_time, only NULLs, without touching business fields. */
+  @Test
+  void backfill_fillsNullStageEnteredAtFromUpdateTime() {
+    Long legacyId = seedOpp(OpportunityStage.POC, OpportunityStatus.OPEN); // service-bypassed → stage_entered_at NULL
+    // a row that already has a value must NOT be touched (WHERE stage_entered_at IS NULL guard)
+    Long presetId = seedOpp(OpportunityStage.SURVEY, OpportunityStatus.WON);
+    Instant sentinel = Instant.parse("2020-01-01T00:00:00Z");
+    Opportunity preset = repo.findById(presetId).get();
+    preset.setStageEnteredAt(sentinel);
+    repo.saveAndFlush(preset);
+    em.clear();
+    assertNull(repo.findById(legacyId).get().getStageEnteredAt(), "legacy precondition: NULL");
+    Instant legacyUpd = repo.findById(legacyId).get().getUpdateTime();
+
+    stageEnteredAtBackfill.run();
+    em.clear();
+
+    Opportunity legacy = repo.findById(legacyId).get();
+    assertNotNull(legacy.getStageEnteredAt(), "backfill should fill the NULL");
+    assertEquals(
+        legacyUpd.toEpochMilli(),
+        legacy.getStageEnteredAt().toEpochMilli(),
+        "filled from update_time (not create_time / now)");
+    assertEquals(OpportunityStage.POC, legacy.getStage()); // business field untouched
+    assertEquals("X 集团", legacy.getCustomerName());
+    // only-NULL guard: the already-populated row keeps its sentinel value
+    assertEquals(
+        sentinel.toEpochMilli(),
+        repo.findById(presetId).get().getStageEnteredAt().toEpochMilli(),
+        "WHERE stage_entered_at IS NULL — existing value must not be clobbered");
   }
 
   /** TC-OPP-003: non-gate advance (LEAD → OPPORTUNITY) — v0.0.45 requires 《商机调研报告》. */

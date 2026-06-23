@@ -25,6 +25,7 @@ import com.rainier.product.repository.ProductRepository;
 import com.rainier.project.repository.ProjectRepository;
 import com.rainier.user.domain.User;
 import com.rainier.user.repository.UserRepository;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -85,6 +86,7 @@ public class OpportunityService {
     o.setAmount(req.getAmount());
     o.setStage(OpportunityStage.LEAD);
     o.setStatus(OpportunityStatus.OPEN);
+    o.setStageEnteredAt(Instant.now()); // v0.0.47 — 创建即进入 LEAD
     o.setCommercialOwnerUserId(req.getCommercialOwnerUserId());
     o.setSolutionOwnerUserId(req.getSolutionOwnerUserId());
     o.setPmUserId(req.getPmUserId());
@@ -193,6 +195,7 @@ public class OpportunityService {
     }
     // PASS (or a non-gate stage): advance to the next node.
     o.setStage(OpportunityStage.STAGE_ORDER.get(idx + 1));
+    o.setStageEnteredAt(Instant.now()); // v0.0.47 — 阶段变更刷新「进入阶段时间」(停留计时归零)
     if (OpportunityStage.CONTRACT.equals(stage)) {
       o.setStatus(OpportunityStatus.WON); // 合同签订 PASS → 赢单，进入实施
     }

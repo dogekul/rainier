@@ -96,6 +96,8 @@ export interface Opportunity {
   productName?: string | null;
   customerId?: number | null;
   gateDecidedBy?: string | null;
+  /** v0.0.47 — 进入当前阶段的时刻（停留时长预警）。 */
+  stageEnteredAt?: string | null;
   createTime?: string;
 }
 
