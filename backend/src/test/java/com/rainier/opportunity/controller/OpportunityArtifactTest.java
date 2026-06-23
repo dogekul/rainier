@@ -1,7 +1,9 @@
 /* (C) 2026 Rainier — internal use only. */
 package com.rainier.opportunity.controller;
 
+import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -271,6 +273,202 @@ class OpportunityArtifactTest {
         .andExpect(status().isCreated())
         .andExpect(jsonPath("$.title").value("讲解材料"))
         .andExpect(jsonPath("$.link").value("https://x/ppt"));
+  }
+
+  // ---- v0.0.46 投标/合同 门禁 (TC-CAR-001..009) ----
+
+  /** POST a link-kind artifact with NO title (链接类无需标题). */
+  private void postLink(Long id, String type, String link) throws Exception {
+    ObjectNode body = json.createObjectNode();
+    body.put("type", type);
+    body.put("link", link);
+    mockMvc
+        .perform(
+            post("/api/opportunities/" + id + "/artifacts")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(body.toString()))
+        .andExpect(status().isCreated());
+  }
+
+  private void seedContractArtifacts(Long id) throws Exception {
+    postLink(id, ArtifactType.BID_WINNING_NOTICE, "https://x/notice");
+    postLink(id, ArtifactType.CONTRACT_DRAFT, "https://x/contract");
+    postArtifact(id, ArtifactType.CONTRACT_REVIEW_MINUTES, "评审纪要", "评审通过，建议签约", null);
+    postLink(id, ArtifactType.REVIEW_EMAIL_ARCHIVE, "https://x/email.eml");
+    postLink(id, ArtifactType.SIGNED_CONTRACT, "https://x/signed.pdf");
+  }
+
+  private void advanceJson(Long id, String decision, int expected) throws Exception {
+    ObjectNode body = json.createObjectNode();
+    body.put("decision", decision);
+    advance(id, body, expected);
+  }
+
+  /** TC-CAR-001: 投标 PASS 缺《投标文件》→ 400，阶段不变。 */
+  @Test
+  void biddingPass_missingBidDoc_returns400() throws Exception {
+    Long id = seedOpp(OpportunityStage.BIDDING, OpportunityStatus.OPEN);
+    advanceJson(id, "PASS", 400);
+    assertEquals(OpportunityStage.BIDDING, repo.findById(id).get().getStage());
+  }
+
+  /** TC-CAR-002: 投标提交投标文件后 PASS → 200/CONTRACT。 */
+  @Test
+  void biddingPass_withBidDoc_advances() throws Exception {
+    Long id = seedOpp(OpportunityStage.BIDDING, OpportunityStatus.OPEN);
+    postLink(id, ArtifactType.BID_DOCUMENT, "https://x/bid");
+    ObjectNode body = json.createObjectNode();
+    body.put("decision", "PASS");
+    mockMvc
+        .perform(
+            post("/api/opportunities/" + id + "/advance")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(body.toString()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.stage").value("CONTRACT"));
+  }
+
+  /** TC-CAR-003: 投标文件可多份（无标题）→ 全落库 + 推进。 */
+  @Test
+  void biddingPass_multipleBidDocs_advances() throws Exception {
+    Long id = seedOpp(OpportunityStage.BIDDING, OpportunityStatus.OPEN);
+    postLink(id, ArtifactType.BID_DOCUMENT, "https://x/bid1");
+    postLink(id, ArtifactType.BID_DOCUMENT, "https://x/bid2");
+    assertEquals(2, artifactRepo.findByOpportunityIdOrderByIdDesc(id).size());
+    ObjectNode body = json.createObjectNode();
+    body.put("decision", "PASS");
+    mockMvc
+        .perform(
+            post("/api/opportunities/" + id + "/advance")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(body.toString()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.stage").value("CONTRACT"));
+  }
+
+  /** TC-CAR-004: 合同 PASS 缺件 → 400 列出缺失《类型名》，阶段不变。 */
+  @Test
+  void contractPass_missingArtifacts_returns400ListsMissing() throws Exception {
+    Long id = seedOpp(OpportunityStage.CONTRACT, OpportunityStatus.OPEN);
+    postLink(id, ArtifactType.BID_WINNING_NOTICE, "https://x/notice");
+    postLink(id, ArtifactType.CONTRACT_DRAFT, "https://x/contract");
+    ObjectNode body = json.createObjectNode();
+    body.put("decision", "PASS");
+    mockMvc
+        .perform(
+            post("/api/opportunities/" + id + "/advance")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(body.toString()))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.message", containsString("评审会议纪要")))
+        .andExpect(jsonPath("$.message", containsString("邮件归档")))
+        .andExpect(jsonPath("$.message", containsString("已盖章合同")));
+    assertEquals(OpportunityStage.CONTRACT, repo.findById(id).get().getStage());
+  }
+
+  /** TC-CAR-005: 合同五件齐 PASS → 200/INITIATION + status=WON。 */
+  @Test
+  void contractPass_allArtifacts_wonAndInitiation() throws Exception {
+    Long id = seedOpp(OpportunityStage.CONTRACT, OpportunityStatus.OPEN);
+    seedContractArtifacts(id);
+    ObjectNode body = json.createObjectNode();
+    body.put("decision", "PASS");
+    mockMvc
+        .perform(
+            post("/api/opportunities/" + id + "/advance")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(body.toString()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.stage").value("INITIATION"))
+        .andExpect(jsonPath("$.status").value("WON"));
+  }
+
+  /** TC-CAR-006: 投标 REJECT 无产出物 → 200/LOST（门禁仅 PASS 强制）。 */
+  @Test
+  void biddingReject_noArtifacts_lost() throws Exception {
+    Long id = seedOpp(OpportunityStage.BIDDING, OpportunityStatus.OPEN);
+    ObjectNode body = json.createObjectNode();
+    body.put("decision", "REJECT");
+    mockMvc
+        .perform(
+            post("/api/opportunities/" + id + "/advance")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(body.toString()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.status").value("LOST"));
+  }
+
+  /** TC-CAR-007: 合同 REJECT 无产出物 → 200/LOST。 */
+  @Test
+  void contractReject_noArtifacts_lost() throws Exception {
+    Long id = seedOpp(OpportunityStage.CONTRACT, OpportunityStatus.OPEN);
+    ObjectNode body = json.createObjectNode();
+    body.put("decision", "REJECT");
+    mockMvc
+        .perform(
+            post("/api/opportunities/" + id + "/advance")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(body.toString()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.status").value("LOST"));
+  }
+
+  /** TC-CAR-008: 投标 PASS 带内联 artifact → 仍 400（链接类不内联创建），无产出物落库。 */
+  @Test
+  void biddingPass_inlineArtifact_stillRequiresBidDoc() throws Exception {
+    Long id = seedOpp(OpportunityStage.BIDDING, OpportunityStatus.OPEN);
+    ObjectNode body = json.createObjectNode();
+    body.put("decision", "PASS");
+    body.set("artifact", artifact("投标", "正文内容"));
+    advance(id, body, 400);
+    assertEquals(OpportunityStage.BIDDING, repo.findById(id).get().getStage());
+    assertTrue(artifactRepo.findByOpportunityIdOrderByIdDesc(id).isEmpty());
+  }
+
+  /** TC-CAR-009: 新类型注册 — label + kind（5 链接类 + 评审会议纪要报告类）。 */
+  @Test
+  void newArtifactTypes_labelsAndKinds() {
+    assertTrue(ArtifactType.ALL.contains(ArtifactType.BID_DOCUMENT));
+    assertTrue(ArtifactType.ALL.contains(ArtifactType.SIGNED_CONTRACT));
+    assertEquals("投标文件", ArtifactType.label(ArtifactType.BID_DOCUMENT));
+    assertEquals("中标公示", ArtifactType.label(ArtifactType.BID_WINNING_NOTICE));
+    assertEquals("已盖章合同", ArtifactType.label(ArtifactType.SIGNED_CONTRACT));
+    assertTrue(ArtifactType.isLink(ArtifactType.BID_DOCUMENT));
+    assertTrue(ArtifactType.isLink(ArtifactType.BID_WINNING_NOTICE));
+    assertTrue(ArtifactType.isLink(ArtifactType.CONTRACT_DRAFT));
+    assertTrue(ArtifactType.isLink(ArtifactType.REVIEW_EMAIL_ARCHIVE));
+    assertTrue(ArtifactType.isLink(ArtifactType.SIGNED_CONTRACT));
+    assertFalse(ArtifactType.isLink(ArtifactType.CONTRACT_REVIEW_MINUTES));
+  }
+
+  /** TC-CAR-010: 合同缺《中标公示》《合同》→ 400 且列出该两类（钉死其必需性，对称于 TC-CAR-004）。 */
+  @Test
+  void contractPass_missingNoticeAndDraft_returns400ListsThem() throws Exception {
+    Long id = seedOpp(OpportunityStage.CONTRACT, OpportunityStatus.OPEN);
+    postArtifact(id, ArtifactType.CONTRACT_REVIEW_MINUTES, "评审纪要", "评审通过", null);
+    postLink(id, ArtifactType.REVIEW_EMAIL_ARCHIVE, "https://x/email.eml");
+    postLink(id, ArtifactType.SIGNED_CONTRACT, "https://x/signed.pdf");
+    ObjectNode body = json.createObjectNode();
+    body.put("decision", "PASS");
+    mockMvc
+        .perform(
+            post("/api/opportunities/" + id + "/advance")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(body.toString()))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.message", containsString("中标公示")))
+        .andExpect(jsonPath("$.message", containsString("《合同》")));
+    assertEquals(OpportunityStage.CONTRACT, repo.findById(id).get().getStage());
+  }
+
+  /** TC-CAR-011: 商机否决缺《决策评审纪要》→ 400（requiredOnReject(OPPORTUNITY)=true 的强制方向）。 */
+  @Test
+  void opportunityReject_missingMinutes_returns400() throws Exception {
+    Long id = seedOpp(OpportunityStage.OPPORTUNITY, OpportunityStatus.OPEN);
+    ObjectNode body = json.createObjectNode();
+    body.put("decision", "REJECT");
+    advance(id, body, 400);
+    assertEquals(OpportunityStage.OPPORTUNITY, repo.findById(id).get().getStage());
   }
 
   /** TC-OAR-007: 产出物标题/正文空 → 400 (no advance). */

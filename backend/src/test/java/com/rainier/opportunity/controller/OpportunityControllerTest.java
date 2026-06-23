@@ -98,6 +98,20 @@ class OpportunityControllerTest {
     return repo.saveAndFlush(o).getId();
   }
 
+  /** Seed an artifact directly (kind-aware: link types → link, else content). v0.0.46 gate prep. */
+  private void seedArtifact(Long oppId, String type, String linkOrContent) {
+    OpportunityArtifact a = new OpportunityArtifact();
+    a.setOpportunityId(oppId);
+    a.setType(type);
+    a.setTitle(ArtifactType.label(type));
+    if (ArtifactType.isLink(type)) {
+      a.setLink(linkOrContent);
+    } else {
+      a.setContent(linkOrContent);
+    }
+    artifactRepo.saveAndFlush(a);
+  }
+
   /** TC-OPP-001: minimal create → 201, LEAD/OPEN. */
   @Test
   void create_returns201LeadOpen() throws Exception {
@@ -271,10 +285,15 @@ class OpportunityControllerTest {
         .andExpect(jsonPath("$.status").value("LOST"));
   }
 
-  /** TC-OPP-007: CONTRACT PASS → WON + 进入实施 (stage=INITIATION 立项). */
+  /** TC-OPP-007: CONTRACT PASS → WON + 进入实施 (stage=INITIATION 立项). v0.0.46: 需先备齐合同 5 件产出物。 */
   @Test
   void advance_contractPass_wonAndEntersDelivery() throws Exception {
     Long id = seedOpp(OpportunityStage.CONTRACT, OpportunityStatus.OPEN);
+    seedArtifact(id, ArtifactType.BID_WINNING_NOTICE, "https://x/notice");
+    seedArtifact(id, ArtifactType.CONTRACT_DRAFT, "https://x/contract");
+    seedArtifact(id, ArtifactType.CONTRACT_REVIEW_MINUTES, "评审纪要");
+    seedArtifact(id, ArtifactType.REVIEW_EMAIL_ARCHIVE, "https://x/email.eml");
+    seedArtifact(id, ArtifactType.SIGNED_CONTRACT, "https://x/signed.pdf");
     ObjectNode body = json.createObjectNode();
     body.put("decision", "PASS");
     mockMvc

@@ -164,6 +164,94 @@ describe('PresaleFlow (售前流转 operations)', () => {
     );
   });
 
+  /** TC-FCAR-01: BIDDING「通过」opens the supplement form for《投标文件》(link, multi). */
+  it('BIDDING 通过 opens the supplement form for 投标文件 (TC-FCAR-01)', async () => {
+    vi.mocked(listOpportunities).mockResolvedValue(page([opp(7, 'BIDDING')]));
+    vi.mocked(listOpportunityArtifacts).mockResolvedValue([]);
+    renderPage();
+    await waitFor(() => expect(screen.getByTestId('presale-pass-7')).toBeInTheDocument());
+    fireEvent.click(screen.getByTestId('presale-pass-7'));
+    await waitFor(() => expect(screen.getByTestId('presale-supp-BID_DOCUMENT')).toBeInTheDocument());
+    // link-kind → indexed link input + 添加链接 button, no title input
+    expect(screen.getByTestId('presale-supp-link-BID_DOCUMENT-0')).toBeInTheDocument();
+    expect(screen.getByTestId('presale-supp-addlink-BID_DOCUMENT')).toBeInTheDocument();
+    expect(screen.queryByTestId('presale-supp-title-BID_DOCUMENT')).not.toBeInTheDocument();
+    expect(advanceOpportunity).not.toHaveBeenCalled();
+  });
+
+  /** TC-FCAR-02: BIDDING「否决」skips the supplement form and confirms 丢单 directly. */
+  it('BIDDING 否决 confirms 丢单 without a supplement form (TC-FCAR-02)', async () => {
+    vi.mocked(listOpportunities).mockResolvedValue(page([opp(7, 'BIDDING')]));
+    renderPage();
+    await waitFor(() => expect(screen.getByTestId('presale-reject-7')).toBeInTheDocument());
+    fireEvent.click(screen.getByTestId('presale-reject-7'));
+    // 丢单 confirm dialog appears; NO supplement form (artifacts only gate PASS)
+    await waitFor(() => expect(screen.getByText(/否决后该商机将标记为/)).toBeInTheDocument());
+    expect(screen.queryByTestId('presale-supp-BID_DOCUMENT')).not.toBeInTheDocument();
+    expect(advanceOpportunity).not.toHaveBeenCalled();
+  });
+
+  /** TC-FCAR-03: CONTRACT「通过」supplement of 5 deliverables → createArtifact×5 + advance PASS. */
+  it('CONTRACT 通过 supplements 5 deliverables then advances (TC-FCAR-03)', async () => {
+    vi.mocked(listOpportunities).mockResolvedValue(page([opp(7, 'CONTRACT')]));
+    vi.mocked(listOpportunityArtifacts).mockResolvedValue([]);
+    renderPage();
+    await waitFor(() => expect(screen.getByTestId('presale-pass-7')).toBeInTheDocument());
+    fireEvent.click(screen.getByTestId('presale-pass-7'));
+    await waitFor(() => expect(screen.getByTestId('presale-supp-save')).toBeInTheDocument());
+    fireEvent.change(screen.getByTestId('presale-supp-link-BID_WINNING_NOTICE-0'), {
+      target: { value: 'https://x/notice' },
+    });
+    fireEvent.change(screen.getByTestId('presale-supp-link-CONTRACT_DRAFT-0'), {
+      target: { value: 'https://x/contract' },
+    });
+    fireEvent.change(screen.getByTestId('presale-supp-content-CONTRACT_REVIEW_MINUTES'), {
+      target: { value: '评审通过，建议签约' },
+    });
+    fireEvent.change(screen.getByTestId('presale-supp-link-REVIEW_EMAIL_ARCHIVE-0'), {
+      target: { value: 'https://x/email.eml' },
+    });
+    fireEvent.change(screen.getByTestId('presale-supp-link-SIGNED_CONTRACT-0'), {
+      target: { value: 'https://x/signed.pdf' },
+    });
+    fireEvent.click(screen.getByTestId('presale-supp-save'));
+    await waitFor(() => expect(createOpportunityArtifact).toHaveBeenCalledTimes(5));
+    expect(createOpportunityArtifact).toHaveBeenCalledWith(
+      7,
+      expect.objectContaining({ type: 'SIGNED_CONTRACT', link: 'https://x/signed.pdf' }),
+    );
+    expect(createOpportunityArtifact).toHaveBeenCalledWith(
+      7,
+      expect.objectContaining({ type: 'CONTRACT_REVIEW_MINUTES', content: '评审通过，建议签约' }),
+    );
+    await waitFor(() =>
+      expect(advanceOpportunity).toHaveBeenCalledWith(7, 'PASS', undefined, undefined),
+    );
+  });
+
+  /** TC-FCAR-04: BIDDING「通过」when 投标文件 already present → skip supplement form, advance directly. */
+  it('BIDDING 通过 with deliverables present advances without the supplement form (TC-FCAR-04)', async () => {
+    vi.mocked(listOpportunities).mockResolvedValue(page([opp(7, 'BIDDING')]));
+    vi.mocked(listOpportunityArtifacts).mockResolvedValue([
+      {
+        id: 1,
+        opportunityId: 7,
+        type: 'BID_DOCUMENT',
+        typeLabel: '投标文件',
+        title: '投标文件',
+        link: 'https://x/bid',
+      },
+    ]);
+    renderPage();
+    await waitFor(() => expect(screen.getByTestId('presale-pass-7')).toBeInTheDocument());
+    fireEvent.click(screen.getByTestId('presale-pass-7'));
+    // already complete → no supplement form, advance called directly with PASS
+    await waitFor(() =>
+      expect(advanceOpportunity).toHaveBeenCalledWith(7, 'PASS', undefined, undefined),
+    );
+    expect(screen.queryByTestId('presale-supp-BID_DOCUMENT')).not.toBeInTheDocument();
+  });
+
   /** TC-PAR-04: 详情「添加产出物」of a link kind submits link, not content. */
   it('adds a link-kind artifact from 详情 (TC-PAR-04)', async () => {
     vi.mocked(listOpportunities).mockResolvedValue(page([opp(7, 'POC')]));

@@ -211,12 +211,19 @@ public class OpportunityService {
     if (required.isEmpty()) {
       return;
     }
+    // v0.0.46 门禁仅前进强制：关口否决（丢单）不要求前进交付物；唯商机决策《纪要》通过/否决都留痕。
+    if (OpportunityStage.GATE_STAGES.contains(stage)
+        && GateDecision.REJECT.equals(decision)
+        && !TransitionArtifactRules.requiredOnReject(stage)) {
+      return;
+    }
     Set<String> have =
         artifactRepo.findByOpportunityIdOrderByIdDesc(o.getId()).stream()
             .map(OpportunityArtifact::getType)
             .collect(Collectors.toCollection(HashSet::new));
-    // 单一产出物的转换（线索/商机）：advance 表单内联提交即建。
+    // 单一产出物的转换（线索/商机）：advance 表单内联提交即建。仅报告类内联，链接类单一规则（投标文件）走预提交。
     if (required.size() == 1
+        && !ArtifactType.isLink(required.get(0))
         && artifact != null
         && !isBlank(artifact.getTitle())
         && !isBlank(artifact.getContent())) {

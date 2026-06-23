@@ -331,8 +331,9 @@ export function PresaleFlow() {
       setArtifactReq({ id: r.id, decision, label: meta.label });
       return;
     }
+    // 多产出物门禁仅前进(PASS/非关口)强制；关口否决(REJECT)跳过补充表单直接确认丢单（镜像后端 PASS-only）。
     const required = STAGE_REQUIRED_ARTIFACTS[r.stage];
-    if (required && required.length) {
+    if (required && required.length && decision !== 'REJECT') {
       let have = new Set<string>();
       try {
         have = new Set((await listOpportunityArtifacts(r.id)).map((a) => a.type));

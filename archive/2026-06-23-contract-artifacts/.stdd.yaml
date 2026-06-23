@@ -1,0 +1,47 @@
+change:
+  id: 2026-06-23-contract-artifacts
+  title: v0.0.46-contract-artifacts — 投标→合同→立项 产出物门禁（附件先 URL 占位）
+  baseline: {tag: v0.0.45-gate-artifacts, commit: b530dd0}
+  type: feature
+  source: "用户：投标需投标文件(多url/附件)；中标后中标公示+合同；合同组织评审→评审会议纪要+邮件留痕(归档附件)；盖章合同后进入立项"
+
+phase:
+  current: archived
+  understand:
+    status: completed
+    confirmed_at: '2026-06-23'
+    gate1_decisions:
+      delivery: 新建 v0.0.46（先交付 v0.0.45，已 commit b530dd0 + tag）
+      attachment_storage: 先贴 URL 占位（后续迁移对象存储）— 本版无文件上传基建
+      email_trail: 上传归档邮件作附件（系统不发信）— 邮件归档 = 链接(URL)
+      contract_review: 仅作必需产出物（评审会议纪要 + 邮件归档），不建结构化评审实体
+    design_decisions:
+      - 6 new ArtifactType (5 link + 评审会议纪要 report)
+      - 2 rules: BIDDING->[投标文件]; CONTRACT->[中标公示,合同,评审会议纪要,邮件归档,已盖章合同]
+      - 门禁仅 PASS 强制 (gate REJECT 跳过; OPPORTUNITY 决策纪要 PASS/REJECT 都留痕 via requiredOnReject)
+      - Path A 单产出物内联创建加 !isLink 守卫 (链接类单一规则走 Path B 预提交)
+  spec: {status: completed, gate_2: auto_proceed}
+  slice: {status: completed}
+  build: {status: completed}
+  verify:
+    status: completed
+    artifact: test-report.md
+    metrics: {backend: 511/511 (temurin-8), frontend: 227/227, new_tests_backend: 11, new_tests_frontend: 4, e2e: green (docker real-mysql; BIDDING->CONTRACT->INITIATION+WON), review: "3 维度 + 对抗式 verify; 3 raw -> confirmed 2 (C:0 H:0 M:0 L:2) 全修 + refuted 1", tables: 25, business_data: intact}
+    confirmed_at: '2026-06-23'   # Gate 3 用户「通过」
+  deliver: {status: completed, archived_to: archive/2026-06-23-contract-artifacts, tag: v0.0.46-contract-artifacts, pushed: true}
+
+long_range:
+  enabled: true
+  mode: full_auto
+  pre_auth: {git_ops: allow_up_to_commit_and_tag, gate_2: auto_proceed, gate_3: require_user_confirmation}
+  user_directive: '确认，然后直接全自动到p5 (stop at Gate 3, NO push)'
+
+scope:
+  type: feature
+  capabilities_modified: [opportunity-artifact, opportunity, frontend-scaffold]
+  capabilities_new: []
+  new_tables: 0   # 附件先 URL 占位，无 file storage（表数仍 25）
+  new_columns: []
+  new_deps: []
+  new_apis: []   # 复用 POST /{id}/artifacts (link/report) + POST /advance
+  deferred: ["附件真实上传 + 对象存储迁移", "系统 SMTP 发信", "结构化合同评审实体"]

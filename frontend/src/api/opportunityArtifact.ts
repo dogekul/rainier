@@ -6,7 +6,14 @@ export type ArtifactType =
   | 'PRESENTATION_MATERIAL'
   | 'CLIENT_REQUIREMENTS'
   | 'POC_SCORE'
-  | 'GAP_ANALYSIS';
+  | 'GAP_ANALYSIS'
+  // v0.0.46 投标/合同 types (附件先 URL 占位 → 链接类，评审会议纪要为报告类):
+  | 'BID_DOCUMENT'
+  | 'BID_WINNING_NOTICE'
+  | 'CONTRACT_DRAFT'
+  | 'CONTRACT_REVIEW_MINUTES'
+  | 'REVIEW_EMAIL_ARCHIVE'
+  | 'SIGNED_CONTRACT';
 
 /** Mirrors backend ArtifactType.LABELS. */
 export const ARTIFACT_TYPE_LABELS: Record<ArtifactType, string> = {
@@ -16,10 +23,24 @@ export const ARTIFACT_TYPE_LABELS: Record<ArtifactType, string> = {
   CLIENT_REQUIREMENTS: '甲方诉求清单',
   POC_SCORE: 'POC 得分表',
   GAP_ANALYSIS: '差距分析报告',
+  BID_DOCUMENT: '投标文件',
+  BID_WINNING_NOTICE: '中标公示',
+  CONTRACT_DRAFT: '合同',
+  CONTRACT_REVIEW_MINUTES: '评审会议纪要',
+  REVIEW_EMAIL_ARCHIVE: '邮件归档',
+  SIGNED_CONTRACT: '已盖章合同',
 };
 
 /** LINK-kind types carry a URL; others carry rich-text content (mirrors backend ArtifactType.LINK_TYPES). */
-export const ARTIFACT_LINK_TYPES: ArtifactType[] = ['PRESENTATION_MATERIAL', 'CLIENT_REQUIREMENTS'];
+export const ARTIFACT_LINK_TYPES: ArtifactType[] = [
+  'PRESENTATION_MATERIAL',
+  'CLIENT_REQUIREMENTS',
+  'BID_DOCUMENT',
+  'BID_WINNING_NOTICE',
+  'CONTRACT_DRAFT',
+  'REVIEW_EMAIL_ARCHIVE',
+  'SIGNED_CONTRACT',
+];
 export function isLinkArtifact(type: string): boolean {
   return (ARTIFACT_LINK_TYPES as string[]).includes(type);
 }
@@ -27,10 +48,19 @@ export function isLinkArtifact(type: string): boolean {
 /**
  * Mirrors backend TransitionArtifactRules for MULTI-artifact stages — the types required to advance FROM
  * a stage. Single-artifact inline stages (线索/商机) live in OPP_TRANSITION_ARTIFACT instead; this drives
- * the「推进时补充」multi-doc form (推介/POC → 投标).
+ * the「推进时补充」multi-doc form (推介/POC → 投标; 投标 → 合同; 合同 → 立项). Gate stages here gate PASS only —
+ * 否决(REJECT) skips the form (see PresaleFlow.requestAdvance), mirroring backend PASS-only enforcement.
  */
 export const STAGE_REQUIRED_ARTIFACTS: Record<string, ArtifactType[]> = {
   POC: ['PRESENTATION_MATERIAL', 'CLIENT_REQUIREMENTS', 'POC_SCORE', 'GAP_ANALYSIS'],
+  BIDDING: ['BID_DOCUMENT'],
+  CONTRACT: [
+    'BID_WINNING_NOTICE',
+    'CONTRACT_DRAFT',
+    'CONTRACT_REVIEW_MINUTES',
+    'REVIEW_EMAIL_ARCHIVE',
+    'SIGNED_CONTRACT',
+  ],
 };
 
 /** Types offerable in the「添加产出物」picker. */
@@ -41,6 +71,12 @@ export const ADDABLE_ARTIFACT_TYPES: ArtifactType[] = [
   'GAP_ANALYSIS',
   'RESEARCH_REPORT',
   'DECISION_MINUTES',
+  'BID_DOCUMENT',
+  'BID_WINNING_NOTICE',
+  'CONTRACT_DRAFT',
+  'CONTRACT_REVIEW_MINUTES',
+  'REVIEW_EMAIL_ARCHIVE',
+  'SIGNED_CONTRACT',
 ];
 
 export interface OpportunityArtifact {
