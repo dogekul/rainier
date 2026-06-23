@@ -1,0 +1,42 @@
+change:
+  id: 2026-06-18-customer-flow
+  title: v0.0.44-customer-flow — Opportunity (售前 pipeline + gates + WON/LOST + 立项) + Operation (售后) + 客户看板
+  baseline: {tag: v0.0.43-ai-work-log, commit: 0666a61}
+  type: feature
+  source: "用户「客户全流程管理」流程图 (13 节点/3 环节/4 负责人/4 关口)"
+
+phase:
+  current: spec
+  understand:
+    status: completed
+    confirmed_at: '2026-06-18'
+    gate1_decisions:
+      model: multi_entity (售前 Opportunity NEW / 实施 reuse Project / 售后 Operation NEW)
+      owners: four_fixed_fields (商务/解决方案/PM/运营)
+      won: at_contract_signed (CONTRACT gate PASS -> WON); lost on any pre-sales gate REJECT
+      amount: yes (pipeline value)
+      delivery: reuse_project (B) + projectId link fields
+      gates: 商机/投标/合同 in 售前 (advance-with-decision); 立项评审 at Opportunity->Project handoff (initiate)
+  spec: {status: completed, artifacts: [design.md, "specs/opportunity", "specs/operation", "specs/frontend-scaffold", test-plan.md], gate_2: auto_proceed}
+  build: {status: completed}
+  verify:
+    status: completed
+    artifact: test-report.md
+    metrics: {backend: 488/488, frontend: 203/203, new_tests_backend: 18, new_tests_frontend: 23, e2e: green, review: "理顺轮 C:0 H:0 M:1(removed); 拆分轮 4 reviewers+verify 16->confirmed 13 (H:3 + M:10) 全处置 -> confirmed-real:0", tables: 23, business_data: intact, verify_fixes: "board size 200->100; 新建->表单抽屉; 理顺 5->10 节点 + 4 关口; 删 dead PRESALES_STAGES; 看板/流转拆分(看板只读 + 售前流转/实施流转 操作页 + 立项移交 initiate UI); 评审修复: handoff double-submit guard, 否决 ConfirmDialog(丢单确认), 空项目提示, 测试强化(stage 过滤独立断言/owner/isAdminPath/客户导航组), proposal/test-report 去陈旧"}
+    awaiting: gate_3_user_review_then_push   # NO push until user reviews (per directive)
+  deliver: {status: archived, gate_3: confirmed, tag: v0.0.44-customer-flow, pushed: true, note: "Gate 3 confirmed by 用户「先 push v0.0.44」; specs merged (opportunity NEW + operation NEW + frontend-scaffold MOD); 产出物门禁 deferred to v0.0.45"}
+
+long_range:
+  enabled: true
+  mode: full_auto
+  pre_auth: {git_ops: allow_up_to_commit_and_tag, gate_2: auto_proceed, gate_3: require_user_confirmation}
+  user_directive: '客户全流程: 1都带上/立项归实施/赢单=合同签订/加金额/实施用B/全自动到P5等审 (NO push at Gate 3)'
+
+scope:
+  type: feature
+  capabilities_new: [opportunity, operation]
+  capabilities_modified: [frontend-scaffold]
+  new_tables: 2   # rainier_opportunity + rainier_operation (21 -> 23)
+  new_columns: []
+  new_deps: []
+  new_apis: ["/api/opportunities CRUD + advance + initiate", "/api/operations CRUD + advance"]

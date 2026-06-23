@@ -273,4 +273,36 @@ describe('AppLayout Sider (TC-FES-201)', () => {
     expect(screen.getByText('系统')).toBeInTheDocument();
     expect(screen.getByTestId('appshell-nav-/sys/audit-logs')).toBeInTheDocument();
   });
+
+  /**
+   * TC-FES-CRM-NAV-001 (v0.0.44): the 客户 group has 4 all-users items in order
+   * 商机看板 → 售前流转 → 实施流转 → 运营看板.
+   */
+  it('renders the 客户 nav group with 4 items in order (TC-FES-CRM-NAV-001)', () => {
+    renderShell();
+    expect(screen.getByText('客户')).toBeInTheDocument();
+    expect(screen.getByTestId('appshell-nav-/crm/opportunities')).toHaveAttribute(
+      'href',
+      '/crm/opportunities',
+    );
+    expect(screen.getByTestId('appshell-nav-/crm/presale-flow')).toHaveAttribute(
+      'href',
+      '/crm/presale-flow',
+    );
+    expect(screen.getByTestId('appshell-nav-/crm/delivery-flow')).toHaveAttribute(
+      'href',
+      '/crm/delivery-flow',
+    );
+    expect(screen.getByTestId('appshell-nav-/crm/operations')).toHaveAttribute(
+      'href',
+      '/crm/operations',
+    );
+    expect(screen.getByText('售前流转')).toBeInTheDocument();
+    expect(screen.getByText('实施流转')).toBeInTheDocument();
+    // order within the 客户 group
+    const html = screen.getByTestId('appshell-sider').innerHTML;
+    expect(html.indexOf('/crm/opportunities')).toBeLessThan(html.indexOf('/crm/presale-flow'));
+    expect(html.indexOf('/crm/presale-flow')).toBeLessThan(html.indexOf('/crm/delivery-flow'));
+    expect(html.indexOf('/crm/delivery-flow')).toBeLessThan(html.indexOf('/crm/operations'));
+  });
 });

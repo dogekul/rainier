@@ -1,0 +1,138 @@
+import client from './client';
+import type { PaginatedResult } from '../hooks/usePaginated';
+
+export type OpportunityStage =
+  | 'LEAD'
+  | 'OPPORTUNITY'
+  | 'POC'
+  | 'BIDDING'
+  | 'CONTRACT'
+  | 'INITIATION'
+  | 'SURVEY'
+  | 'REQUIREMENT'
+  | 'DELIVERY'
+  | 'ACCEPTANCE';
+export type OpportunityStatus = 'OPEN' | 'WON' | 'LOST';
+export type GateDecision = 'PASS' | 'REJECT';
+
+/** Full customer-journey order: 售前 5 节点 + 实施 5 节点. */
+export const OPP_STAGE_ORDER: OpportunityStage[] = [
+  'LEAD',
+  'OPPORTUNITY',
+  'POC',
+  'BIDDING',
+  'CONTRACT',
+  'INITIATION',
+  'SURVEY',
+  'REQUIREMENT',
+  'DELIVERY',
+  'ACCEPTANCE',
+];
+export const OPP_STAGE_LABELS: Record<OpportunityStage, string> = {
+  LEAD: '线索',
+  OPPORTUNITY: '商机',
+  POC: '推介/POC',
+  BIDDING: '投标',
+  CONTRACT: '合同签订',
+  INITIATION: '立项',
+  SURVEY: '现场调研',
+  REQUIREMENT: '产品诉求',
+  DELIVERY: '交付实施',
+  ACCEPTANCE: '验收',
+};
+/** Decision gates (商机决策 / 投标决策 / 合同评审 / 立项评审). */
+export const OPP_GATE_STAGES: OpportunityStage[] = ['OPPORTUNITY', 'BIDDING', 'CONTRACT', 'INITIATION'];
+
+/** Phase bands matching the 客户全流程 diagram. 售前 = LEAD..CONTRACT, 实施 = INITIATION..ACCEPTANCE. */
+export const OPP_PHASES: { key: string; label: string; owner: string; stages: OpportunityStage[] }[] = [
+  {
+    key: 'presale',
+    label: '售前环节',
+    owner: '商务 / 解决方案',
+    stages: ['LEAD', 'OPPORTUNITY', 'POC', 'BIDDING', 'CONTRACT'],
+  },
+  {
+    key: 'delivery',
+    label: '实施环节',
+    owner: '项目经理',
+    stages: ['INITIATION', 'SURVEY', 'REQUIREMENT', 'DELIVERY', 'ACCEPTANCE'],
+  },
+];
+
+/** 售前环节 stages (线索..合同签订) — drives the「售前流转」operation page. */
+export const OPP_PRESALE_STAGES: OpportunityStage[] = OPP_PHASES[0].stages;
+/** 实施环节 stages (立项..验收) — drives the「实施流转」operation page. */
+export const OPP_DELIVERY_STAGES: OpportunityStage[] = OPP_PHASES[1].stages;
+
+export interface Opportunity {
+  id: number;
+  customerName: string;
+  title: string;
+  amount?: number | null;
+  stage: OpportunityStage;
+  status: OpportunityStatus;
+  commercialOwnerUserId?: number | null;
+  commercialOwnerName?: string | null;
+  solutionOwnerUserId?: number | null;
+  solutionOwnerName?: string | null;
+  pmUserId?: number | null;
+  pmName?: string | null;
+  opsOwnerUserId?: number | null;
+  opsOwnerName?: string | null;
+  projectId?: number | null;
+  gateDecidedBy?: string | null;
+  createTime?: string;
+}
+
+export interface OpportunityCreate {
+  customerName: string;
+  title: string;
+  amount?: number;
+  commercialOwnerUserId?: number;
+  solutionOwnerUserId?: number;
+  pmUserId?: number;
+  opsOwnerUserId?: number;
+}
+
+export interface OpportunityListParams {
+  stage?: OpportunityStage;
+  status?: OpportunityStatus;
+  ownerUserId?: number;
+  page?: number;
+  size?: number;
+}
+
+export async function listOpportunities(
+  params: OpportunityListParams = {},
+): Promise<PaginatedResult<Opportunity>> {
+  const res = await client.get<PaginatedResult<Opportunity>>('/opportunities', { params });
+  return res.data;
+}
+
+export async function createOpportunity(body: OpportunityCreate): Promise<Opportunity> {
+  const res = await client.post<Opportunity>('/opportunities', body);
+  return res.data;
+}
+
+/** Advance one stage. At a gate stage, pass decision PASS/REJECT (REJECT loses the deal). */
+export async function advanceOpportunity(
+  id: number,
+  decision?: GateDecision,
+  note?: string,
+): Promise<Opportunity> {
+  const res = await client.post<Opportunity>(`/opportunities/${id}/advance`, { decision, note });
+  return res.data;
+}
+
+/** 立项: link a WON opportunity to a delivery Project (PASS) — the 立项评审 gate. */
+export async function initiateOpportunity(
+  id: number,
+  projectId: number,
+  decision: GateDecision,
+): Promise<Opportunity> {
+  const res = await client.post<Opportunity>(`/opportunities/${id}/initiate`, {
+    projectId,
+    decision,
+  });
+  return res.data;
+}

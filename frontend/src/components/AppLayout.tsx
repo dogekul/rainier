@@ -47,6 +47,16 @@ export const navGroups: NavGroup[] = [
     ],
   },
   {
+    key: 'crm',
+    title: '客户',
+    items: [
+      { to: '/crm/opportunities', label: '商机看板', icon: 'gauge' },
+      { to: '/crm/presale-flow', label: '售前流转', icon: 'edit' },
+      { to: '/crm/delivery-flow', label: '实施流转', icon: 'check' },
+      { to: '/crm/operations', label: '运营看板', icon: 'loop' },
+    ],
+  },
+  {
     key: 'ai',
     title: 'AI',
     items: [{ to: '/ai/work-logs', label: 'AI 工作日志', icon: 'loop' }],

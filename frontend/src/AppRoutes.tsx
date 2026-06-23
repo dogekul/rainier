@@ -15,6 +15,10 @@ import Login from './pages/Login';
 import AuditLogsPage from './pages/AuditLog';
 import CompliancePage from './pages/Compliance';
 import AiWorkLogsPage from './pages/AiWorkLog';
+import OpportunityBoardPage from './pages/Crm/OpportunityBoardPage';
+import PresaleFlowPage from './pages/Crm/PresaleFlowPage';
+import DeliveryFlowPage from './pages/Crm/DeliveryFlowPage';
+import OperationBoardPage from './pages/Crm/OperationBoardPage';
 import InboxPage from './pages/Inbox';
 import OrganizationsPage from './pages/Organization';
 import PositionsPage from './pages/Position';
@@ -43,6 +47,10 @@ export function AppRoutes() {
           <Route path="/portfolio" element={<PortfolioPage />} />
           <Route path="/reviews" element={<ReviewsPage />} />
           <Route path="/ai/work-logs" element={<AiWorkLogsPage />} />
+          <Route path="/crm/opportunities" element={<OpportunityBoardPage />} />
+          <Route path="/crm/presale-flow" element={<PresaleFlowPage />} />
+          <Route path="/crm/delivery-flow" element={<DeliveryFlowPage />} />
+          <Route path="/crm/operations" element={<OperationBoardPage />} />
           <Route path="/demand-submit" element={<DemandSubmitPage />} />
           <Route path="/org" element={<Navigate to="/org/organizations" replace />} />
           <Route path="/org/organizations" element={<OrganizationsPage />} />

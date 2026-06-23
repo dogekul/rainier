@@ -4,6 +4,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AppRoutes } from './AppRoutes';
+import { isAdminPath } from './components/ProtectedRoute';
 import { useAuthStore } from './store/auth';
 
 // Mock the API modules so the pages mount without network.
@@ -108,6 +109,20 @@ vi.mock('./api/aiWorkLog', async () => {
     listAiWorkLogs: vi.fn().mockResolvedValue({ content: [], total: 0, page: 0, size: 100 }),
   };
 });
+vi.mock('./api/opportunity', async () => {
+  const actual = await vi.importActual<typeof import('./api/opportunity')>('./api/opportunity');
+  return {
+    ...actual,
+    listOpportunities: vi.fn().mockResolvedValue({ content: [], total: 0, page: 0, size: 200 }),
+  };
+});
+vi.mock('./api/operation', async () => {
+  const actual = await vi.importActual<typeof import('./api/operation')>('./api/operation');
+  return {
+    ...actual,
+    listOperations: vi.fn().mockResolvedValue({ content: [], total: 0, page: 0, size: 200 }),
+  };
+});
 
 describe('AppRoutes /pm/*', () => {
   beforeEach(() => {
@@ -174,6 +189,63 @@ describe('AppRoutes /pm/*', () => {
     await waitFor(() => {
       expect(screen.getByTestId('compliance-summary')).toBeInTheDocument();
     });
+  });
+
+  /** TC-FES-CRM-01 (v0.0.44): all four /crm/* routes registered + 商机看板 mounts (all-users). */
+  it('registers the four /crm/* routes (TC-FES-CRM-01)', async () => {
+    const path = resolve(__dirname, 'AppRoutes.tsx');
+    const src = readFileSync(path, 'utf-8');
+    expect(src.split('/crm/opportunities').length - 1).toBeGreaterThanOrEqual(1);
+    expect(src.split('/crm/presale-flow').length - 1).toBeGreaterThanOrEqual(1);
+    expect(src.split('/crm/delivery-flow').length - 1).toBeGreaterThanOrEqual(1);
+    expect(src.split('/crm/operations').length - 1).toBeGreaterThanOrEqual(1);
+    render(
+      <MemoryRouter initialEntries={['/crm/opportunities']}>
+        <AppRoutes />
+      </MemoryRouter>,
+    );
+    await waitFor(() => expect(screen.getByTestId('opp-summary')).toBeInTheDocument());
+  });
+
+  it('mounts OperationBoard at /crm/operations', async () => {
+    render(
+      <MemoryRouter initialEntries={['/crm/operations']}>
+        <AppRoutes />
+      </MemoryRouter>,
+    );
+    await waitFor(() => expect(screen.getByTestId('opr-summary')).toBeInTheDocument());
+  });
+
+  /** TC-FES-CRM-02 (v0.0.44): 售前流转 operation page mounts at /crm/presale-flow. */
+  it('mounts PresaleFlow at /crm/presale-flow (TC-FES-CRM-02)', async () => {
+    render(
+      <MemoryRouter initialEntries={['/crm/presale-flow']}>
+        <AppRoutes />
+      </MemoryRouter>,
+    );
+    await waitFor(() => expect(screen.getByTestId('presale-summary')).toBeInTheDocument());
+  });
+
+  /** TC-FES-CRM-03 (v0.0.44): 实施流转 operation page mounts at /crm/delivery-flow. */
+  it('mounts DeliveryFlow at /crm/delivery-flow (TC-FES-CRM-03)', async () => {
+    render(
+      <MemoryRouter initialEntries={['/crm/delivery-flow']}>
+        <AppRoutes />
+      </MemoryRouter>,
+    );
+    await waitFor(() => expect(screen.getByTestId('delivery-summary')).toBeInTheDocument());
+  });
+
+  /** TC-FES-CRM-04 (v0.0.44): all four /crm/* routes are all-users (NOT admin-gated). */
+  it('keeps all /crm/* routes all-users — isAdminPath false (TC-FES-CRM-04)', () => {
+    for (const p of [
+      '/crm/opportunities',
+      '/crm/presale-flow',
+      '/crm/delivery-flow',
+      '/crm/operations',
+    ]) {
+      expect(isAdminPath(p)).toBe(false);
+    }
   });
 
   /** TC-FES-AIW-01/02 (v0.0.43): /ai/work-logs route registered + mounts AiWorkLogsPage (all-users). */
