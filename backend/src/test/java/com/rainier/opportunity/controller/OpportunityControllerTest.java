@@ -460,10 +460,10 @@ class OpportunityControllerTest {
         .andExpect(jsonPath("$.status").value("WON"));
   }
 
-  /** TC-OPP-009 / TC-INI-01: initiate WON+PASS links an existing 对外-交付 project. */
+  /** TC-OPP-009 / TC-INI-01: initiate WON+PASS links an existing 对外-交付 project AND advances 立项→现场调研. */
   @Test
   void initiate_wonPass_linksExternalDeliveryProject() throws Exception {
-    Long id = seedOpp(OpportunityStage.CONTRACT, OpportunityStatus.WON);
+    Long id = seedOpp(OpportunityStage.INITIATION, OpportunityStatus.WON);
     Long proj = seedProject("PRJ-1", ProjectType.EXTERNAL_DELIVERY);
     ObjectNode body = json.createObjectNode();
     body.put("projectId", proj);
@@ -474,13 +474,31 @@ class OpportunityControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(body.toString()))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.projectId").value(proj));
+        .andExpect(jsonPath("$.projectId").value(proj))
+        .andExpect(jsonPath("$.stage").value("SURVEY")) // v0.0.52 立项移交即推进
+        .andExpect(jsonPath("$.status").value("WON"));
+  }
+
+  /** TC-INI-08: 非 立项 阶段的 WON 商机不可立项 → 409. */
+  @Test
+  void initiate_notAtInitiation_returns409() throws Exception {
+    Long id = seedOpp(OpportunityStage.SURVEY, OpportunityStatus.WON);
+    Long proj = seedProject("PRJ-SURV", ProjectType.EXTERNAL_DELIVERY);
+    ObjectNode body = json.createObjectNode();
+    body.put("projectId", proj);
+    body.put("decision", "PASS");
+    mockMvc
+        .perform(
+            post("/api/opportunities/" + id + "/initiate")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(body.toString()))
+        .andExpect(status().isConflict());
   }
 
   /** TC-INI-02: initiate linking a non-对外-交付 (CASUAL) project → 400. */
   @Test
   void initiate_linkNonDeliveryProject_returns400() throws Exception {
-    Long id = seedOpp(OpportunityStage.CONTRACT, OpportunityStatus.WON);
+    Long id = seedOpp(OpportunityStage.INITIATION, OpportunityStatus.WON);
     Long proj = seedProject("PRJ-CASUAL", ProjectType.CASUAL);
     ObjectNode body = json.createObjectNode();
     body.put("projectId", proj);
@@ -496,7 +514,7 @@ class OpportunityControllerTest {
   /** TC-INI-03: initiate inline-creates an 对外-交付 project (仅 name+owner, 编号自动生成 ED-{id}) and links it. */
   @Test
   void initiate_inlineCreatesExternalDeliveryProject() throws Exception {
-    Long id = seedOpp(OpportunityStage.CONTRACT, OpportunityStatus.WON);
+    Long id = seedOpp(OpportunityStage.INITIATION, OpportunityStatus.WON);
     Long owner = seedUser("deliv-owner");
     ObjectNode body = json.createObjectNode();
     body.put("projectName", "交付项目一");
@@ -517,12 +535,14 @@ class OpportunityControllerTest {
     Project created = projectRepo.findById(newProjId).get();
     assertEquals(ProjectType.EXTERNAL_DELIVERY, created.getProjectType());
     assertTrue(created.getCode().matches("ED-\\d+"), "auto code: " + created.getCode());
+    // v0.0.52 立项移交即推进：进入现场调研
+    assertEquals(OpportunityStage.SURVEY, repo.findById(id).get().getStage());
   }
 
   /** TC-INI-04: initiate with neither projectId nor create fields → 400. */
   @Test
   void initiate_noProjectInfo_returns400() throws Exception {
-    Long id = seedOpp(OpportunityStage.CONTRACT, OpportunityStatus.WON);
+    Long id = seedOpp(OpportunityStage.INITIATION, OpportunityStatus.WON);
     ObjectNode body = json.createObjectNode();
     body.put("decision", "PASS");
     mockMvc
@@ -536,7 +556,7 @@ class OpportunityControllerTest {
   /** TC-INI-05: 内联新建但缺负责人（商机无 pm 且未传 projectOwnerUserId）→ 400（用户实测命中的分支）。 */
   @Test
   void initiate_inlineCreateMissingOwner_returns400() throws Exception {
-    Long id = seedOpp(OpportunityStage.CONTRACT, OpportunityStatus.WON); // seedOpp 不设 pmUserId
+    Long id = seedOpp(OpportunityStage.INITIATION, OpportunityStatus.WON); // seedOpp 不设 pmUserId
     ObjectNode body = json.createObjectNode();
     body.put("decision", "PASS");
     body.put("projectName", "缺负责人");
@@ -551,7 +571,7 @@ class OpportunityControllerTest {
   /** TC-INI-06: 同时提供 projectId 与新建字段 → 400（二选一守卫）。 */
   @Test
   void initiate_bothProjectIdAndCreate_returns400() throws Exception {
-    Long id = seedOpp(OpportunityStage.CONTRACT, OpportunityStatus.WON);
+    Long id = seedOpp(OpportunityStage.INITIATION, OpportunityStatus.WON);
     Long proj = seedProject("PRJ-BOTH", ProjectType.EXTERNAL_DELIVERY);
     ObjectNode body = json.createObjectNode();
     body.put("decision", "PASS");
@@ -568,7 +588,7 @@ class OpportunityControllerTest {
   /** TC-INI-07: 关联不存在的 projectId → 400。 */
   @Test
   void initiate_unknownProjectId_returns400() throws Exception {
-    Long id = seedOpp(OpportunityStage.CONTRACT, OpportunityStatus.WON);
+    Long id = seedOpp(OpportunityStage.INITIATION, OpportunityStatus.WON);
     ObjectNode body = json.createObjectNode();
     body.put("decision", "PASS");
     body.put("projectId", 999_999L);

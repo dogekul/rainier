@@ -265,14 +265,19 @@ public class OpportunityService {
   }
 
   /**
-   * 立项评审 gate: a WON opportunity is initiated into a delivery Project on PASS. v0.0.48 — PASS may
-   * either link an existing 对外-交付 (EXTERNAL_DELIVERY) project OR inline-create one (atomic).
+   * 立项评审 gate: a WON opportunity at 立项 (INITIATION) is initiated into a delivery Project on PASS.
+   * v0.0.48 — PASS links an existing 对外-交付 project OR inline-creates one (atomic). v0.0.52 — PASS
+   * 同时**推进到下一阶段「现场调研」(SURVEY)** 并刷新 stageEnteredAt：立项移交即完成立项、进入实施，状态可见前进。
+   * REJECT 仅记录决策、停留在立项（不链项目、不推进）。
    */
   @Transactional
   public OpportunityDetail initiate(Long id, OpportunityInitiateRequest req, String decidedBy) {
     Opportunity o = getOrThrow(id);
     if (!OpportunityStatus.WON.equals(o.getStatus())) {
       throw new ConflictException("opportunity must be WON to initiate (立项): status=" + o.getStatus());
+    }
+    if (!OpportunityStage.INITIATION.equals(o.getStage())) {
+      throw new ConflictException("opportunity must be at 立项 to initiate: stage=" + o.getStage());
     }
     String decision = req.getDecision();
     if (decision == null || !GateDecision.ALL.contains(decision)) {
@@ -281,6 +286,9 @@ public class OpportunityService {
     o.setGateDecidedBy(decidedBy);
     if (GateDecision.PASS.equals(decision)) {
       o.setProjectId(resolveDeliveryProject(o, req)); // 立项 → 链入实施 Project
+      int idx = OpportunityStage.STAGE_ORDER.indexOf(OpportunityStage.INITIATION);
+      o.setStage(OpportunityStage.STAGE_ORDER.get(idx + 1)); // 立项通过 → 进入现场调研
+      o.setStageEnteredAt(Instant.now());
     }
     return enrich(repo.saveAndFlush(o));
   }

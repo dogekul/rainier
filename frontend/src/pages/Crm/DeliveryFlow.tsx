@@ -188,25 +188,16 @@ export function DeliveryFlow() {
                           已验收
                         </span>
                       ) : isInitiation ? (
+                        // v0.0.52 立项移交（关联/新建项目）即完成立项并推进到现场调研；否决=驳回立项（停留）。
                         <>
                           <Button
                             type="button"
-                            variant="secondary"
+                            variant="primary"
                             disabled={busyId === r.id || handoffId === r.id}
                             onClick={() => setHandoffId(r.id)}
                             data-testid={`delivery-handoff-${r.id}`}
                           >
                             立项移交
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="primary"
-                            style={{ marginLeft: 6 }}
-                            disabled={busyId === r.id}
-                            onClick={() => void advance(r.id, 'PASS')}
-                            data-testid={`delivery-pass-${r.id}`}
-                          >
-                            通过
                           </Button>
                           <Button
                             type="button"
@@ -216,7 +207,7 @@ export function DeliveryFlow() {
                             onClick={() => void advance(r.id, 'REJECT')}
                             data-testid={`delivery-reject-${r.id}`}
                           >
-                            否决
+                            驳回
                           </Button>
                         </>
                       ) : (

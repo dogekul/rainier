@@ -74,11 +74,11 @@ describe('DeliveryFlow (实施流转 operations)', () => {
     vi.mocked(listOpportunities).mockReset();
   });
 
-  /** TC-DEL-01: lists only WON 实施 opps; 立项→移交+通过/否决, non-gate→推进, 验收→已验收, OPEN/售前 excluded. */
+  /** TC-DEL-01: lists only WON 实施 opps; 立项→移交+驳回（无独立「通过」）, non-gate→推进, 验收→已验收, OPEN/售前 excluded. */
   it('lists WON 实施 opps with stage-appropriate actions (TC-DEL-01)', async () => {
     vi.mocked(listOpportunities).mockResolvedValue(
       page([
-        opp(7, 'INITIATION'), // gate → 立项移交 + 通过/否决
+        opp(7, 'INITIATION'), // gate → 立项移交 + 驳回（v0.0.52 去掉独立「通过」）
         opp(8, 'SURVEY'), // non-gate → 推进
         opp(9, 'ACCEPTANCE'), // terminal → 已验收
         opp(10, 'OPPORTUNITY', { status: 'OPEN' }), // 售前/OPEN → excluded
@@ -89,8 +89,9 @@ describe('DeliveryFlow (实施流转 operations)', () => {
     await waitFor(() => expect(screen.getByTestId('delivery-row-7')).toBeInTheDocument());
     expect(listOpportunities).toHaveBeenCalledWith({ size: 100 });
     expect(screen.getByTestId('delivery-handoff-7')).toBeInTheDocument();
-    expect(screen.getByTestId('delivery-pass-7')).toBeInTheDocument();
     expect(screen.getByTestId('delivery-reject-7')).toBeInTheDocument();
+    // v0.0.52: 立项行不再有独立「通过」(立项移交即推进)
+    expect(screen.queryByTestId('delivery-pass-7')).not.toBeInTheDocument();
     expect(screen.getByTestId('delivery-advance-8')).toBeInTheDocument();
     expect(screen.getByTestId('delivery-done-9')).toBeInTheDocument();
     // ACCEPTANCE is terminal — no advance control
@@ -101,16 +102,15 @@ describe('DeliveryFlow (实施流转 operations)', () => {
     expect(screen.queryByTestId('delivery-row-11')).not.toBeInTheDocument();
   });
 
-  /** TC-DEL-02: 通过 at 立项 calls advance(id,'PASS') and refetches. */
-  it('passes the 立项 gate and refetches (TC-DEL-02)', async () => {
+  /** TC-DEL-02: 现场调研（非关口）「推进」calls advance(id) and refetches. */
+  it('advances a non-gate 实施 stage and refetches (TC-DEL-02)', async () => {
     vi.mocked(listOpportunities)
-      .mockResolvedValueOnce(page([opp(7, 'INITIATION')]))
-      .mockResolvedValueOnce(page([opp(7, 'SURVEY')]));
+      .mockResolvedValueOnce(page([opp(7, 'SURVEY')]))
+      .mockResolvedValueOnce(page([opp(7, 'REQUIREMENT')]));
     renderPage();
-    await waitFor(() => expect(screen.getByTestId('delivery-pass-7')).toBeInTheDocument());
-    fireEvent.click(screen.getByTestId('delivery-pass-7'));
-    await waitFor(() => expect(advanceOpportunity).toHaveBeenCalledWith(7, 'PASS'));
     await waitFor(() => expect(screen.getByTestId('delivery-advance-7')).toBeInTheDocument());
+    fireEvent.click(screen.getByTestId('delivery-advance-7'));
+    await waitFor(() => expect(advanceOpportunity).toHaveBeenCalledWith(7, undefined));
     expect(listOpportunities).toHaveBeenCalledTimes(2);
   });
 
