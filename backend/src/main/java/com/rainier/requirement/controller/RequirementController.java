@@ -60,8 +60,9 @@ public class RequirementController {
       @RequestParam(required = false) String status,
       @RequestParam(required = false) String priority,
       @RequestParam(required = false) Long projectId,
+      @RequestParam(required = false) Long opportunityId,
       @Valid PageParams page) {
-    return service.list(status, priority, projectId, page);
+    return service.list(status, priority, projectId, opportunityId, page);
   }
 
   @PutMapping("/{id}")

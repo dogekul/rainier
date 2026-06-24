@@ -37,14 +37,17 @@ public class DemandService {
   private final DemandRepository repo;
   private final UserRepository userRepo;
   private final com.rainier.demandrequirement.repository.DemandRequirementLinkRepository linkRepo;
+  private final com.rainier.opportunity.repository.OpportunityRepository opportunityRepo;
 
   public DemandService(
       DemandRepository repo,
       UserRepository userRepo,
-      com.rainier.demandrequirement.repository.DemandRequirementLinkRepository linkRepo) {
+      com.rainier.demandrequirement.repository.DemandRequirementLinkRepository linkRepo,
+      com.rainier.opportunity.repository.OpportunityRepository opportunityRepo) {
     this.repo = repo;
     this.userRepo = userRepo;
     this.linkRepo = linkRepo;
+    this.opportunityRepo = opportunityRepo;
   }
 
   @Transactional
@@ -64,6 +67,9 @@ public class DemandService {
     if (!Source.ALL.contains(source)) {
       throw new BadRequestException("invalid source: " + source);
     }
+    if (req.getOpportunityId() != null && !opportunityRepo.existsById(req.getOpportunityId())) {
+      throw new BadRequestException("opportunity not found: id=" + req.getOpportunityId());
+    }
     Demand d = new Demand();
     d.setTitle(req.getTitle());
     d.setDescription(req.getDescription());
@@ -72,6 +78,7 @@ public class DemandService {
     d.setPriority(priority);
     d.setSource(source);
     d.setCloseReason(req.getCloseReason());
+    d.setOpportunityId(req.getOpportunityId());
     return DemandDetail.from(repo.saveAndFlush(d));
   }
 
@@ -79,7 +86,8 @@ public class DemandService {
     return DemandDetail.from(getOrThrow(id));
   }
 
-  public PageResponse<DemandDetail> list(String status, String priority, PageParams page) {
+  public PageResponse<DemandDetail> list(
+      String status, String priority, Long opportunityId, PageParams page) {
     Specification<Demand> spec =
         (root, query, cb) -> {
           javax.persistence.criteria.Predicate p = cb.conjunction();
@@ -88,6 +96,9 @@ public class DemandService {
           }
           if (priority != null) {
             p = cb.and(p, cb.equal(root.get("priority"), priority));
+          }
+          if (opportunityId != null) {
+            p = cb.and(p, cb.equal(root.get("opportunityId"), opportunityId));
           }
           String search = page.getSearch();
           if (search != null && !search.isEmpty()) {

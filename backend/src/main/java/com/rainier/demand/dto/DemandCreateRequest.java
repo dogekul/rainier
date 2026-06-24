@@ -32,6 +32,17 @@ public class DemandCreateRequest {
   @Size(max = 500)
   private String closeReason;
 
+  /** v0.0.56 — 可选来源商机 id（非空则后端校验存在）。 */
+  private Long opportunityId;
+
+  public Long getOpportunityId() {
+    return opportunityId;
+  }
+
+  public void setOpportunityId(Long opportunityId) {
+    this.opportunityId = opportunityId;
+  }
+
   public String getTitle() {
     return title;
   }

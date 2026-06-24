@@ -33,6 +33,7 @@ class DemandControllerCreateTest {
   @Autowired private DemandRepository repo;
   @Autowired private DemandRequirementLinkRepository linkRepo;
   @Autowired private UserRepository userRepo;
+  @Autowired private com.rainier.opportunity.repository.OpportunityRepository oppRepo;
   @Autowired private ObjectMapper json;
 
   @BeforeEach
@@ -49,6 +50,60 @@ class DemandControllerCreateTest {
     u.setIsInternal(true);
     u.setEnabled(true);
     return userRepo.saveAndFlush(u).getId();
+  }
+
+  private Long seedOpp() {
+    com.rainier.opportunity.domain.Opportunity o = new com.rainier.opportunity.domain.Opportunity();
+    o.setCustomerName("X 集团");
+    o.setTitle("采购系统");
+    o.setStage(com.rainier.opportunity.domain.OpportunityStage.REQUIREMENT);
+    o.setStatus(com.rainier.opportunity.domain.OpportunityStatus.WON);
+    return oppRepo.saveAndFlush(o).getId();
+  }
+
+  /** TC-OGEN-D1: 创建诉求带存在的 opportunityId → 201 + 返回 opportunityId。 */
+  @Test
+  void post_withOpportunityId_persistsAndReturns() throws Exception {
+    Long userId = createUser();
+    Long oppId = seedOpp();
+    ObjectNode body = json.createObjectNode();
+    body.put("title", "现场调研派生诉求");
+    body.put("description", "据现场调研生成");
+    body.put("submitterUserId", userId);
+    body.put("opportunityId", oppId);
+    mockMvc
+        .perform(
+            post("/api/demands").contentType(MediaType.APPLICATION_JSON).content(body.toString()))
+        .andExpect(status().isCreated())
+        .andExpect(jsonPath("$.opportunityId").value(oppId));
+  }
+
+  /** TC-OGEN-D2: 创建诉求带不存在的 opportunityId → 400。 */
+  @Test
+  void post_withUnknownOpportunityId_returns400() throws Exception {
+    Long userId = createUser();
+    ObjectNode body = json.createObjectNode();
+    body.put("title", "x");
+    body.put("submitterUserId", userId);
+    body.put("opportunityId", 999999L);
+    mockMvc
+        .perform(
+            post("/api/demands").contentType(MediaType.APPLICATION_JSON).content(body.toString()))
+        .andExpect(status().isBadRequest());
+  }
+
+  /** TC-OGEN-D3: 不带 opportunityId 创建 → opportunityId 为 null（既有行为不回归）。 */
+  @Test
+  void post_withoutOpportunityId_opportunityIdNull() throws Exception {
+    Long userId = createUser();
+    ObjectNode body = json.createObjectNode();
+    body.put("title", "普通诉求");
+    body.put("submitterUserId", userId);
+    mockMvc
+        .perform(
+            post("/api/demands").contentType(MediaType.APPLICATION_JSON).content(body.toString()))
+        .andExpect(status().isCreated())
+        .andExpect(jsonPath("$.opportunityId").isEmpty());
   }
 
   /** TC-DMD-001: 最小 payload + 默认值。 */

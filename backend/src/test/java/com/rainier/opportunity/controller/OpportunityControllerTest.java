@@ -58,6 +58,7 @@ class OpportunityControllerTest {
   @Autowired private ProjectRepository projectRepo;
   @Autowired private ProductRepository productRepo;
   @Autowired private CustomerRepository customerRepo;
+  @Autowired private com.rainier.requirement.repository.RequirementRepository requirementRepo;
   @Autowired private ObjectMapper json;
   @Autowired private OpportunityStageEnteredAtBackfill stageEnteredAtBackfill;
   @PersistenceContext private EntityManager em;
@@ -65,11 +66,24 @@ class OpportunityControllerTest {
   @BeforeEach
   void cleanDb() {
     artifactRepo.deleteAll();
+    requirementRepo.deleteAll();
     repo.deleteAll();
     projectRepo.deleteAll();
     productRepo.deleteAll();
     customerRepo.deleteAll();
     userRepo.deleteAll();
+  }
+
+  /** v0.0.56 — seed a requirement linked to an opportunity (产品诉求→交付实施 卡点用)。 */
+  private void seedRequirementForOpp(Long oppId) {
+    com.rainier.requirement.domain.Requirement r = new com.rainier.requirement.domain.Requirement();
+    r.setCode("GATE-REQ-" + oppId);
+    r.setTitle("派生需求");
+    r.setOwnerUserId(1L);
+    r.setStatus("DRAFT");
+    r.setPriority("MEDIUM");
+    r.setOpportunityId(oppId);
+    requirementRepo.saveAndFlush(r);
   }
 
   private Long seedProduct(String code) {
@@ -252,8 +266,8 @@ class OpportunityControllerTest {
   /** TC-OSEA-02: a stage-advancing PASS refreshes stageEnteredAt forward (计时归零). */
   @Test
   void advance_refreshesStageEnteredAt() throws Exception {
-    // v0.0.53: 现场调研(SURVEY) 现已有产出物门禁 → 用 产品诉求(REQUIREMENT，非关口、无门禁) 作样例。
-    Long id = seedOpp(OpportunityStage.REQUIREMENT, OpportunityStatus.WON);
+    // v0.0.56: 产品诉求(REQUIREMENT) 现有转化卡点 → 用 交付实施(DELIVERY，非关口、无门禁) 作样例。
+    Long id = seedOpp(OpportunityStage.DELIVERY, OpportunityStatus.WON);
     Instant t0 = Instant.now().minusSeconds(3600);
     Opportunity seeded = repo.findById(id).get();
     seeded.setStageEnteredAt(t0);
@@ -264,7 +278,7 @@ class OpportunityControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{}"))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.stage").value("DELIVERY"));
+        .andExpect(jsonPath("$.stage").value("ACCEPTANCE"));
     em.clear();
     Opportunity after = repo.findById(id).get();
     assertNotNull(after.getStageEnteredAt());
@@ -496,6 +510,33 @@ class OpportunityControllerTest {
         .andExpect(status().isCreated())
         .andExpect(jsonPath("$.type").value("SURVEY_ATTACHMENT"))
         .andExpect(jsonPath("$.link").value("https://x/site.jpg"));
+  }
+
+  /** TC-OREQ-01: 产品诉求(REQUIREMENT) 无需求 → 推进到交付实施被拦截 400。 */
+  @Test
+  void advance_requirement_noRequirement_returns400() throws Exception {
+    Long id = seedOpp(OpportunityStage.REQUIREMENT, OpportunityStatus.WON);
+    mockMvc
+        .perform(
+            post("/api/opportunities/" + id + "/advance")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{}"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.message", containsString("需求")));
+  }
+
+  /** TC-OREQ-02: 产品诉求 已有该商机需求 → 推进到 交付实施(DELIVERY)。 */
+  @Test
+  void advance_requirement_withRequirement_advancesToDelivery() throws Exception {
+    Long id = seedOpp(OpportunityStage.REQUIREMENT, OpportunityStatus.WON);
+    seedRequirementForOpp(id);
+    mockMvc
+        .perform(
+            post("/api/opportunities/" + id + "/advance")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.stage").value("DELIVERY"));
   }
 
   /** TC-OPP-013: 验收 (ACCEPTANCE) is terminal → advancing → 409. */

@@ -48,6 +48,7 @@ public class RequirementService {
   private final DemandRequirementLinkRepository linkRepo;
   private final ProjectRepository projectRepo;
   private final com.rainier.sprint.repository.SprintRepository sprintRepo;
+  private final com.rainier.opportunity.repository.OpportunityRepository opportunityRepo;
 
   public RequirementService(
       RequirementRepository repo,
@@ -55,13 +56,15 @@ public class RequirementService {
       DemandRepository demandRepo,
       DemandRequirementLinkRepository linkRepo,
       ProjectRepository projectRepo,
-      com.rainier.sprint.repository.SprintRepository sprintRepo) {
+      com.rainier.sprint.repository.SprintRepository sprintRepo,
+      com.rainier.opportunity.repository.OpportunityRepository opportunityRepo) {
     this.repo = repo;
     this.userRepo = userRepo;
     this.demandRepo = demandRepo;
     this.linkRepo = linkRepo;
     this.projectRepo = projectRepo;
     this.sprintRepo = sprintRepo;
+    this.opportunityRepo = opportunityRepo;
   }
 
   @Transactional(rollbackFor = Exception.class)
@@ -69,7 +72,9 @@ public class RequirementService {
     if (!userRepo.existsById(req.getOwnerUserId())) {
       throw new BadRequestException("owner user not found: id=" + req.getOwnerUserId());
     }
-    if (repo.existsByCode(req.getCode())) {
+    // v0.0.56: code 现可空 —— 缺省走自增 id 自动生成 REQ-{id}（同 Project 模式），不再 existsByCode 早查。
+    boolean autoCode = req.getCode() == null || req.getCode().trim().isEmpty();
+    if (!autoCode && repo.existsByCode(req.getCode())) {
       throw new ConflictException("code already exists: " + req.getCode());
     }
     String status = req.getStatus() == null ? RequirementStatus.DRAFT : req.getStatus();
@@ -87,9 +92,14 @@ public class RequirementService {
     if (req.getProjectId() != null && !projectRepo.existsById(req.getProjectId())) {
       throw new BadRequestException("project not found: id=" + req.getProjectId());
     }
+    // v0.0.56: 来源商机校验（非空则须存在）。
+    if (req.getOpportunityId() != null && !opportunityRepo.existsById(req.getOpportunityId())) {
+      throw new BadRequestException("opportunity not found: id=" + req.getOpportunityId());
+    }
 
     Requirement r = new Requirement();
-    r.setCode(req.getCode());
+    // 自增 code 路径：先用临时占位符 saveAndFlush 拿 id，再设 REQ-{id} 二次 save（同 Project v0.0.49）。
+    r.setCode(autoCode ? ("__pending__" + System.nanoTime()) : req.getCode());
     r.setTitle(req.getTitle());
     r.setDescription(req.getDescription());
     r.setOwnerUserId(req.getOwnerUserId());
@@ -99,10 +109,15 @@ public class RequirementService {
     r.setProjectId(req.getProjectId());
     r.setCloseReason(req.getCloseReason());
     r.setExpectedDate(req.getExpectedDate());
+    r.setOpportunityId(req.getOpportunityId());
 
     Requirement saved;
     try {
       saved = repo.saveAndFlush(r);
+      if (autoCode) {
+        saved.setCode("REQ-" + saved.getId());
+        saved = repo.saveAndFlush(saved);
+      }
     } catch (DataIntegrityViolationException e) {
       throw new ConflictException("code already exists: " + req.getCode());
     }
@@ -135,7 +150,7 @@ public class RequirementService {
   }
 
   public PageResponse<RequirementDetail> list(
-      String status, String priority, Long projectId, PageParams page) {
+      String status, String priority, Long projectId, Long opportunityId, PageParams page) {
     Specification<Requirement> spec =
         (root, query, cb) -> {
           javax.persistence.criteria.Predicate p = cb.conjunction();
@@ -147,6 +162,9 @@ public class RequirementService {
           }
           if (projectId != null) {
             p = cb.and(p, cb.equal(root.get("projectId"), projectId));
+          }
+          if (opportunityId != null) {
+            p = cb.and(p, cb.equal(root.get("opportunityId"), opportunityId));
           }
           String search = page.getSearch();
           if (search != null && !search.isEmpty()) {

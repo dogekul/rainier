@@ -4,16 +4,11 @@
   margin-right: 4px;
 }
 
+/* 全宽单列堆叠：概览 / 产出物 / 诉求需求 各自占满宽度，信息不再挤在窄列里 */
 .opp-detail-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  display: flex;
+  flex-direction: column;
   gap: 12px;
-  align-items: start;
-}
-@media (max-width: 860px) {
-  .opp-detail-grid {
-    grid-template-columns: 1fr;
-  }
 }
 
 .opp-card {
@@ -22,6 +17,13 @@
   border-radius: var(--rainier-radius-card);
   box-shadow: var(--rainier-shadow-card);
   padding: 16px 18px;
+}
+
+/* 概览顶部 hero 与下方字段之间的分隔 */
+.opp-hero-sep {
+  border: none;
+  border-top: 1px solid var(--rainier-border);
+  margin: 14px 0;
 }
 
 .opp-card-title {
@@ -44,14 +46,14 @@
   align-items: flex-start;
 }
 .opp-hero-avatar {
-  width: 48px;
-  height: 48px;
+  width: 56px;
+  height: 56px;
   flex: none;
-  border-radius: 12px;
+  border-radius: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 18px;
+  font-size: 22px;
   font-weight: 600;
   letter-spacing: 0.5px;
 }
@@ -64,11 +66,11 @@
   color: var(--rainier-color-text-2);
 }
 .opp-hero-title {
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 700;
   color: var(--rainier-color-text-1);
   line-height: 1.3;
-  margin: 2px 0 8px;
+  margin: 3px 0 10px;
   word-break: break-word;
 }
 .opp-hero-chips {
@@ -78,22 +80,17 @@
   align-items: center;
 }
 
-/* read-only field list */
+/* read-only field list — 自适应多列填满宽度 */
 .opp-fields {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 2px 16px;
-}
-@media (max-width: 520px) {
-  .opp-fields {
-    grid-template-columns: 1fr;
-  }
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0 24px;
 }
 .opp-field {
   display: flex;
   gap: 8px;
   font-size: 13px;
-  padding: 6px 0;
+  padding: 7px 0;
   border-bottom: 1px solid var(--rainier-bg-hover);
 }
 .opp-field-label {

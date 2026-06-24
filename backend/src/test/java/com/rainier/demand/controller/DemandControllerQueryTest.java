@@ -36,6 +36,7 @@ class DemandControllerQueryTest {
   @Autowired private DemandRepository repo;
   @Autowired private DemandRequirementLinkRepository linkRepo;
   @Autowired private UserRepository userRepo;
+  @Autowired private com.rainier.opportunity.repository.OpportunityRepository oppRepo;
   @Autowired private ObjectMapper json;
 
   @BeforeEach
@@ -73,6 +74,42 @@ class DemandControllerQueryTest {
             .andExpect(status().isCreated())
             .andReturn();
     return json.readTree(res.getResponse().getContentAsString()).get("id").asLong();
+  }
+
+  private Long seedOpp() {
+    com.rainier.opportunity.domain.Opportunity o = new com.rainier.opportunity.domain.Opportunity();
+    o.setCustomerName("X 集团");
+    o.setTitle("采购系统");
+    o.setStage(com.rainier.opportunity.domain.OpportunityStage.REQUIREMENT);
+    o.setStatus(com.rainier.opportunity.domain.OpportunityStatus.WON);
+    return oppRepo.saveAndFlush(o).getId();
+  }
+
+  private void createDemandWithOpp(Long submitterId, String title, Long oppId) throws Exception {
+    ObjectNode body = json.createObjectNode();
+    body.put("title", title);
+    body.put("description", "x");
+    body.put("submitterUserId", submitterId);
+    body.put("opportunityId", oppId);
+    mockMvc
+        .perform(
+            post("/api/demands").contentType(MediaType.APPLICATION_JSON).content(body.toString()))
+        .andExpect(status().isCreated());
+  }
+
+  /** TC-OGEN-D4: GET /demands?opportunityId= 仅返回该商机派生的诉求。 */
+  @Test
+  void list_filterByOpportunityId_returnsOnlyThatOpp() throws Exception {
+    Long userId = createUser();
+    Long oppA = seedOpp();
+    Long oppB = seedOpp();
+    createDemandWithOpp(userId, "A1", oppA);
+    createDemandWithOpp(userId, "A2", oppA);
+    createDemandWithOpp(userId, "B1", oppB);
+    mockMvc
+        .perform(get("/api/demands").param("opportunityId", String.valueOf(oppA)))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.content.length()").value(2));
   }
 
   /** TC-DMD-005: GET 详情返完整字段集。 */

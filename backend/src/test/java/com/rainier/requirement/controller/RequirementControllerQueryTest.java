@@ -43,6 +43,7 @@ class RequirementControllerQueryTest {
   @Autowired private UserRepository userRepo;
   @Autowired private StoryRepository storyRepo;
   @Autowired private SprintRepository sprintRepo;
+  @Autowired private com.rainier.opportunity.repository.OpportunityRepository oppRepo;
   @Autowired private ObjectMapper json;
 
   @BeforeEach
@@ -79,6 +80,44 @@ class RequirementControllerQueryTest {
             .andExpect(status().isCreated())
             .andReturn();
     return json.readTree(res.getResponse().getContentAsString()).get("id").asLong();
+  }
+
+  private Long seedOpp() {
+    com.rainier.opportunity.domain.Opportunity o = new com.rainier.opportunity.domain.Opportunity();
+    o.setCustomerName("X 集团");
+    o.setTitle("采购系统");
+    o.setStage(com.rainier.opportunity.domain.OpportunityStage.REQUIREMENT);
+    o.setStatus(com.rainier.opportunity.domain.OpportunityStatus.WON);
+    return oppRepo.saveAndFlush(o).getId();
+  }
+
+  private void createReqWithOpp(Long ownerId, String code, Long oppId) throws Exception {
+    ObjectNode body = json.createObjectNode();
+    body.put("code", code);
+    body.put("title", "x");
+    body.put("ownerUserId", ownerId);
+    body.put("opportunityId", oppId);
+    mockMvc
+        .perform(
+            post("/api/requirements")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(body.toString()))
+        .andExpect(status().isCreated());
+  }
+
+  /** TC-OGEN-R3: GET /requirements?opportunityId= 仅返回该商机派生的需求。 */
+  @Test
+  void list_filterByOpportunityId_returnsOnlyThatOpp() throws Exception {
+    Long userId = createUser();
+    Long oppA = seedOpp();
+    Long oppB = seedOpp();
+    createReqWithOpp(userId, "R-A1", oppA);
+    createReqWithOpp(userId, "R-A2", oppA);
+    createReqWithOpp(userId, "R-B1", oppB);
+    mockMvc
+        .perform(get("/api/requirements").param("opportunityId", String.valueOf(oppA)))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.content.length()").value(2));
   }
 
   /** TC-REQ-004: GET 详情完整字段集。 */

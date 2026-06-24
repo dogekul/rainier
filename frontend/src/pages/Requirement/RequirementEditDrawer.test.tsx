@@ -99,9 +99,9 @@ describe('RequirementEditDrawer', () => {
       expect(screen.getByTestId('req-source-checkbox-10')).toBeInTheDocument();
     });
 
-    // Fill required text fields.
-    const codeInput = screen.getByLabelText(/编码/);
-    fireEvent.change(codeInput, { target: { value: 'REQ-CONV-1' } });
+    // v0.0.56 — 新建时无编号输入（后端按自增 id 自动生成 REQ-{id}）
+    expect(screen.queryByLabelText(/编号/)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/编码/)).not.toBeInTheDocument();
     const titleInput = screen.getByLabelText(/标题/);
     fireEvent.change(titleInput, { target: { value: 'X' } });
 
@@ -126,7 +126,8 @@ describe('RequirementEditDrawer', () => {
     });
     const body = onCreate.mock.calls[0][0];
     expect(body.sourceDemandIds).toEqual([10, 20]);
-    expect(body.code).toBe('REQ-CONV-1');
+    // v0.0.56 — 前端不再发送 code（或发送空串），后端按自增 id 生成 REQ-{id}
+    expect(body.code === undefined || body.code === '').toBe(true);
     expect(body.title).toBe('X');
     expect(body.ownerUserId).toBe(1);
     expect(body.projectId).toBe(5);
@@ -220,7 +221,6 @@ describe('RequirementEditDrawer', () => {
     await waitFor(() => {
       expect(screen.getByTestId('req-sources-section')).toBeInTheDocument();
     });
-    fireEvent.change(screen.getByLabelText(/编码/), { target: { value: 'REQ-E1' } });
     fireEvent.change(screen.getByLabelText(/标题/), { target: { value: 'X' } });
     fireEvent.change(screen.getByTestId('req-owner-select'), { target: { value: '1' } });
     fireEvent.change(screen.getByTestId('req-expected-date'), {

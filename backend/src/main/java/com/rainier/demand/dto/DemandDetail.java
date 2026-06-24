@@ -17,6 +17,7 @@ public class DemandDetail {
   private String aiClassification;
   private Long aiDuplicateHint;
   private String closeReason;
+  private Long opportunityId;
   private Instant createTime;
   private Instant updateTime;
   private String createBy;
@@ -34,6 +35,7 @@ public class DemandDetail {
     dto.aiClassification = d.getAiClassification();
     dto.aiDuplicateHint = d.getAiDuplicateHint();
     dto.closeReason = d.getCloseReason();
+    dto.opportunityId = d.getOpportunityId();
     dto.createTime = d.getCreateTime();
     dto.updateTime = d.getUpdateTime();
     dto.createBy = d.getCreateBy();
@@ -79,6 +81,10 @@ public class DemandDetail {
 
   public String getCloseReason() {
     return closeReason;
+  }
+
+  public Long getOpportunityId() {
+    return opportunityId;
   }
 
   public Instant getCreateTime() {

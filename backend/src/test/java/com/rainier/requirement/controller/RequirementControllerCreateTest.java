@@ -35,6 +35,7 @@ class RequirementControllerCreateTest {
   @Autowired private DemandRepository demandRepo;
   @Autowired private DemandRequirementLinkRepository linkRepo;
   @Autowired private UserRepository userRepo;
+  @Autowired private com.rainier.opportunity.repository.OpportunityRepository oppRepo;
   @Autowired private ObjectMapper json;
 
   @BeforeEach
@@ -52,6 +53,68 @@ class RequirementControllerCreateTest {
     u.setIsInternal(true);
     u.setEnabled(true);
     return userRepo.saveAndFlush(u).getId();
+  }
+
+  private Long seedOpp() {
+    com.rainier.opportunity.domain.Opportunity o = new com.rainier.opportunity.domain.Opportunity();
+    o.setCustomerName("X 集团");
+    o.setTitle("采购系统");
+    o.setStage(com.rainier.opportunity.domain.OpportunityStage.REQUIREMENT);
+    o.setStatus(com.rainier.opportunity.domain.OpportunityStatus.WON);
+    return oppRepo.saveAndFlush(o).getId();
+  }
+
+  /** TC-OGEN-R1: 创建需求带存在的 opportunityId → 201 + 返回 opportunityId。 */
+  @Test
+  void post_withOpportunityId_persistsAndReturns() throws Exception {
+    Long userId = createUser();
+    Long oppId = seedOpp();
+    ObjectNode body = json.createObjectNode();
+    body.put("code", "REQ-OGEN-1");
+    body.put("title", "现场调研派生需求");
+    body.put("ownerUserId", userId);
+    body.put("opportunityId", oppId);
+    mockMvc
+        .perform(
+            post("/api/requirements")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(body.toString()))
+        .andExpect(status().isCreated())
+        .andExpect(jsonPath("$.opportunityId").value(oppId));
+  }
+
+  /** TC-OGEN-R-AUTO: 创建需求不带 code → 后端按自增 id 自动生成 REQ-{id}。 */
+  @Test
+  void post_withoutCode_autoGeneratesCode() throws Exception {
+    Long userId = createUser();
+    ObjectNode body = json.createObjectNode();
+    body.put("title", "无编号需求");
+    body.put("ownerUserId", userId);
+    mockMvc
+        .perform(
+            post("/api/requirements")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(body.toString()))
+        .andExpect(status().isCreated())
+        .andExpect(jsonPath("$.code", matchesPattern("^REQ-\\d+$")))
+        .andExpect(jsonPath("$.title").value("无编号需求"));
+  }
+
+  /** TC-OGEN-R2: 创建需求带不存在的 opportunityId → 400。 */
+  @Test
+  void post_withUnknownOpportunityId_returns400() throws Exception {
+    Long userId = createUser();
+    ObjectNode body = json.createObjectNode();
+    body.put("code", "REQ-OGEN-2");
+    body.put("title", "x");
+    body.put("ownerUserId", userId);
+    body.put("opportunityId", 999999L);
+    mockMvc
+        .perform(
+            post("/api/requirements")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(body.toString()))
+        .andExpect(status().isBadRequest());
   }
 
   /** TC-REQ-001: 最小 payload + 默认值。 */

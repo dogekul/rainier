@@ -142,7 +142,10 @@ export function RequirementEditDrawer({
       title={editing ? '编辑需求' : '新建需求'}
       onClose={onClose}
     >
-      <Input label="编码 (REQ-...)" value={code} onChange={(e) => setCode(e.target.value)} />
+      {/* v0.0.56 — 新建时不填编号（后端自增生成 REQ-{id}）；编辑时只读展示。 */}
+      {editing ? (
+        <Input label="编号" value={code} readOnly />
+      ) : null}
       <Input label="标题" value={title} onChange={(e) => setTitle(e.target.value)} />
       <Input
         label="描述（含验收标准）"

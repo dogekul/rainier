@@ -50,6 +50,18 @@ public class Demand extends BaseEntity {
   @Column(name = "close_reason", length = 500)
   private String closeReason;
 
+  /** v0.0.56 — 来源商机（可空，可追溯由哪个商机的现场调研生成）。 */
+  @Column(name = "opportunity_id")
+  private Long opportunityId;
+
+  public Long getOpportunityId() {
+    return opportunityId;
+  }
+
+  public void setOpportunityId(Long opportunityId) {
+    this.opportunityId = opportunityId;
+  }
+
   public String getTitle() {
     return title;
   }

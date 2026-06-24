@@ -42,6 +42,8 @@ export interface Requirement {
   closeReason?: string | null;
   /** v0.0.19 — 期望交付日期 (YYYY-MM-DD, 可空). */
   expectedDate?: string | null;
+  /** v0.0.56 — 来源商机（可空）。 */
+  opportunityId?: number | null;
   createBy?: string;
   createTime?: string;
   updateBy?: string;
@@ -49,7 +51,8 @@ export interface Requirement {
 }
 
 export interface RequirementCreate {
-  code: string;
+  /** v0.0.56 — 可空：缺省由后端按自增 id 生成 REQ-{id}（参照 Project v0.0.49）。 */
+  code?: string;
   title: string;
   description?: string;
   ownerUserId: number;
@@ -62,6 +65,8 @@ export interface RequirementCreate {
   expectedDate?: string;
   /** Optional: atomically create N derived links to existing demands. */
   sourceDemandIds?: number[];
+  /** v0.0.56 — 来源商机 id（可空）。 */
+  opportunityId?: number;
 }
 
 export interface RequirementUpdate {
@@ -84,6 +89,7 @@ export interface RequirementListParams {
   status?: RequirementStatus;
   priority?: Priority;
   projectId?: number;
+  opportunityId?: number;
   search?: string;
   page?: number;
   size?: number;

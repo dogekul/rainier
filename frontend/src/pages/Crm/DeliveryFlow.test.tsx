@@ -15,6 +15,7 @@ import {
   listOpportunityArtifacts,
   type OpportunityArtifact,
 } from '../../api/opportunityArtifact';
+import { listRequirements, type Requirement } from '../../api/requirement';
 
 const mockNavigate = vi.fn();
 vi.mock('react-router-dom', async (orig) => ({
@@ -42,6 +43,10 @@ vi.mock('../../api/project', async (orig) => ({
     page: 0,
     size: 100,
   }),
+}));
+vi.mock('../../api/requirement', async (orig) => ({
+  ...(await orig<typeof import('../../api/requirement')>()),
+  listRequirements: vi.fn(() => Promise.resolve({ content: [], total: 0, page: 0, size: 100 })),
 }));
 vi.mock('../../api/user', () => ({
   listUsers: vi.fn().mockResolvedValue({
@@ -89,6 +94,9 @@ describe('DeliveryFlow (实施流转 operations)', () => {
     vi.mocked(listOpportunities).mockReset();
     vi.mocked(listOpportunityArtifacts).mockClear().mockResolvedValue([] as OpportunityArtifact[]);
     vi.mocked(createOpportunityArtifact).mockClear();
+    vi.mocked(listRequirements)
+      .mockReset()
+      .mockResolvedValue({ content: [], total: 0, page: 0, size: 100 });
     mockNavigate.mockClear();
   });
 
@@ -165,17 +173,36 @@ describe('DeliveryFlow (实施流转 operations)', () => {
     expect(listOpportunities).toHaveBeenCalledTimes(2);
   });
 
-  /** TC-DEL-09: 产品诉求（无门禁）「推进」直接 advance(id)，不开补充表单。 */
-  it('advances a non-gated 实施 stage directly (TC-DEL-09)', async () => {
+  /** TC-DEL-09a: 产品诉求 推进且无需求 → 跳转详情页（让用户填写诉求转化），不调 advance。 */
+  it('navigates to detail when REQUIREMENT row has no requirements (TC-DEL-09a)', async () => {
+    vi.mocked(listOpportunities).mockResolvedValue(page([opp(7, 'REQUIREMENT')]));
+    // 该商机当前 0 条需求
+    vi.mocked(listRequirements).mockResolvedValue({ content: [], total: 0, page: 0, size: 100 });
+    renderPage();
+    await waitFor(() => expect(screen.getByTestId('delivery-advance-7')).toBeInTheDocument());
+    fireEvent.click(screen.getByTestId('delivery-advance-7'));
+    await waitFor(() =>
+      expect(mockNavigate).toHaveBeenCalledWith('/crm/opportunities/7?action=convert'),
+    );
+    expect(advanceOpportunity).not.toHaveBeenCalled();
+  });
+
+  /** TC-DEL-09b: 产品诉求 推进且已有需求 → 直接 advance（不跳转）。 */
+  it('advances directly when REQUIREMENT row already has a requirement (TC-DEL-09b)', async () => {
     vi.mocked(listOpportunities)
       .mockResolvedValueOnce(page([opp(7, 'REQUIREMENT')]))
       .mockResolvedValueOnce(page([opp(7, 'DELIVERY')]));
+    vi.mocked(listRequirements).mockResolvedValue({
+      content: [{ id: 99, code: 'REQ-99' } as Requirement],
+      total: 1,
+      page: 0,
+      size: 100,
+    });
     renderPage();
     await waitFor(() => expect(screen.getByTestId('delivery-advance-7')).toBeInTheDocument());
     fireEvent.click(screen.getByTestId('delivery-advance-7'));
     await waitFor(() => expect(advanceOpportunity).toHaveBeenCalledWith(7, undefined));
-    expect(listOpportunityArtifacts).not.toHaveBeenCalled();
-    expect(screen.queryByTestId('delivery-supp-SURVEY_REPORT')).not.toBeInTheDocument();
+    expect(mockNavigate).not.toHaveBeenCalled();
   });
 
   /** TC-DEL-03 / TC-FDH-01: 立项关联已有对外-交付项目（次要路径，先切到「关联已有」）— initiate({projectId}). */

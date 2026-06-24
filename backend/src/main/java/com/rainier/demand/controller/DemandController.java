@@ -51,8 +51,9 @@ public class DemandController {
   public PageResponse<DemandDetail> list(
       @RequestParam(required = false) String status,
       @RequestParam(required = false) String priority,
+      @RequestParam(required = false) Long opportunityId,
       @Valid PageParams page) {
-    return service.list(status, priority, page);
+    return service.list(status, priority, opportunityId, page);
   }
 
   @PutMapping("/{id}")

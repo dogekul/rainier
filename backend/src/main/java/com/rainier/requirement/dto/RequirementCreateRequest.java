@@ -17,7 +17,7 @@ import javax.validation.constraints.Size;
  */
 public class RequirementCreateRequest {
 
-  @NotBlank
+  /** v0.0.56 — 可空：缺省则后端按自增 id 生成 REQ-{id}（参照 Project v0.0.49 模式）。 */
   @Size(max = 64)
   private String code;
 
@@ -48,6 +48,17 @@ public class RequirementCreateRequest {
   private LocalDate expectedDate;
 
   private List<Long> sourceDemandIds;
+
+  /** v0.0.56 — 可选来源商机 id（非空则后端校验存在）。 */
+  private Long opportunityId;
+
+  public Long getOpportunityId() {
+    return opportunityId;
+  }
+
+  public void setOpportunityId(Long opportunityId) {
+    this.opportunityId = opportunityId;
+  }
 
   public String getCode() {
     return code;

@@ -7,6 +7,7 @@ import { Drawer } from '../../components/ui/Drawer';
 import { Input } from '../../components/ui/Input';
 import { listProjects, PROJECT_TYPE_LABELS, type Project } from '../../api/project';
 import { listUsers, type User } from '../../api/user';
+import { listRequirements } from '../../api/requirement';
 import { useAuthStore } from '../../store/auth';
 import {
   advanceOpportunity,
@@ -116,9 +117,31 @@ export function DeliveryFlow() {
     }
   };
 
-  // 实施环节「推进」路由：有产出物门禁(现场调研)且缺件 → 开补充表单；否则直接推进。
+  // 实施环节「推进」路由：
+  //  - 现场调研：缺件 → 开补充表单；齐备 → 直接推进。
+  //  - 产品诉求(v0.0.56)：无任何需求 → 跳转到详情页让用户填写诉求转化；已有需求 → 直接推进。
+  //  - 其它非终态：直接推进。
   const requestAdvance = async (r: Opportunity) => {
     if (busyId === r.id || suppOpp?.id === r.id) return; // in-flight / 表单已开 → 防重复触发
+    // v0.0.56 产品诉求 → 交付实施：必须先有需求；否则跳详情页。
+    if (r.stage === 'REQUIREMENT') {
+      setBusyId(r.id);
+      let hasRequirement = false;
+      try {
+        const page = await listRequirements({ opportunityId: r.id, size: 1 });
+        hasRequirement = (page.content?.length ?? 0) > 0;
+      } catch {
+        // lookup failed → fall through to advance; backend gate is the safety net
+      }
+      setBusyId(null);
+      if (!hasRequirement) {
+        // v0.0.56 — 带上提示参数，详情页会滚动到「产品诉求 / 需求」卡 + 展示补全提示横幅
+        navigate(`/crm/opportunities/${r.id}?action=convert`);
+        return;
+      }
+      void advance(r.id);
+      return;
+    }
     const required = STAGE_REQUIRED_ARTIFACTS[r.stage];
     if (required && required.length) {
       setBusyId(r.id); // guard the lookup window against double-clicks

@@ -25,6 +25,8 @@ export interface Demand {
   aiClassification?: string | null;
   aiDuplicateHint?: number | null;
   closeReason?: string | null;
+  /** v0.0.56 — 来源商机（可空）。 */
+  opportunityId?: number | null;
   createBy?: string;
   createTime?: string;
   updateBy?: string;
@@ -39,6 +41,8 @@ export interface DemandCreate {
   priority?: Priority;
   source?: Source;
   closeReason?: string;
+  /** v0.0.56 — 来源商机 id（可空）。 */
+  opportunityId?: number;
 }
 
 export interface DemandUpdate {
@@ -53,6 +57,7 @@ export interface DemandUpdate {
 export interface DemandListParams {
   status?: DemandStatus;
   priority?: Priority;
+  opportunityId?: number;
   search?: string;
   page?: number;
   size?: number;

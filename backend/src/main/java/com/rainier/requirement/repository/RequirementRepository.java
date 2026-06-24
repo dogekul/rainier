@@ -20,6 +20,9 @@ public interface RequirementRepository
   /** v0.0.8: used by ProjectService.delete to enforce FK protection. */
   long countByProjectId(Long projectId);
 
+  /** v0.0.56 — 商机派生需求计数（产品诉求→交付实施 推进卡点：需 ≥1）。 */
+  long countByOpportunityId(Long opportunityId);
+
   /** Hard delete for test cleanup — see DemandRepository.hardDeleteAll() rationale. */
   @org.springframework.data.jpa.repository.Modifying
   @org.springframework.data.jpa.repository.Query(

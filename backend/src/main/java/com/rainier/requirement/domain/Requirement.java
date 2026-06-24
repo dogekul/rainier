@@ -58,6 +58,18 @@ public class Requirement extends BaseEntity {
   @Column(name = "expected_date")
   private LocalDate expectedDate;
 
+  /** v0.0.56 — 来源商机（可空，可追溯由哪个商机的现场调研生成）。 */
+  @Column(name = "opportunity_id")
+  private Long opportunityId;
+
+  public Long getOpportunityId() {
+    return opportunityId;
+  }
+
+  public void setOpportunityId(Long opportunityId) {
+    this.opportunityId = opportunityId;
+  }
+
   public String getCode() {
     return code;
   }

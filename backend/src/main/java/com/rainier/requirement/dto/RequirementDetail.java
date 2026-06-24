@@ -33,6 +33,8 @@ public class RequirementDetail {
    * storyCount.
    */
   private Long sprintCount;
+  /** v0.0.56 — 来源商机（可空）。 */
+  private Long opportunityId;
 
   private Instant createTime;
   private Instant updateTime;
@@ -52,6 +54,7 @@ public class RequirementDetail {
     dto.projectId = r.getProjectId();
     dto.closeReason = r.getCloseReason();
     dto.expectedDate = r.getExpectedDate();
+    dto.opportunityId = r.getOpportunityId();
     dto.createTime = r.getCreateTime();
     dto.updateTime = r.getUpdateTime();
     dto.createBy = r.getCreateBy();
@@ -133,6 +136,10 @@ public class RequirementDetail {
 
   public LocalDate getExpectedDate() {
     return expectedDate;
+  }
+
+  public Long getOpportunityId() {
+    return opportunityId;
   }
 
   public Long getSprintCount() {

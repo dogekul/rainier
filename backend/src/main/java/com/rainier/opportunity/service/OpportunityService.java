@@ -61,6 +61,7 @@ public class OpportunityService {
   private final ProductRepository productRepo;
   private final CustomerRepository customerRepo;
   private final ProjectService projectService;
+  private final com.rainier.requirement.repository.RequirementRepository requirementRepo;
 
   public OpportunityService(
       OpportunityRepository repo,
@@ -69,7 +70,8 @@ public class OpportunityService {
       OpportunityArtifactRepository artifactRepo,
       ProductRepository productRepo,
       CustomerRepository customerRepo,
-      ProjectService projectService) {
+      ProjectService projectService,
+      com.rainier.requirement.repository.RequirementRepository requirementRepo) {
     this.repo = repo;
     this.userRepo = userRepo;
     this.projectRepo = projectRepo;
@@ -77,6 +79,7 @@ public class OpportunityService {
     this.productRepo = productRepo;
     this.customerRepo = customerRepo;
     this.projectService = projectService;
+    this.requirementRepo = requirementRepo;
   }
 
   @Transactional
@@ -194,6 +197,11 @@ public class OpportunityService {
     }
     // v0.0.45 产出物门禁：若该来源阶段要求产出物，校验 + 同事务创建（关口通过/否决都留痕）。
     persistRequiredArtifact(o, stage, decision, artifact);
+    // v0.0.56 产品诉求 → 交付实施 推进卡点：该商机须已有 ≥1 条需求（诉求转化/直接生成）。
+    if (OpportunityStage.REQUIREMENT.equals(stage)
+        && requirementRepo.countByOpportunityId(o.getId()) == 0) {
+      throw new BadRequestException("请先将诉求转化为需求：产品诉求 → 交付实施 需该商机已有至少 1 条需求");
+    }
     // 关口否决：售前 → 丢单，立项 → 停留可重审。
     if (OpportunityStage.GATE_STAGES.contains(stage) && GateDecision.REJECT.equals(decision)) {
       if (OpportunityStage.PRESALES_GATES.contains(stage)) {
