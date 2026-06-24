@@ -17,6 +17,16 @@ public class OperationCreateRequest {
 
   private Long opsOwnerUserId;
   private Long projectId;
+  /** v0.0.58 — 可选来源商机 id（手动建运营单可不传；ACCEPTANCE 自动建走 createForAcceptedOpportunity）。 */
+  private Long opportunityId;
+
+  public Long getOpportunityId() {
+    return opportunityId;
+  }
+
+  public void setOpportunityId(Long opportunityId) {
+    this.opportunityId = opportunityId;
+  }
 
   public String getCustomerName() {
     return customerName;

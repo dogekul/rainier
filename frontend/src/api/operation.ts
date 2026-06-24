@@ -20,7 +20,10 @@ export interface Operation {
   opsOwnerUserId?: number | null;
   opsOwnerName?: string | null;
   projectId?: number | null;
+  /** v0.0.58 — 来源商机（可空）。 */
+  opportunityId?: number | null;
   createTime?: string;
+  updateTime?: string;
 }
 
 export interface OperationCreate {
@@ -28,11 +31,22 @@ export interface OperationCreate {
   title: string;
   opsOwnerUserId?: number;
   projectId?: number;
+  /** v0.0.58 — 可选来源商机 id。 */
+  opportunityId?: number;
+}
+
+export interface OperationUpdate {
+  customerName: string;
+  title: string;
+  opsOwnerUserId?: number | null;
+  projectId?: number | null;
 }
 
 export interface OperationListParams {
   stage?: OperationStage;
   status?: OperationStatus;
+  /** v0.0.58 — 按来源商机过滤。 */
+  opportunityId?: number;
   page?: number;
   size?: number;
 }
@@ -51,5 +65,16 @@ export async function createOperation(body: OperationCreate): Promise<Operation>
 
 export async function advanceOperation(id: number): Promise<Operation> {
   const res = await client.post<Operation>(`/operations/${id}/advance`, {});
+  return res.data;
+}
+
+/** v0.0.58 — get one operation by id (powers OperationDetailPage). */
+export async function getOperation(id: number): Promise<Operation> {
+  const res = await client.get<Operation>(`/operations/${id}`);
+  return res.data;
+}
+
+export async function updateOperation(id: number, body: OperationUpdate): Promise<Operation> {
+  const res = await client.put<Operation>(`/operations/${id}`, body);
   return res.data;
 }

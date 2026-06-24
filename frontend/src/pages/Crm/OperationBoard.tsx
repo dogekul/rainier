@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { StatTiles } from '../../components/board';
 import { Button } from '../../components/ui/Button';
 import { Drawer } from '../../components/ui/Drawer';
@@ -20,6 +21,7 @@ import {
  *「售后环节」of the 客户全流程.
  */
 export function OperationBoard() {
+  const navigate = useNavigate();
   const [rows, setRows] = useState<Operation[]>([]);
   const [busyId, setBusyId] = useState<number | null>(null);
 
@@ -138,7 +140,15 @@ export function OperationBoard() {
                 >
                   <div style={{ fontWeight: 600, fontSize: 13 }}>{r.customerName}</div>
                   <div style={{ fontSize: 13 }}>{r.title}</div>
-                  <div style={{ marginTop: 4 }}>
+                  <div style={{ marginTop: 4, display: 'flex', gap: 6 }}>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={() => navigate(`/crm/operations/${r.id}`)}
+                      data-testid={`opr-detail-${r.id}`}
+                    >
+                      详情
+                    </Button>
                     <Button
                       type="button"
                       variant="primary"

@@ -41,6 +41,18 @@ public class Operation extends BaseEntity {
   @Column(name = "project_id")
   private Long projectId;
 
+  /** v0.0.58 — 来源商机（可空，可追溯由哪条商机验收时自动建）。 */
+  @Column(name = "opportunity_id")
+  private Long opportunityId;
+
+  public Long getOpportunityId() {
+    return opportunityId;
+  }
+
+  public void setOpportunityId(Long opportunityId) {
+    this.opportunityId = opportunityId;
+  }
+
   public String getCustomerName() {
     return customerName;
   }

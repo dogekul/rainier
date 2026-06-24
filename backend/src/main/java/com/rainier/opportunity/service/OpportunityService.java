@@ -62,6 +62,7 @@ public class OpportunityService {
   private final CustomerRepository customerRepo;
   private final ProjectService projectService;
   private final com.rainier.requirement.repository.RequirementRepository requirementRepo;
+  private final com.rainier.operation.service.OperationService operationService;
 
   public OpportunityService(
       OpportunityRepository repo,
@@ -71,7 +72,8 @@ public class OpportunityService {
       ProductRepository productRepo,
       CustomerRepository customerRepo,
       ProjectService projectService,
-      com.rainier.requirement.repository.RequirementRepository requirementRepo) {
+      com.rainier.requirement.repository.RequirementRepository requirementRepo,
+      com.rainier.operation.service.OperationService operationService) {
     this.repo = repo;
     this.userRepo = userRepo;
     this.projectRepo = projectRepo;
@@ -80,6 +82,7 @@ public class OpportunityService {
     this.customerRepo = customerRepo;
     this.projectService = projectService;
     this.requirementRepo = requirementRepo;
+    this.operationService = operationService;
   }
 
   @Transactional
@@ -215,7 +218,17 @@ public class OpportunityService {
     if (OpportunityStage.CONTRACT.equals(stage)) {
       o.setStatus(OpportunityStatus.WON); // 合同签订 PASS → 赢单，进入实施
     }
-    return enrich(repo.saveAndFlush(o));
+    Opportunity saved = repo.saveAndFlush(o);
+    // v0.0.58 — 商机进入 ACCEPTANCE 时自动建一条 Operation（来源商机/项目/负责人同源），幂等。
+    if (OpportunityStage.ACCEPTANCE.equals(saved.getStage())) {
+      operationService.createForAcceptedOpportunity(
+          saved.getId(),
+          saved.getCustomerName(),
+          saved.getTitle(),
+          saved.getOpsOwnerUserId(),
+          saved.getProjectId());
+    }
+    return enrich(saved);
   }
 
   /**

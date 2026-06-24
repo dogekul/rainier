@@ -15,6 +15,8 @@ public class OperationDetail {
   private Long opsOwnerUserId;
   private String opsOwnerName;
   private Long projectId;
+  /** v0.0.58 — 来源商机（可空）。 */
+  private Long opportunityId;
   private Instant createTime;
   private Instant updateTime;
 
@@ -27,9 +29,14 @@ public class OperationDetail {
     d.status = o.getStatus();
     d.opsOwnerUserId = o.getOpsOwnerUserId();
     d.projectId = o.getProjectId();
+    d.opportunityId = o.getOpportunityId();
     d.createTime = o.getCreateTime();
     d.updateTime = o.getUpdateTime();
     return d;
+  }
+
+  public Long getOpportunityId() {
+    return opportunityId;
   }
 
   public Long getId() {

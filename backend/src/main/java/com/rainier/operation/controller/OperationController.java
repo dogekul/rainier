@@ -41,8 +41,9 @@ public class OperationController {
   public PageResponse<OperationDetail> list(
       @RequestParam(required = false) String stage,
       @RequestParam(required = false) String status,
+      @RequestParam(required = false) Long opportunityId,
       @Valid PageParams page) {
-    return service.list(stage, status, page);
+    return service.list(stage, status, opportunityId, page);
   }
 
   @GetMapping("/{id}")

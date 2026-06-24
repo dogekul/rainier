@@ -45,14 +45,39 @@ public class OperationService {
     o.setStatus(Operation.ACTIVE);
     o.setOpsOwnerUserId(req.getOpsOwnerUserId());
     o.setProjectId(req.getProjectId());
+    o.setOpportunityId(req.getOpportunityId());
     return enrich(repo.saveAndFlush(o));
+  }
+
+  /**
+   * v0.0.58 — 当商机推进至 ACCEPTANCE 时由 OpportunityService 调用：自动建一条 Operation。同
+   * opportunityId 已存在则跳过（幂等）。返回新建或既有的 OperationDetail。
+   */
+  @Transactional
+  public OperationDetail createForAcceptedOpportunity(
+      Long opportunityId, String customerName, String title, Long opsOwnerUserId, Long projectId) {
+    return repo.findFirstByOpportunityId(opportunityId)
+        .map(this::enrich)
+        .orElseGet(
+            () -> {
+              Operation o = new Operation();
+              o.setCustomerName(customerName);
+              o.setTitle(title);
+              o.setStage(OperationStage.MAINTENANCE);
+              o.setStatus(Operation.ACTIVE);
+              o.setOpsOwnerUserId(opsOwnerUserId);
+              o.setProjectId(projectId);
+              o.setOpportunityId(opportunityId);
+              return enrich(repo.saveAndFlush(o));
+            });
   }
 
   public OperationDetail findById(Long id) {
     return enrich(getOrThrow(id));
   }
 
-  public PageResponse<OperationDetail> list(String stage, String status, PageParams page) {
+  public PageResponse<OperationDetail> list(
+      String stage, String status, Long opportunityId, PageParams page) {
     Specification<Operation> spec =
         (root, q, cb) -> {
           Predicate p = cb.conjunction();
@@ -61,6 +86,9 @@ public class OperationService {
           }
           if (status != null) {
             p = cb.and(p, cb.equal(root.get("status"), status));
+          }
+          if (opportunityId != null) {
+            p = cb.and(p, cb.equal(root.get("opportunityId"), opportunityId));
           }
           return p;
         };

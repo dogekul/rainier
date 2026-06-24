@@ -21,6 +21,7 @@ import OpportunityDetailPage from './pages/Crm/OpportunityDetailPage';
 import PresaleFlowPage from './pages/Crm/PresaleFlowPage';
 import DeliveryFlowPage from './pages/Crm/DeliveryFlowPage';
 import OperationBoardPage from './pages/Crm/OperationBoardPage';
+import OperationDetailPage from './pages/Crm/OperationDetailPage';
 import InboxPage from './pages/Inbox';
 import OrganizationsPage from './pages/Organization';
 import PositionsPage from './pages/Position';
@@ -55,6 +56,7 @@ export function AppRoutes() {
           <Route path="/crm/presale-flow" element={<PresaleFlowPage />} />
           <Route path="/crm/delivery-flow" element={<DeliveryFlowPage />} />
           <Route path="/crm/operations" element={<OperationBoardPage />} />
+          <Route path="/crm/operations/:id" element={<OperationDetailPage />} />
           <Route path="/demand-submit" element={<DemandSubmitPage />} />
           <Route path="/org" element={<Navigate to="/org/organizations" replace />} />
           <Route path="/org/organizations" element={<OrganizationsPage />} />
