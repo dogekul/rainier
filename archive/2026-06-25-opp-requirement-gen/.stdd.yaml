@@ -1,0 +1,36 @@
+change:
+  id: 2026-06-25-opp-requirement-gen
+  title: v0.0.56-opp-requirement-gen — 商机→诉求/需求生成 + 转化卡点 + 详情页布局优化
+  baseline: {tag: v0.0.55-opportunity-detail-page, commit: 6aeb02d}
+  type: feature
+  source: "用户：进入产品诉求阶段，据调研+产品情况生成产品诉求/需求并提交到本系统"
+
+phase:
+  current: archived
+  understand: {status: completed, confirmed_at: '2026-06-25', gate_1: "助手式草稿(无 LLM); 诉求或需求用户选; +opportunityId 链接"}
+  spec: {status: completed, gate_2: auto_proceed}
+  slice: {status: completed}
+  build: {status: completed}
+  verify:
+    status: completed
+    metrics: {backend: "temurin-8 541/541 (+7 TC-OGEN +2 TC-OREQ)", frontend: "260/260 (+4 TC-OGEN-F)", tsc: clean, lint: clean, e2e: "列迁移+创建+过滤+400 + 转化卡点 待 live 复核"}
+    review: {C: 0, H: 0, M: 0, L: 3, fixed: "L3 描述截断"}
+    awaiting: gate_3_user_review_then_commit
+  deliver: {status: completed, archived_at: '2026-06-25'}
+  iteration_v2:
+    note: "用户反馈：详情页布局重排（全宽单列+多列字段+强 hero）；产品诉求→交付实施 推进卡点=该商机≥1需求(Option B)"
+
+long_range:
+  enabled: true
+  mode: full_auto
+  pre_auth: {git_ops: allow_up_to_commit_and_tag, gate_2: auto_proceed, gate_3: require_user_confirmation}
+
+scope:
+  type: feature
+  capabilities_modified: [entity-demand, entity-requirement, opportunity, frontend-scaffold]
+  capabilities_new: []
+  new_tables: 0
+  new_columns: [rainier_demand.opportunity_id, rainier_requirement.opportunity_id]
+  new_deps: []
+  new_apis: []
+  behavior_change: "Demand/Requirement 加 opportunityId + create/list；商机详情页助手式生成诉求/需求；产品诉求→交付实施 推进卡点(商机≥1需求)；详情页布局重排"
