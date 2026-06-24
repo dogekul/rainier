@@ -4,6 +4,22 @@ import type { Priority } from './demand';
 
 export type TaskStatus = 'TODO' | 'IN_PROGRESS' | 'DONE' | 'BLOCKED' | 'CANCELLED';
 
+/** v0.0.50 — 任务状态选项顺序 + 中文标签，供 TasksPage / 工作台 / 驾驶舱 / 编辑抽屉 共用展示。 */
+export const TASK_STATUS_OPTIONS: TaskStatus[] = [
+  'TODO',
+  'IN_PROGRESS',
+  'DONE',
+  'BLOCKED',
+  'CANCELLED',
+];
+export const TASK_STATUS_LABELS: Record<TaskStatus, string> = {
+  TODO: '待办',
+  IN_PROGRESS: '进行中',
+  DONE: '已完成',
+  BLOCKED: '阻塞',
+  CANCELLED: '已取消',
+};
+
 export interface Task {
   id: number;
   code: string;

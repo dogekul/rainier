@@ -9,13 +9,14 @@ import { listStories, type Story } from '../../api/story';
 import { listUsers, type User } from '../../api/user';
 import { PRIORITY_LABELS } from '../../api/demand';
 import {
+  TASK_STATUS_LABELS,
+  TASK_STATUS_OPTIONS,
   type Task,
   type TaskCreate,
   type TaskStatus,
   type TaskUpdate,
 } from '../../api/task';
 
-const STATUS_OPTIONS: TaskStatus[] = ['TODO', 'IN_PROGRESS', 'DONE', 'BLOCKED', 'CANCELLED'];
 const PRIORITY_OPTIONS = ['LOW', 'MEDIUM', 'HIGH', 'URGENT', 'LOWEST'] as const;
 
 export interface TaskEditDrawerProps {
@@ -230,9 +231,9 @@ export function TaskEditDrawer({
           value={status}
           onChange={(e) => setStatus(e.target.value as TaskStatus)}
         >
-          {STATUS_OPTIONS.map((s) => (
+          {TASK_STATUS_OPTIONS.map((s) => (
             <option key={s} value={s}>
-              {s}
+              {TASK_STATUS_LABELS[s]}
             </option>
           ))}
         </select>

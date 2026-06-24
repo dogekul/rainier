@@ -5,7 +5,14 @@ import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import { Pagination } from '../../components/ui/Pagination';
 import { Table, type TableColumn } from '../../components/ui/Table';
 import { StatusChip } from '../../components/board';
-import { createTask, deleteTask, listTasks, updateTask, type Task } from '../../api/task';
+import {
+  createTask,
+  deleteTask,
+  listTasks,
+  TASK_STATUS_LABELS,
+  updateTask,
+  type Task,
+} from '../../api/task';
 import { usePaginated } from '../../hooks/usePaginated';
 import { TaskEditDrawer } from './TaskEditDrawer';
 
@@ -45,7 +52,11 @@ export function TasksPage() {
       render: (t) =>
         t.assigneeName ? `${t.assigneeName}（${t.assigneeLoginName ?? ''}）` : '待分配',
     },
-    { key: 'status', title: '状态', render: (t) => <StatusChip status={t.status} /> },
+    {
+      key: 'status',
+      title: '状态',
+      render: (t) => <StatusChip status={t.status} label={TASK_STATUS_LABELS[t.status]} />,
+    },
     { key: 'priority', title: '优先级', render: (t) => t.priority },
     { key: 'dueDate', title: '到期日', render: (t) => t.dueDate ?? '—' },
     {

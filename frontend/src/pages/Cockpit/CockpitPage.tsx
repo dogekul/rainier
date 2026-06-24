@@ -3,14 +3,19 @@ import { Link } from 'react-router-dom';
 import { DashboardCard, EmptyState, StatusBar, StatusChip } from '../../components/board';
 import { groupByStatus, isOverdue, rygToTier, RYG_LABEL, todayISO } from '../../utils/board';
 import { useAuthStore } from '../../store/auth';
-import { listTasks, updateTask, type Task, type TaskStatus } from '../../api/task';
+import {
+  listTasks,
+  TASK_STATUS_LABELS,
+  TASK_STATUS_OPTIONS,
+  updateTask,
+  type Task,
+  type TaskStatus,
+} from '../../api/task';
 import { listStories, updateStory, type Story, type StoryStatus } from '../../api/story';
 import { listSprints, type Sprint } from '../../api/sprint';
 import { listRequirements, type Requirement } from '../../api/requirement';
 import { listMilestones, type Milestone } from '../../api/milestone';
 import { getPortfolio, type PortfolioRow } from '../../api/portfolio';
-
-const TASK_STATUS_OPTIONS: TaskStatus[] = ['TODO', 'IN_PROGRESS', 'DONE', 'BLOCKED', 'CANCELLED'];
 const STORY_STATUS_OPTIONS: StoryStatus[] = [
   'DRAFT',
   'READY',
@@ -331,7 +336,7 @@ export function CockpitPage() {
                     >
                       {TASK_STATUS_OPTIONS.map((s) => (
                         <option key={s} value={s}>
-                          {s}
+                          {TASK_STATUS_LABELS[s]}
                         </option>
                       ))}
                     </select>

@@ -49,14 +49,17 @@ describe('TasksPage', () => {
     useAuthStore.setState({ token: 'tk', user: { username: 'alice' } });
   });
 
-  /** TC-FES-TSK-002 (partial): /pm/tasks renders TasksPage w/ list + 新建按钮. */
-  it('renders task list w/ 新建任务 button', async () => {
+  /** TC-FES-TSK-002 (partial): /pm/tasks renders TasksPage w/ list + 新建按钮 + 中文状态. */
+  it('renders task list w/ 新建任务 button and Chinese status label', async () => {
     render(<TasksPage />);
     await waitFor(() => {
       expect(screen.getByText('TASK-1')).toBeInTheDocument();
     });
     expect(screen.getByText('修登录页 bug')).toBeInTheDocument();
     expect(screen.getByTestId('task-new-btn')).toBeInTheDocument();
+    // v0.0.50: 任务状态展示中文（TODO → 待办），不再是原始枚举
+    expect(screen.getByText('待办')).toBeInTheDocument();
+    expect(screen.queryByText('TODO')).not.toBeInTheDocument();
   });
 
   /** TC-FES-PRIO-001: the task edit drawer's priority dropdown includes 最低 (shared 5-level). */

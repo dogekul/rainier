@@ -4,12 +4,17 @@ import { Card } from '../../components/ui';
 import { StatusChip } from '../../components/board';
 import { isOverdue, todayISO } from '../../utils/board';
 import { useAuthStore } from '../../store/auth';
-import { listTasks, updateTask, type Task, type TaskStatus } from '../../api/task';
+import {
+  listTasks,
+  TASK_STATUS_LABELS,
+  TASK_STATUS_OPTIONS,
+  updateTask,
+  type Task,
+  type TaskStatus,
+} from '../../api/task';
 import { listStories, type Story } from '../../api/story';
 import type { Priority } from '../../api/demand';
 import './WorkbenchPage.css';
-
-const TASK_STATUS_OPTIONS: TaskStatus[] = ['TODO', 'IN_PROGRESS', 'DONE', 'BLOCKED', 'CANCELLED'];
 
 const PRIORITY_RANK: Record<Priority, number> = {
   URGENT: 0,
@@ -181,7 +186,7 @@ export function WorkbenchPage() {
                     >
                       {TASK_STATUS_OPTIONS.map((s) => (
                         <option key={s} value={s}>
-                          {s}
+                          {TASK_STATUS_LABELS[s]}
                         </option>
                       ))}
                     </select>
