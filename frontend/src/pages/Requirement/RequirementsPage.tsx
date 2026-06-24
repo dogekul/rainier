@@ -18,7 +18,7 @@ import { PRIORITY_LABELS } from '../../api/demand';
 import { usePaginated } from '../../hooks/usePaginated';
 import { RequirementEditDrawer } from './RequirementEditDrawer';
 import { SprintListPanel } from './SprintListPanel';
-import { StatusChip } from '../../components/board';
+import { OwnerChip, StatusChip } from '../../components/board';
 
 export function RequirementsPage() {
   const fetcher = useCallback(
@@ -90,8 +90,7 @@ export function RequirementsPage() {
     {
       key: 'owner',
       title: '负责人',
-      render: (r) =>
-        r.ownerName ? `${r.ownerName}（${r.ownerLoginName ?? ''}）` : r.ownerUserId,
+      render: (r) => <OwnerChip name={r.ownerName} loginName={r.ownerLoginName} />,
     },
     {
       key: 'project',
@@ -138,7 +137,7 @@ export function RequirementsPage() {
   return (
     <div className="rainier-page">
       <div className="rainier-page-head">
-        <h2 style={{ margin: 0 }}>需求</h2>
+        <h2>需求</h2>
         <div style={{ flex: 1 }} />
         <Button
           type="button"

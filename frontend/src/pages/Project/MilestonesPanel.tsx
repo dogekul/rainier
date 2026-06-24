@@ -117,7 +117,7 @@ export function MilestonesPanel({ projectId }: MilestonesPanelProps) {
             状态
           </label>
           <select
-            className="rainier-treeselect-trigger"
+            className="rainier-form-select"
             value={statusVal}
             onChange={(e) => setStatusVal(e.target.value as MilestoneStatus)}
             data-testid="milestone-status-select"

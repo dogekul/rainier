@@ -65,7 +65,7 @@ export function SprintFeaturePanel({ sprintId, productId }: SprintFeaturePanelPr
     >
       <div style={{ display: 'flex', gap: 8, marginBottom: 12, alignItems: 'center' }}>
         <select
-          className="rainier-treeselect-trigger"
+          className="rainier-form-select"
           value={selected}
           onChange={(e) => setSelected(e.target.value === '' ? '' : Number(e.target.value))}
           data-testid="sprint-feature-mount-select"

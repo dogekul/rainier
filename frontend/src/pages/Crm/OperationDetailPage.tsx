@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { StatusChip } from '../../components/board';
 import { Button } from '../../components/ui/Button';
+import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import { Input } from '../../components/ui/Input';
 import { MarkdownView } from '../../components/ui/MarkdownView';
 import { listUsers, type User } from '../../api/user';
@@ -256,11 +257,9 @@ export default function OperationDetailPage() {
     }
   };
 
-  const removeIssue = async (issueId: number) => {
-    if (!confirm('确认删除该问题？')) return;
-    await deleteOperationIssue(issueId);
-    loadIssues();
-  };
+  // v0.0.60 — replace window.confirm with state-managed ConfirmDialog (Feishu pattern, mirrors CustomerPage).
+  const [confirmDeleteIssueId, setConfirmDeleteIssueId] = useState<number | null>(null);
+  const removeIssue = (issueId: number) => setConfirmDeleteIssueId(issueId);
 
   return (
     <div className="rainier-page" data-testid="op-detail-page">
@@ -277,7 +276,7 @@ export default function OperationDetailPage() {
         >
           ← 返回
         </Button>
-        <h2 style={{ margin: 0 }}>运营详情</h2>
+        <h2>运营详情</h2>
         {op && (
           <>
             <span
@@ -391,7 +390,7 @@ export default function OperationDetailPage() {
                 <div className="opp-form-block">
                   <label className="opp-form-label">运营负责人</label>
                   <select
-                    className="rainier-treeselect-trigger"
+                    className="rainier-form-select"
                     value={eOwnerId}
                     onChange={(e) =>
                       setEOwnerId(e.target.value === '' ? '' : Number(e.target.value))
@@ -666,7 +665,7 @@ export default function OperationDetailPage() {
                 <div className="opp-form-block">
                   <label className="opp-form-label">严重度</label>
                   <select
-                    className="rainier-treeselect-trigger"
+                    className="rainier-form-select"
                     value={iSeverity}
                     onChange={(e) => setISeverity(e.target.value as IssueSeverity)}
                     data-testid="op-issue-severity"
@@ -681,7 +680,7 @@ export default function OperationDetailPage() {
                 <div className="opp-form-block">
                   <label className="opp-form-label">负责人（可空）</label>
                   <select
-                    className="rainier-treeselect-trigger"
+                    className="rainier-form-select"
                     value={iAssignee}
                     onChange={(e) =>
                       setIAssignee(e.target.value === '' ? '' : Number(e.target.value))
@@ -777,7 +776,7 @@ export default function OperationDetailPage() {
                       <div className="opp-form-block">
                         <label className="opp-form-label">状态</label>
                         <select
-                          className="rainier-treeselect-trigger"
+                          className="rainier-form-select"
                           value={iEditStatus}
                           onChange={(e) => setIEditStatus(e.target.value as IssueStatus)}
                           data-testid={`op-issue-edit-status-${issue.id}`}
@@ -792,7 +791,7 @@ export default function OperationDetailPage() {
                       <div className="opp-form-block">
                         <label className="opp-form-label">负责人</label>
                         <select
-                          className="rainier-treeselect-trigger"
+                          className="rainier-form-select"
                           value={iEditAssignee}
                           onChange={(e) =>
                             setIEditAssignee(e.target.value === '' ? '' : Number(e.target.value))
@@ -854,6 +853,22 @@ export default function OperationDetailPage() {
           </div>
         </div>
       ) : null}
+
+      <ConfirmDialog
+        open={confirmDeleteIssueId !== null}
+        title="删除问题"
+        message="确认删除该问题？删除后不可恢复。"
+        confirmText="删除"
+        onCancel={() => setConfirmDeleteIssueId(null)}
+        onConfirm={async () => {
+          const target = confirmDeleteIssueId;
+          setConfirmDeleteIssueId(null);
+          if (target != null) {
+            await deleteOperationIssue(target);
+            loadIssues();
+          }
+        }}
+      />
     </div>
   );
 }

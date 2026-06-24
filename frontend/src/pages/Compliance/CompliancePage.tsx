@@ -39,7 +39,7 @@ export function CompliancePage() {
   return (
     <div className="rainier-page">
       <div className="rainier-page-head">
-        <h2 style={{ margin: 0 }}>合规仪表盘</h2>
+        <h2>合规仪表盘</h2>
       </div>
 
       <StatTiles

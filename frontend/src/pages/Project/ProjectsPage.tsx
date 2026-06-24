@@ -7,6 +7,7 @@ import { Input } from '../../components/ui/Input';
 import { Pagination } from '../../components/ui/Pagination';
 import { Table, type TableColumn } from '../../components/ui/Table';
 import { StatusChip } from '../../components/board';
+import { PROJECT_STATUS_LABELS } from '../../constants/labels';
 import {
   createProject,
   deleteProject,
@@ -123,7 +124,7 @@ export function ProjectsPage() {
   const columns: TableColumn<Project>[] = [
     { key: 'code', title: '编码', render: (r) => r.code },
     { key: 'name', title: '名称', render: (r) => r.name },
-    { key: 'status', title: '状态', render: (r) => <StatusChip status={r.status} /> },
+    { key: 'status', title: '状态', render: (r) => <StatusChip status={r.status} label={PROJECT_STATUS_LABELS[r.status]} /> },
     {
       key: 'projectType',
       title: '类型',
@@ -171,7 +172,7 @@ export function ProjectsPage() {
   return (
     <div className="rainier-page">
       <div className="rainier-page-head">
-        <h2 style={{ margin: 0 }}>项目</h2>
+        <h2>项目</h2>
         <div style={{ flex: 1 }} />
         <select
           className="rainier-select"
@@ -227,14 +228,14 @@ export function ProjectsPage() {
         <div style={{ marginBottom: 12 }}>
           <label style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }}>状态</label>
           <select
-            className="rainier-treeselect-trigger"
+            className="rainier-form-select"
             value={status}
             onChange={(e) => setStatus(e.target.value as ProjectStatus)}
             data-testid="projects-status-select"
           >
             {STATUS_OPTIONS.map((s) => (
               <option key={s} value={s}>
-                {s}
+                {PROJECT_STATUS_LABELS[s] ?? s}
               </option>
             ))}
           </select>
@@ -242,7 +243,7 @@ export function ProjectsPage() {
         <div style={{ marginBottom: 12 }}>
           <label style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }}>项目类型</label>
           <select
-            className="rainier-treeselect-trigger"
+            className="rainier-form-select"
             value={projectType}
             onChange={(e) => setProjectType(e.target.value as ProjectType)}
             data-testid="projects-type-select"
@@ -259,7 +260,7 @@ export function ProjectsPage() {
             负责人（默认为当前登录用户，可改）
           </label>
           <select
-            className="rainier-treeselect-trigger"
+            className="rainier-form-select"
             value={ownerUserId}
             onChange={(e) => {
               setOwnerUserId(e.target.value === '' ? '' : Number(e.target.value));

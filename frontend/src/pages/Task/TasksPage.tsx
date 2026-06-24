@@ -4,7 +4,7 @@ import { Card } from '../../components/ui/Card';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import { Pagination } from '../../components/ui/Pagination';
 import { Table, type TableColumn } from '../../components/ui/Table';
-import { StatusChip } from '../../components/board';
+import { OwnerChip, StatusChip } from '../../components/board';
 import {
   createTask,
   deleteTask,
@@ -13,6 +13,7 @@ import {
   updateTask,
   type Task,
 } from '../../api/task';
+import { PRIORITY_LABELS } from '../../api/demand';
 import { usePaginated } from '../../hooks/usePaginated';
 import { TaskEditDrawer } from './TaskEditDrawer';
 
@@ -49,15 +50,14 @@ export function TasksPage() {
     {
       key: 'assignee',
       title: '指派人',
-      render: (t) =>
-        t.assigneeName ? `${t.assigneeName}（${t.assigneeLoginName ?? ''}）` : '待分配',
+      render: (t) => <OwnerChip name={t.assigneeName} loginName={t.assigneeLoginName} />,
     },
     {
       key: 'status',
       title: '状态',
       render: (t) => <StatusChip status={t.status} label={TASK_STATUS_LABELS[t.status]} />,
     },
-    { key: 'priority', title: '优先级', render: (t) => t.priority },
+    { key: 'priority', title: '优先级', render: (t) => PRIORITY_LABELS[t.priority] ?? t.priority },
     { key: 'dueDate', title: '到期日', render: (t) => t.dueDate ?? '—' },
     {
       key: 'actions',
@@ -85,7 +85,7 @@ export function TasksPage() {
   return (
     <div className="rainier-page">
       <div className="rainier-page-head">
-        <h2 style={{ margin: 0 }}>任务</h2>
+        <h2>任务</h2>
         <div style={{ flex: 1 }} />
         <Button
           type="button"

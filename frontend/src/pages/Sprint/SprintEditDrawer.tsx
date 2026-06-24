@@ -118,7 +118,7 @@ export function SprintEditDrawer({
       <div style={{ marginBottom: 12 }}>
         <label style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }}>状态</label>
         <select
-          className="rainier-treeselect-trigger"
+          className="rainier-form-select"
           value={status}
           onChange={(e) => setStatus(e.target.value as SprintStatus)}
           data-testid="sprint-status-select"
@@ -135,7 +135,7 @@ export function SprintEditDrawer({
           负责人（默认为当前登录用户，可改）
         </label>
         <select
-          className="rainier-treeselect-trigger"
+          className="rainier-form-select"
           value={ownerUserId}
           onChange={(e) => {
             setOwnerUserId(e.target.value === '' ? '' : Number(e.target.value));

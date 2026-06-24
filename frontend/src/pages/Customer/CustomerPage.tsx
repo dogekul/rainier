@@ -89,7 +89,7 @@ export function CustomerPage() {
   return (
     <div className="rainier-page">
       <div className="rainier-page-head">
-        <h2 style={{ margin: 0 }}>客户</h2>
+        <h2>客户</h2>
         <span className="cust-count">共 {list.total} 家</span>
         <div style={{ flex: 1 }} />
         <Input

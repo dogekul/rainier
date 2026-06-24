@@ -64,7 +64,7 @@ export function SprintsPage() {
   return (
     <div className="rainier-page">
       <div className="rainier-page-head">
-        <h2 style={{ margin: 0 }}>Sprint</h2>
+        <h2>Sprint</h2>
         <div style={{ flex: 1 }} />
       </div>
       <Card>

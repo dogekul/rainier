@@ -97,7 +97,7 @@ export function UsersPage() {
   return (
     <div className="rainier-page">
       <div className="rainier-page-head">
-        <h2 style={{ margin: 0 }}>用户</h2>
+        <h2>用户</h2>
         <div style={{ flex: 1 }} />
         <Input
           label="搜索"
@@ -149,7 +149,7 @@ export function UsersPage() {
         <div style={{ marginBottom: 12 }}>
           <label style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }}>岗位</label>
           <select
-            className="rainier-treeselect-trigger"
+            className="rainier-form-select"
             value={positionId}
             onChange={(e) =>
               setPositionId(e.target.value === '' ? '' : Number(e.target.value))

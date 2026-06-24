@@ -144,7 +144,7 @@ export function TaskEditDrawer({
       <div style={{ marginBottom: 12 }}>
         <label style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }}>项目</label>
         <select
-          className="rainier-treeselect-trigger"
+          className="rainier-form-select"
           value={projectId}
           onChange={(e) =>
             handleProjectChange(e.target.value === '' ? '' : Number(e.target.value))
@@ -165,7 +165,7 @@ export function TaskEditDrawer({
           Sprint（可选）
         </label>
         <select
-          className="rainier-treeselect-trigger"
+          className="rainier-form-select"
           value={sprintId}
           onChange={(e) => {
             const next = e.target.value === '' ? '' : Number(e.target.value);
@@ -188,7 +188,7 @@ export function TaskEditDrawer({
           Story（可选）
         </label>
         <select
-          className="rainier-treeselect-trigger"
+          className="rainier-form-select"
           value={storyId}
           onChange={(e) =>
             setStoryId(e.target.value === '' ? '' : Number(e.target.value))
@@ -209,7 +209,7 @@ export function TaskEditDrawer({
           指派人（可选 — 留空 = 未分配）
         </label>
         <select
-          className="rainier-treeselect-trigger"
+          className="rainier-form-select"
           value={assigneeUserId}
           onChange={(e) =>
             setAssigneeUserId(e.target.value === '' ? '' : Number(e.target.value))
@@ -227,7 +227,7 @@ export function TaskEditDrawer({
       <div style={{ marginBottom: 12 }}>
         <label style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }}>状态</label>
         <select
-          className="rainier-treeselect-trigger"
+          className="rainier-form-select"
           value={status}
           onChange={(e) => setStatus(e.target.value as TaskStatus)}
         >
@@ -241,7 +241,7 @@ export function TaskEditDrawer({
       <div style={{ marginBottom: 12 }}>
         <label style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }}>优先级</label>
         <select
-          className="rainier-treeselect-trigger"
+          className="rainier-form-select"
           value={priority}
           onChange={(e) =>
             setPriority(e.target.value as (typeof PRIORITY_OPTIONS)[number])

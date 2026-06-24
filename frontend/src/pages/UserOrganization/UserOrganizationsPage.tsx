@@ -8,6 +8,7 @@ import { Pagination } from '../../components/ui/Pagination';
 import { Table, type TableColumn } from '../../components/ui/Table';
 import { TreeSelect, type TreeNode } from '../../components/ui/TreeSelect';
 import { StatusChip } from '../../components/board';
+import { USER_ORG_ROLE_LABELS } from '../../constants/labels';
 import { getOrganizationTree } from '../../api/organization';
 import { listUsers, type User } from '../../api/user';
 import {
@@ -74,7 +75,7 @@ export function UserOrganizationsPage() {
       title: '组织',
       render: (r) => `${r.organizationName ?? ''}（${r.organizationType ?? ''}）`,
     },
-    { key: 'role', title: '角色', render: (r) => r.role },
+    { key: 'role', title: '角色', render: (r) => <StatusChip status={r.role} label={USER_ORG_ROLE_LABELS[r.role] ?? r.role} tier={r.role === 'HEAD' ? 'green' : 'gray'} /> },
     { key: 'isPrimary', title: '主属', render: (r) => (r.isPrimary ? '是' : '—') },
     {
       key: 'status',
@@ -107,7 +108,7 @@ export function UserOrganizationsPage() {
   return (
     <div className="rainier-page">
       <div className="rainier-page-head">
-        <h2 style={{ margin: 0 }}>用户-组织关系</h2>
+        <h2>用户-组织关系</h2>
         <div style={{ flex: 1 }} />
         <Button
           type="button"
@@ -137,7 +138,7 @@ export function UserOrganizationsPage() {
         <div style={{ marginBottom: 12 }}>
           <label style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }}>用户</label>
           <select
-            className="rainier-treeselect-trigger"
+            className="rainier-form-select"
             value={userId}
             onChange={(e) => setUserId(e.target.value === '' ? '' : Number(e.target.value))}
             disabled={editing !== null}
@@ -163,13 +164,13 @@ export function UserOrganizationsPage() {
         <div style={{ marginBottom: 12 }}>
           <label style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }}>角色</label>
           <select
-            className="rainier-treeselect-trigger"
+            className="rainier-form-select"
             value={role}
             onChange={(e) => setRole(e.target.value as UserOrgRole)}
           >
             {roles.map((r) => (
               <option key={r} value={r}>
-                {r}
+                {USER_ORG_ROLE_LABELS[r] ?? r}
               </option>
             ))}
           </select>

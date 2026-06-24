@@ -410,7 +410,7 @@ export default function OpportunityDetailPage() {
     <div className="opp-form-block">
       <label className="opp-form-label">{label}</label>
       <select
-        className="rainier-treeselect-trigger"
+        className="rainier-form-select"
         value={value}
         onChange={(e) => setter(e.target.value === '' ? '' : Number(e.target.value))}
         data-testid={testId}
@@ -444,7 +444,7 @@ export default function OpportunityDetailPage() {
         >
           ← 返回
         </Button>
-        <h2 style={{ margin: 0 }}>商机详情</h2>
+        <h2>商机详情</h2>
       </div>
 
       {loading ? (
@@ -532,7 +532,7 @@ export default function OpportunityDetailPage() {
                 <div className="opp-form-block">
                   <label className="opp-form-label">产品（可空）</label>
                   <select
-                    className="rainier-treeselect-trigger"
+                    className="rainier-form-select"
                     value={dProduct}
                     onChange={(e) => setDProduct(e.target.value === '' ? '' : Number(e.target.value))}
                     data-testid="opp-detail-product"
@@ -622,7 +622,7 @@ export default function OpportunityDetailPage() {
                 <div className="opp-form-block">
                   <label className="opp-form-label">类型</label>
                   <select
-                    className="rainier-treeselect-trigger"
+                    className="rainier-form-select"
                     value={aType}
                     onChange={(e) => setAType(e.target.value as ArtifactType)}
                     data-testid="opp-detail-add-type"
@@ -838,7 +838,7 @@ export default function OpportunityDetailPage() {
               <div className="opp-form-block">
                 <label className="opp-form-label">优先级</label>
                 <select
-                  className="rainier-treeselect-trigger"
+                  className="rainier-form-select"
                   value={genPriority}
                   onChange={(e) => setGenPriority(e.target.value as Priority)}
                   data-testid="opp-gen-priority"
@@ -854,7 +854,7 @@ export default function OpportunityDetailPage() {
                 <div className="opp-form-block">
                   <label className="opp-form-label">来源（渠道）</label>
                   <select
-                    className="rainier-treeselect-trigger"
+                    className="rainier-form-select"
                     value={genSource}
                     onChange={(e) => setGenSource(e.target.value as Source)}
                     data-testid="opp-gen-source"
@@ -871,7 +871,7 @@ export default function OpportunityDetailPage() {
                   <div className="opp-form-block">
                     <label className="opp-form-label">负责人 (PO)</label>
                     <select
-                      className="rainier-treeselect-trigger"
+                      className="rainier-form-select"
                       value={genOwnerId}
                       onChange={(e) =>
                         setGenOwnerId(e.target.value === '' ? '' : Number(e.target.value))
@@ -889,7 +889,7 @@ export default function OpportunityDetailPage() {
                   <div className="opp-form-block">
                     <label className="opp-form-label">复杂度（可空）</label>
                     <select
-                      className="rainier-treeselect-trigger"
+                      className="rainier-form-select"
                       value={genComplexity}
                       onChange={(e) => setGenComplexity(e.target.value as Complexity | '')}
                       data-testid="opp-gen-complexity"

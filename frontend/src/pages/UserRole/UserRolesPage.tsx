@@ -80,7 +80,7 @@ export function UserRolesPage() {
   return (
     <div className="rainier-page">
       <div className="rainier-page-head">
-        <h2 style={{ margin: 0 }}>用户角色</h2>
+        <h2>用户角色</h2>
         <div style={{ flex: 1 }} />
         <Button
           type="button"
@@ -103,7 +103,7 @@ export function UserRolesPage() {
         <div style={{ marginBottom: 12 }}>
           <label style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }}>用户</label>
           <select
-            className="rainier-treeselect-trigger"
+            className="rainier-form-select"
             value={userId}
             onChange={(e) => setUserId(e.target.value === '' ? '' : Number(e.target.value))}
             data-testid="user-roles-user-select"
@@ -119,7 +119,7 @@ export function UserRolesPage() {
         <div style={{ marginBottom: 12 }}>
           <label style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }}>角色</label>
           <select
-            className="rainier-treeselect-trigger"
+            className="rainier-form-select"
             value={roleId}
             onChange={(e) => setRoleId(e.target.value === '' ? '' : Number(e.target.value))}
             data-testid="user-roles-role-select"
@@ -137,7 +137,7 @@ export function UserRolesPage() {
             项目（留白 = 公司级 hat）
           </label>
           <select
-            className="rainier-treeselect-trigger"
+            className="rainier-form-select"
             value={projectId}
             onChange={(e) => setProjectId(e.target.value === '' ? '' : Number(e.target.value))}
             data-testid="user-roles-project-select"

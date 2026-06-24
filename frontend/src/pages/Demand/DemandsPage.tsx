@@ -98,7 +98,7 @@ export function DemandsPage() {
     { key: 'title', title: '主题', render: (r) => r.title },
     { key: 'submitterUserId', title: '提交人', render: (r) => r.submitterUserId },
     { key: 'status', title: '状态', render: (r) => <StatusChip status={r.status} /> },
-    { key: 'priority', title: '优先级', render: (r) => r.priority },
+    { key: 'priority', title: '优先级', render: (r) => PRIORITY_LABELS[r.priority] ?? r.priority },
     { key: 'source', title: '来源', render: (r) => r.source },
     {
       key: 'actions',
@@ -126,7 +126,7 @@ export function DemandsPage() {
   return (
     <div className="rainier-page">
       <div className="rainier-page-head">
-        <h2 style={{ margin: 0 }}>诉求</h2>
+        <h2>诉求</h2>
         <div style={{ flex: 1 }} />
         <Button
           type="button"
@@ -162,7 +162,7 @@ export function DemandsPage() {
         <div style={{ marginBottom: 12 }}>
           <label style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }}>提交人</label>
           <select
-            className="rainier-treeselect-trigger"
+            className="rainier-form-select"
             value={submitterUserId}
             onChange={(e) =>
               setSubmitterUserId(e.target.value === '' ? '' : Number(e.target.value))
@@ -181,7 +181,7 @@ export function DemandsPage() {
         <div style={{ marginBottom: 12 }}>
           <label style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }}>状态</label>
           <select
-            className="rainier-treeselect-trigger"
+            className="rainier-form-select"
             value={status}
             onChange={(e) => setStatus(e.target.value as DemandStatus)}
           >
@@ -195,7 +195,7 @@ export function DemandsPage() {
         <div style={{ marginBottom: 12 }}>
           <label style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }}>优先级</label>
           <select
-            className="rainier-treeselect-trigger"
+            className="rainier-form-select"
             value={priority}
             onChange={(e) => setPriority(e.target.value as Priority)}
           >
@@ -209,7 +209,7 @@ export function DemandsPage() {
         <div style={{ marginBottom: 12 }}>
           <label style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }}>来源</label>
           <select
-            className="rainier-treeselect-trigger"
+            className="rainier-form-select"
             value={source}
             onChange={(e) => setSource(e.target.value as Source)}
           >

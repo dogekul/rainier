@@ -18,6 +18,21 @@
   background: #fafbfc;
   font-weight: 600;
   color: var(--rainier-color-text-2);
+  /* v0.0.60 — sticky header so column labels stay visible while scrolling. */
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+/* v0.0.60 — row-click feedback (Feishu pattern: row click opens drawer). */
+.rainier-table-row-clickable {
+  cursor: pointer;
+}
+.rainier-table-row-clickable:focus {
+  outline: none;
+}
+.rainier-table-row-clickable:focus-visible td {
+  background: var(--rainier-bg-selected);
 }
 
 .rainier-table tr:last-child td {

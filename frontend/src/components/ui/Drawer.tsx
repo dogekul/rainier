@@ -7,10 +7,13 @@ export interface DrawerProps {
   onClose: () => void;
   children: ReactNode;
   width?: number;
+  /** v0.0.60 — optional sticky footer slot (typically primary + secondary buttons).
+   *  Renders inside .rainier-drawer-footer below the body. Pass `<Button …>取消</Button> <Button …>保存</Button>`. */
+  footer?: ReactNode;
 }
 
 /** Right-anchored slide-in panel. Controlled by parent (open, onClose). */
-export function Drawer({ open, title, onClose, children, width = 480 }: DrawerProps) {
+export function Drawer({ open, title, onClose, children, width = 480, footer }: DrawerProps) {
   useEffect(() => {
     if (!open) return;
     const handler = (e: KeyboardEvent) => {
@@ -37,6 +40,7 @@ export function Drawer({ open, title, onClose, children, width = 480 }: DrawerPr
           </button>
         </header>
         <div className="rainier-drawer-body">{children}</div>
+        {footer ? <footer className="rainier-drawer-footer">{footer}</footer> : null}
       </aside>
     </div>
   );

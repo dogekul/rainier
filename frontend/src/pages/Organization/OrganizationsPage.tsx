@@ -66,7 +66,7 @@ export function OrganizationsPage() {
   return (
     <div className="rainier-page">
       <div className="rainier-page-head">
-        <h2 style={{ margin: 0 }}>组织节点</h2>
+        <h2>组织节点</h2>
         <div style={{ flex: 1 }} />
         <Input
           label="搜索"

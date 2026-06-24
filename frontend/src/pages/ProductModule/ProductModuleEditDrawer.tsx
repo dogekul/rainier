@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Button } from '../../components/ui/Button';
 import { Drawer } from '../../components/ui/Drawer';
 import { Input } from '../../components/ui/Input';
+import { PRODUCT_MODULE_STATUS_LABELS } from '../../constants/labels';
 import { listProducts, type Product } from '../../api/product';
 import { listUsers, type User } from '../../api/user';
 import { useAuthStore } from '../../store/auth';
@@ -129,7 +130,7 @@ export function ProductModuleEditDrawer({
           所属产品（创建时锁定）
         </label>
         <select
-          className="rainier-treeselect-trigger"
+          className="rainier-form-select"
           value={productId}
           onChange={(e) =>
             handleProductChange(e.target.value === '' ? '' : Number(e.target.value))
@@ -150,7 +151,7 @@ export function ProductModuleEditDrawer({
           父级模块（可选 — 留空为顶层；可改 = 调整层级）
         </label>
         <select
-          className="rainier-treeselect-trigger"
+          className="rainier-form-select"
           value={parentId}
           onChange={(e) => {
             setParentId(e.target.value === '' ? '' : Number(e.target.value));
@@ -169,14 +170,14 @@ export function ProductModuleEditDrawer({
       <div style={{ marginBottom: 12 }}>
         <label style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }}>状态</label>
         <select
-          className="rainier-treeselect-trigger"
+          className="rainier-form-select"
           value={status}
           onChange={(e) => setStatus(e.target.value as ProductModuleStatus)}
           data-testid="product-module-status-select"
         >
           {STATUS_OPTIONS.map((s) => (
             <option key={s} value={s}>
-              {s}
+              {PRODUCT_MODULE_STATUS_LABELS[s] ?? s}
             </option>
           ))}
         </select>
@@ -186,7 +187,7 @@ export function ProductModuleEditDrawer({
           负责人（默认为当前登录用户，可改）
         </label>
         <select
-          className="rainier-treeselect-trigger"
+          className="rainier-form-select"
           value={ownerUserId}
           onChange={(e) => {
             setOwnerUserId(e.target.value === '' ? '' : Number(e.target.value));

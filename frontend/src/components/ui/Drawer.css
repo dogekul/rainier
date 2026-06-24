@@ -50,3 +50,14 @@
   overflow-y: auto;
   padding: 20px;
 }
+
+/* v0.0.60 — sticky footer slot for primary/secondary actions. */
+.rainier-drawer-footer {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  align-items: center;
+  padding: 12px 20px;
+  border-top: 1px solid #f0f1f2;
+  background: var(--rainier-bg-card);
+}

@@ -125,7 +125,7 @@ export function OpportunityBoard() {
   return (
     <div className="rainier-page">
       <div className="rainier-page-head">
-        <h2 style={{ margin: 0 }}>商机看板</h2>
+        <h2>商机看板</h2>
         <div style={{ flex: 1 }} />
         <span style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }} data-testid="opp-readonly-hint">
           只读 · 全商机进展总览（操作请到 售前/实施 流转）

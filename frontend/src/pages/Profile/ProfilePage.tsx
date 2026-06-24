@@ -44,7 +44,7 @@ export function ProfilePage() {
     return (
       <div className="rainier-page">
         <div className="rainier-page-head">
-          <h2 style={{ margin: 0 }}>我的档案</h2>
+          <h2>我的档案</h2>
         </div>
       </div>
     );
@@ -55,7 +55,7 @@ export function ProfilePage() {
   return (
     <div className="rainier-page">
       <div className="rainier-page-head">
-        <h2 style={{ margin: 0 }}>我的档案</h2>
+        <h2>我的档案</h2>
       </div>
 
       <DashboardCard title="身份" testId="profile-identity">

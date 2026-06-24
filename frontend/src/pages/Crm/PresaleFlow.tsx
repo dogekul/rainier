@@ -299,7 +299,7 @@ export function PresaleFlow() {
     <div style={{ marginBottom: 12 }}>
       <label style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }}>{label}</label>
       <select
-        className="rainier-treeselect-trigger"
+        className="rainier-form-select"
         value={value}
         onChange={(e) => setter(e.target.value === '' ? '' : Number(e.target.value))}
         data-testid={testId}
@@ -320,7 +320,7 @@ export function PresaleFlow() {
   return (
     <div className="rainier-page">
       <div className="rainier-page-head">
-        <h2 style={{ margin: 0 }}>售前流转</h2>
+        <h2>售前流转</h2>
         <div style={{ flex: 1 }} />
         <Button type="button" onClick={() => setDrawerOpen(true)} data-testid="presale-new-btn">
           新建商机
@@ -528,7 +528,7 @@ export function PresaleFlow() {
             产品（可空，不确定先留空）
           </label>
           <select
-            className="rainier-treeselect-trigger"
+            className="rainier-form-select"
             value={product}
             onChange={(e) => setProduct(e.target.value === '' ? '' : Number(e.target.value))}
             data-testid="presale-new-product"

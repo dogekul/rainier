@@ -132,7 +132,7 @@ export function FeatureEditDrawer({
           所属产品（用于过滤模块下拉）
         </label>
         <select
-          className="rainier-treeselect-trigger"
+          className="rainier-form-select"
           value={productId}
           onChange={(e) =>
             handleProductChange(e.target.value === '' ? '' : Number(e.target.value))
@@ -153,7 +153,7 @@ export function FeatureEditDrawer({
           所属模块（创建时锁定）
         </label>
         <select
-          className="rainier-treeselect-trigger"
+          className="rainier-form-select"
           value={moduleId}
           onChange={(e) => {
             setModuleId(e.target.value === '' ? '' : Number(e.target.value));
@@ -173,7 +173,7 @@ export function FeatureEditDrawer({
       <div style={{ marginBottom: 12 }}>
         <label style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }}>状态</label>
         <select
-          className="rainier-treeselect-trigger"
+          className="rainier-form-select"
           value={status}
           onChange={(e) => setStatus(e.target.value as FeatureStatus)}
           data-testid="feature-status-select"
@@ -190,7 +190,7 @@ export function FeatureEditDrawer({
           负责人（默认为当前登录用户，可改）
         </label>
         <select
-          className="rainier-treeselect-trigger"
+          className="rainier-form-select"
           value={ownerUserId}
           onChange={(e) => {
             setOwnerUserId(e.target.value === '' ? '' : Number(e.target.value));

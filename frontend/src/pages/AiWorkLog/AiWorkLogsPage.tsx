@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { DashboardCard, EmptyState, StatTiles, StatusChip } from '../../components/board';
 import { Button } from '../../components/ui/Button';
+import { Drawer } from '../../components/ui/Drawer';
 import {
   AI_STATUS_LABELS,
   decideAiWorkLog,
@@ -33,6 +34,10 @@ export function AiWorkLogsPage() {
   const [statusFilter, setStatusFilter] = useState<'' | AiWorkLogStatus>('');
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<number | null>(null);
+  // v0.0.60 — reject reason drawer (replaces window.prompt). Required-non-empty enforced.
+  const [rejectId, setRejectId] = useState<number | null>(null);
+  const [rejectReason, setRejectReason] = useState('');
+  const [rejectError, setRejectError] = useState<string | null>(null);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -64,12 +69,23 @@ export function AiWorkLogsPage() {
     }
   };
 
-  const reject = async (id: number) => {
-    const reason = window.prompt('驳回理由（必填）');
-    if (!reason || !reason.trim()) return;
-    setBusyId(id);
+  const openReject = (id: number) => {
+    setRejectId(id);
+    setRejectReason('');
+    setRejectError(null);
+  };
+
+  const submitReject = async () => {
+    if (rejectId == null) return;
+    const reason = rejectReason.trim();
+    if (!reason) {
+      setRejectError('请填写驳回理由');
+      return;
+    }
+    setBusyId(rejectId);
     try {
-      await decideAiWorkLog(id, 'REJECTED', reason.trim());
+      await decideAiWorkLog(rejectId, 'REJECTED', reason);
+      setRejectId(null);
       await load();
     } finally {
       setBusyId(null);
@@ -79,7 +95,7 @@ export function AiWorkLogsPage() {
   return (
     <div className="rainier-page">
       <div className="rainier-page-head">
-        <h2 style={{ margin: 0 }}>AI 工作日志</h2>
+        <h2>AI 工作日志</h2>
         <select
           data-testid="ai-status-filter"
           className="rainier-select"
@@ -147,7 +163,7 @@ export function AiWorkLogsPage() {
                           variant="secondary"
                           style={{ marginLeft: 6 }}
                           disabled={busyId === r.id}
-                          onClick={() => void reject(r.id)}
+                          onClick={() => openReject(r.id)}
                           data-testid={`ai-reject-${r.id}`}
                         >
                           驳回
@@ -165,6 +181,46 @@ export function AiWorkLogsPage() {
           </table>
         )}
       </DashboardCard>
+
+      <Drawer
+        open={rejectId !== null}
+        title="驳回 AI 提议"
+        onClose={() => setRejectId(null)}
+        footer={
+          <>
+            <Button type="button" variant="secondary" onClick={() => setRejectId(null)}>
+              取消
+            </Button>
+            <Button
+              type="button"
+              variant="primary"
+              disabled={busyId === rejectId}
+              onClick={() => void submitReject()}
+              data-testid="ai-reject-submit"
+            >
+              确认驳回
+            </Button>
+          </>
+        }
+      >
+        <div className="rainier-form-group">
+          <label className="rainier-form-label" htmlFor="ai-reject-reason">
+            驳回理由（必填）
+          </label>
+          <textarea
+            id="ai-reject-reason"
+            className="rainier-input"
+            rows={5}
+            value={rejectReason}
+            onChange={(e) => {
+              setRejectReason(e.target.value);
+              if (rejectError) setRejectError(null);
+            }}
+            data-testid="ai-reject-reason"
+          />
+        </div>
+        {rejectError && <div className="rainier-error-banner">{rejectError}</div>}
+      </Drawer>
     </div>
   );
 }

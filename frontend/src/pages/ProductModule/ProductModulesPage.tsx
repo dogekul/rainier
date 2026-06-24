@@ -31,7 +31,7 @@ export function ProductModulesPage() {
   return (
     <div className="rainier-page">
       <div className="rainier-page-head">
-        <h2 style={{ margin: 0 }}>产品模块</h2>
+        <h2>产品模块</h2>
         <div style={{ flex: 1 }} />
         <Button
           type="button"

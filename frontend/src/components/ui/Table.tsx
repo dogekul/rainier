@@ -20,6 +20,9 @@ export interface TableProps<T> {
    */
   isExpanded?: (row: T) => boolean;
   renderExpanded?: (row: T) => ReactNode;
+  /** v0.0.60 — row-click handler. When set, rows get cursor:pointer and an aria role.
+   *  Use to open a side detail drawer (Feishu pattern). */
+  onRowClick?: (row: T) => void;
 }
 
 /** Minimal Feishu-style table. Controlled, no internal state. */
@@ -30,6 +33,7 @@ export function Table<T>({
   emptyText = '暂无数据',
   isExpanded,
   renderExpanded,
+  onRowClick,
 }: TableProps<T>) {
   const getKey = (row: T): string =>
     typeof rowKey === 'function' ? rowKey(row) : String(row[rowKey] ?? '');
@@ -54,8 +58,22 @@ export function Table<T>({
         ) : (
           dataSource.flatMap((row) => {
             const key = getKey(row);
+            const clickable = !!onRowClick;
             const rows = [
-              <tr key={key}>
+              <tr
+                key={key}
+                onClick={clickable ? () => onRowClick(row) : undefined}
+                className={clickable ? 'rainier-table-row-clickable' : undefined}
+                role={clickable ? 'button' : undefined}
+                tabIndex={clickable ? 0 : undefined}
+                onKeyDown={
+                  clickable
+                    ? (e) => {
+                        if (e.key === 'Enter') onRowClick(row);
+                      }
+                    : undefined
+                }
+              >
                 {columns.map((c) => (
                   <td key={c.key}>
                     {c.render

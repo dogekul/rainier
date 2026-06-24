@@ -64,7 +64,7 @@ export function LinksPage() {
   return (
     <div className="rainier-page">
       <div className="rainier-page-head">
-        <h2 style={{ margin: 0 }}>诉求-需求关联</h2>
+        <h2>诉求-需求关联</h2>
         <div style={{ flex: 1 }} />
         <Button
           type="button"
@@ -87,7 +87,7 @@ export function LinksPage() {
         <div style={{ marginBottom: 12 }}>
           <label style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }}>诉求</label>
           <select
-            className="rainier-treeselect-trigger"
+            className="rainier-form-select"
             value={demandId}
             onChange={(e) => setDemandId(e.target.value === '' ? '' : Number(e.target.value))}
             data-testid="links-demand-select"
@@ -103,7 +103,7 @@ export function LinksPage() {
         <div style={{ marginBottom: 12 }}>
           <label style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }}>需求</label>
           <select
-            className="rainier-treeselect-trigger"
+            className="rainier-form-select"
             value={requirementId}
             onChange={(e) =>
               setRequirementId(e.target.value === '' ? '' : Number(e.target.value))
@@ -121,7 +121,7 @@ export function LinksPage() {
         <div style={{ marginBottom: 12 }}>
           <label style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }}>类型</label>
           <select
-            className="rainier-treeselect-trigger"
+            className="rainier-form-select"
             value={linkType}
             onChange={(e) => setLinkType(e.target.value as LinkType)}
           >

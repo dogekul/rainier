@@ -192,7 +192,7 @@ export function CockpitPage() {
   return (
     <div className="rainier-page">
       <div className="rainier-page-head">
-        <h2 style={{ margin: 0 }}>项目驾驶舱</h2>
+        <h2>项目驾驶舱</h2>
         <select
           data-testid="cockpit-project-select"
           className="rainier-select"

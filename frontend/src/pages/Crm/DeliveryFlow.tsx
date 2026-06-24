@@ -275,7 +275,7 @@ export function DeliveryFlow() {
   return (
     <div className="rainier-page">
       <div className="rainier-page-head">
-        <h2 style={{ margin: 0 }}>实施流转</h2>
+        <h2>实施流转</h2>
       </div>
 
       <StatTiles
@@ -435,7 +435,7 @@ export function DeliveryFlow() {
               </div>
             ) : (
               <select
-                className="rainier-treeselect-trigger"
+                className="rainier-form-select"
                 value={projectId}
                 onChange={(e) => setProjectId(e.target.value === '' ? '' : Number(e.target.value))}
                 data-testid="delivery-project-select"
@@ -460,7 +460,7 @@ export function DeliveryFlow() {
             <div style={{ marginBottom: 8 }}>
               <label style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }}>项目负责人</label>
               <select
-                className="rainier-treeselect-trigger"
+                className="rainier-form-select"
                 value={newOwnerUserId}
                 onChange={(e) => setNewOwnerUserId(e.target.value === '' ? '' : Number(e.target.value))}
                 data-testid="delivery-new-owner"

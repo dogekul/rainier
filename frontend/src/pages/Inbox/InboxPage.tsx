@@ -38,7 +38,7 @@ export function InboxPage() {
   return (
     <div className="rainier-page">
       <div className="rainier-page-head">
-        <h2 style={{ margin: 0 }}>需求收件箱</h2>
+        <h2>需求收件箱</h2>
       </div>
 
       <StatTiles

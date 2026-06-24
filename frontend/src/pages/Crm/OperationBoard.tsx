@@ -91,7 +91,7 @@ export function OperationBoard() {
   return (
     <div className="rainier-page">
       <div className="rainier-page-head">
-        <h2 style={{ margin: 0 }}>运营看板</h2>
+        <h2>运营看板</h2>
         <div style={{ flex: 1 }} />
         <Button type="button" onClick={() => setDrawerOpen(true)} data-testid="opr-new-btn">
           新建运营单
@@ -182,7 +182,7 @@ export function OperationBoard() {
         <div style={{ marginBottom: 12 }}>
           <label style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }}>运营负责人</label>
           <select
-            className="rainier-treeselect-trigger"
+            className="rainier-form-select"
             value={owner}
             onChange={(e) => setOwner(e.target.value === '' ? '' : Number(e.target.value))}
             data-testid="opr-owner-select"

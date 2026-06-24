@@ -49,7 +49,7 @@ export function PortfolioPage() {
   return (
     <div className="rainier-page">
       <div className="rainier-page-head">
-        <h2 style={{ margin: 0 }}>项目地图</h2>
+        <h2>项目地图</h2>
         <select
           data-testid="portfolio-scope"
           className="rainier-select"

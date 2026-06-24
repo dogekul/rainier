@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Button } from '../../components/ui/Button';
 import { Drawer } from '../../components/ui/Drawer';
 import { Input } from '../../components/ui/Input';
+import { PRODUCT_STATUS_LABELS } from '../../constants/labels';
 import { listUsers, type User } from '../../api/user';
 import { useAuthStore } from '../../store/auth';
 import {
@@ -88,14 +89,14 @@ export function ProductEditDrawer({
       <div style={{ marginBottom: 12 }}>
         <label style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }}>状态</label>
         <select
-          className="rainier-treeselect-trigger"
+          className="rainier-form-select"
           value={status}
           onChange={(e) => setStatus(e.target.value as ProductStatus)}
           data-testid="product-status-select"
         >
           {STATUS_OPTIONS.map((s) => (
             <option key={s} value={s}>
-              {s}
+              {PRODUCT_STATUS_LABELS[s] ?? s}
             </option>
           ))}
         </select>
@@ -105,7 +106,7 @@ export function ProductEditDrawer({
           负责人（默认为当前登录用户，可改）
         </label>
         <select
-          className="rainier-treeselect-trigger"
+          className="rainier-form-select"
           value={ownerUserId}
           onChange={(e) => {
             setOwnerUserId(e.target.value === '' ? '' : Number(e.target.value));

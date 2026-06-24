@@ -42,7 +42,7 @@ export function AuditLogsPage() {
   return (
     <div className="rainier-page">
       <div className="rainier-page-head">
-        <h2 style={{ margin: 0 }}>审计日志</h2>
+        <h2>审计日志</h2>
         <div style={{ flex: 1 }} />
         <div
           style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'flex-end' }}

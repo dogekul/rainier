@@ -160,7 +160,7 @@ export function StoryEditDrawer({
       <div style={{ marginBottom: 12 }}>
         <label style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }}>状态</label>
         <select
-          className="rainier-treeselect-trigger"
+          className="rainier-form-select"
           value={status}
           onChange={(e) => setStatus(e.target.value as StoryStatus)}
           data-testid="story-status-select"
@@ -175,7 +175,7 @@ export function StoryEditDrawer({
       <div style={{ marginBottom: 12 }}>
         <label style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }}>优先级</label>
         <select
-          className="rainier-treeselect-trigger"
+          className="rainier-form-select"
           value={priority}
           onChange={(e) => setPriority(e.target.value as Priority)}
         >
@@ -189,7 +189,7 @@ export function StoryEditDrawer({
       <div style={{ marginBottom: 12 }}>
         <label style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }}>复杂度</label>
         <select
-          className="rainier-treeselect-trigger"
+          className="rainier-form-select"
           value={complexity}
           onChange={(e) => setComplexity((e.target.value as Complexity) || '')}
         >
@@ -206,7 +206,7 @@ export function StoryEditDrawer({
           负责人（默认为当前登录用户，可改）
         </label>
         <select
-          className="rainier-treeselect-trigger"
+          className="rainier-form-select"
           value={ownerUserId}
           onChange={(e) => {
             setOwnerUserId(e.target.value === '' ? '' : Number(e.target.value));

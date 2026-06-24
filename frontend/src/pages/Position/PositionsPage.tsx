@@ -7,6 +7,7 @@ import { Input } from '../../components/ui/Input';
 import { Pagination } from '../../components/ui/Pagination';
 import { Table, type TableColumn } from '../../components/ui/Table';
 import { StatusChip } from '../../components/board';
+import { POSITION_CATEGORY_LABELS } from '../../constants/labels';
 import {
   createPosition,
   deletePosition,
@@ -57,7 +58,7 @@ export function PositionsPage() {
   const columns: TableColumn<Position>[] = [
     { key: 'code', title: '编码', render: (r) => r.code },
     { key: 'name', title: '名称', render: (r) => r.name },
-    { key: 'category', title: '类别', render: (r) => <StatusChip status={r.category} /> },
+    { key: 'category', title: '类别', render: (r) => <StatusChip status={r.category} label={POSITION_CATEGORY_LABELS[r.category]} /> },
     { key: 'enabled', title: '启用', render: (r) => (r.enabled ? '是' : '否') },
     {
       key: 'actions',
@@ -85,7 +86,7 @@ export function PositionsPage() {
   return (
     <div className="rainier-page">
       <div className="rainier-page-head">
-        <h2 style={{ margin: 0 }}>岗位</h2>
+        <h2>岗位</h2>
         <div style={{ flex: 1 }} />
         <Button
           type="button"
@@ -127,13 +128,13 @@ export function PositionsPage() {
         <div style={{ marginBottom: 12 }}>
           <label style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }}>类别</label>
           <select
-            className="rainier-treeselect-trigger"
+            className="rainier-form-select"
             value={category}
             onChange={(e) => setCategory(e.target.value as PositionCategory)}
           >
             {CATEGORIES.map((c) => (
               <option key={c} value={c}>
-                {c}
+                {POSITION_CATEGORY_LABELS[c] ?? c}
               </option>
             ))}
           </select>

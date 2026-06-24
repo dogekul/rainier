@@ -103,7 +103,7 @@ export function TeamLeadPage() {
   return (
     <div className="rainier-page">
       <div className="rainier-page-head">
-        <h2 style={{ margin: 0 }}>团队负责人面板</h2>
+        <h2>团队负责人面板</h2>
         {teams && teams.length > 1 && (
           <select
             data-testid="tl-team-select"

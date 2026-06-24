@@ -4,7 +4,7 @@ import { Card } from '../../components/ui/Card';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import { Pagination } from '../../components/ui/Pagination';
 import { Table, type TableColumn } from '../../components/ui/Table';
-import { StatusChip } from '../../components/board';
+import { OwnerChip, StatusChip } from '../../components/board';
 import {
   createFeature,
   deleteFeature,
@@ -42,8 +42,7 @@ export function FeaturesPage() {
     {
       key: 'owner',
       title: '负责人',
-      render: (f) =>
-        f.ownerName ? `${f.ownerName}（${f.ownerLoginName ?? ''}）` : '—',
+      render: (f) => <OwnerChip name={f.ownerName} loginName={f.ownerLoginName} />,
     },
     {
       key: 'actions',
@@ -79,7 +78,7 @@ export function FeaturesPage() {
   return (
     <div className="rainier-page">
       <div className="rainier-page-head">
-        <h2 style={{ margin: 0 }}>功能</h2>
+        <h2>功能</h2>
         <div style={{ flex: 1 }} />
         <Button
           type="button"

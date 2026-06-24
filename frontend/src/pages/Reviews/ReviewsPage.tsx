@@ -50,7 +50,7 @@ export function ReviewsPage() {
   return (
     <div className="rainier-page">
       <div className="rainier-page-head">
-        <h2 style={{ margin: 0 }}>我的评审</h2>
+        <h2>我的评审</h2>
       </div>
 
       {!loading && rows.length === 0 ? (
