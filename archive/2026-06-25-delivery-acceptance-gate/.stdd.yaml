@@ -1,0 +1,34 @@
+change:
+  id: 2026-06-25-delivery-acceptance-gate
+  title: v0.0.57-delivery-acceptance-gate — 交付实施→验收 推进门禁（甲方验收报告）
+  baseline: {tag: v0.0.56-opp-requirement-gen, commit: 610d020}
+  type: feature
+  source: "用户：实施转验收阶段需要门禁准入；先提交一份甲方验收报告"
+
+phase:
+  current: archived
+  understand: {status: completed, confirmed_at: '2026-06-25', gate_1: "单产出物：甲方验收报告(报告类)"}
+  spec: {status: completed, gate_2: auto_proceed}
+  slice: {status: completed}
+  build: {status: completed}
+  verify:
+    status: completed
+    metrics: {backend: "temurin-8 544/544 (+TC-ACPT-01/02 + TC-OAR-006 改测 Path A)", frontend: "265/265", tsc: clean, lint: clean}
+    review: "skipped — pattern mirrors v0.0.53 SURVEY gate exactly (single-report Path A); manual cross-check 5 mirror points OK"
+    awaiting: gate_3_user_review_then_commit
+  deliver: {status: completed, archived_at: '2026-06-25'}
+
+long_range:
+  enabled: true
+  mode: full_auto
+  pre_auth: {git_ops: allow_up_to_commit_and_tag, gate_2: auto_proceed, gate_3: require_user_confirmation}
+
+scope:
+  type: feature
+  capabilities_modified: [opportunity, frontend-scaffold]
+  capabilities_new: []
+  new_tables: 0
+  new_columns: []
+  new_deps: []
+  new_apis: []
+  behavior_change: "advance FROM DELIVERY 须先有 DELIVERY_ACCEPTANCE_REPORT；前端实施流转 DELIVERY 推进经现成 supplement form 收集"
