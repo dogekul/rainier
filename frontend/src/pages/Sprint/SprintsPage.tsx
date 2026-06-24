@@ -65,7 +65,7 @@ export function SprintsPage() {
     <div className="rainier-page">
       <div className="rainier-page-head">
         <h2>Sprint</h2>
-        <div style={{ flex: 1 }} />
+        <span className="rainier-spacer" />
       </div>
       <Card>
         <Table<Sprint>

@@ -125,8 +125,8 @@ export function ProductModuleEditDrawer({
         value={description}
         onChange={(e) => setDescription(e.target.value)}
       />
-      <div style={{ marginBottom: 12 }}>
-        <label style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }}>
+      <div className="rainier-form-group">
+        <label className="rainier-form-label">
           所属产品（创建时锁定）
         </label>
         <select
@@ -146,8 +146,8 @@ export function ProductModuleEditDrawer({
           ))}
         </select>
       </div>
-      <div style={{ marginBottom: 12 }}>
-        <label style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }}>
+      <div className="rainier-form-group">
+        <label className="rainier-form-label">
           父级模块（可选 — 留空为顶层；可改 = 调整层级）
         </label>
         <select
@@ -167,8 +167,8 @@ export function ProductModuleEditDrawer({
           ))}
         </select>
       </div>
-      <div style={{ marginBottom: 12 }}>
-        <label style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }}>状态</label>
+      <div className="rainier-form-group">
+        <label className="rainier-form-label">状态</label>
         <select
           className="rainier-form-select"
           value={status}
@@ -182,8 +182,8 @@ export function ProductModuleEditDrawer({
           ))}
         </select>
       </div>
-      <div style={{ marginBottom: 12 }}>
-        <label style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }}>
+      <div className="rainier-form-group">
+        <label className="rainier-form-label">
           负责人（默认为当前登录用户，可改）
         </label>
         <select
@@ -204,21 +204,11 @@ export function ProductModuleEditDrawer({
         </select>
       </div>
       {formError && (
-        <div
-          style={{
-            padding: '6px 10px',
-            marginBottom: 12,
-            color: 'var(--rainier-color-danger, #d4380d)',
-            fontSize: 12,
-            background: 'rgba(212, 56, 13, 0.08)',
-            borderRadius: 4,
-          }}
-          data-testid="product-module-form-error"
-        >
+        <div className="rainier-error-banner" data-testid="product-module-form-error">
           {formError}
         </div>
       )}
-      <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+      <div className="rainier-form-footer">
         <Button type="button" variant="secondary" onClick={onClose}>
           取消
         </Button>

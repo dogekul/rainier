@@ -126,7 +126,7 @@ export function OpportunityBoard() {
     <div className="rainier-page">
       <div className="rainier-page-head">
         <h2>商机看板</h2>
-        <div style={{ flex: 1 }} />
+        <span className="rainier-spacer" />
         <span style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }} data-testid="opp-readonly-hint">
           只读 · 全商机进展总览（操作请到 售前/实施 流转）
         </span>
@@ -152,7 +152,7 @@ export function OpportunityBoard() {
             列表
           </button>
         </div>
-        <div style={{ flex: 1 }} />
+        <span className="rainier-spacer" />
         <select
           className="rainier-input"
           data-testid="opp-filter-owner"

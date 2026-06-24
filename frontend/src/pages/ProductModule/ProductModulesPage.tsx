@@ -32,7 +32,7 @@ export function ProductModulesPage() {
     <div className="rainier-page">
       <div className="rainier-page-head">
         <h2>产品模块</h2>
-        <div style={{ flex: 1 }} />
+        <span className="rainier-spacer" />
         <Button
           type="button"
           onClick={() => {

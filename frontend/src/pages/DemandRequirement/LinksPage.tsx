@@ -65,7 +65,7 @@ export function LinksPage() {
     <div className="rainier-page">
       <div className="rainier-page-head">
         <h2>诉求-需求关联</h2>
-        <div style={{ flex: 1 }} />
+        <span className="rainier-spacer" />
         <Button
           type="button"
           onClick={() => setDrawerOpen(true)}
@@ -84,8 +84,8 @@ export function LinksPage() {
         />
       </Card>
       <Drawer open={drawerOpen} title="新建关联" onClose={() => setDrawerOpen(false)}>
-        <div style={{ marginBottom: 12 }}>
-          <label style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }}>诉求</label>
+        <div className="rainier-form-group">
+          <label className="rainier-form-label">诉求</label>
           <select
             className="rainier-form-select"
             value={demandId}
@@ -100,8 +100,8 @@ export function LinksPage() {
             ))}
           </select>
         </div>
-        <div style={{ marginBottom: 12 }}>
-          <label style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }}>需求</label>
+        <div className="rainier-form-group">
+          <label className="rainier-form-label">需求</label>
           <select
             className="rainier-form-select"
             value={requirementId}
@@ -118,8 +118,8 @@ export function LinksPage() {
             ))}
           </select>
         </div>
-        <div style={{ marginBottom: 12 }}>
-          <label style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }}>类型</label>
+        <div className="rainier-form-group">
+          <label className="rainier-form-label">类型</label>
           <select
             className="rainier-form-select"
             value={linkType}
@@ -132,7 +132,7 @@ export function LinksPage() {
             ))}
           </select>
         </div>
-        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+        <div className="rainier-form-footer">
           <Button type="button" variant="secondary" onClick={() => setDrawerOpen(false)}>
             取消
           </Button>

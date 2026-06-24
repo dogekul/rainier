@@ -97,7 +97,7 @@ export function DemandSubmitPage() {
             onChange={(e) => setDescription(e.target.value)}
             data-testid="demand-submit-desc"
           />
-          <div style={{ marginBottom: 12 }}>
+          <div className="rainier-form-group">
             <label className="rainier-input-wrap">
               <span className="rainier-input-label">优先级</span>
               <select

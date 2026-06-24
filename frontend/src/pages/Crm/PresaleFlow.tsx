@@ -296,8 +296,8 @@ export function PresaleFlow() {
     setter: (v: number | '') => void,
     testId: string,
   ) => (
-    <div style={{ marginBottom: 12 }}>
-      <label style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }}>{label}</label>
+    <div className="rainier-form-group">
+      <label className="rainier-form-label">{label}</label>
       <select
         className="rainier-form-select"
         value={value}
@@ -321,7 +321,7 @@ export function PresaleFlow() {
     <div className="rainier-page">
       <div className="rainier-page-head">
         <h2>售前流转</h2>
-        <div style={{ flex: 1 }} />
+        <span className="rainier-spacer" />
         <Button type="button" onClick={() => setDrawerOpen(true)} data-testid="presale-new-btn">
           新建商机
         </Button>
@@ -336,17 +336,7 @@ export function PresaleFlow() {
       />
 
       {advError && (
-        <div
-          style={{
-            padding: '8px 12px',
-            margin: '8px 0',
-            color: 'var(--rainier-color-danger, #d4380d)',
-            fontSize: 13,
-            background: 'rgba(212, 56, 13, 0.08)',
-            borderRadius: 4,
-          }}
-          data-testid="presale-adv-error"
-        >
+        <div className="rainier-error-banner" data-testid="presale-adv-error">
           {advError}（可在「详情 → 添加产出物」补齐后再推进）
         </div>
       )}
@@ -453,8 +443,8 @@ export function PresaleFlow() {
           onChange={(e) => setArtTitle(e.target.value)}
           data-testid="presale-artifact-title"
         />
-        <div style={{ marginBottom: 12 }}>
-          <label style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }}>正文</label>
+        <div className="rainier-form-group">
+          <label className="rainier-form-label">正文</label>
           <textarea
             className="rainier-input"
             style={{ width: '100%', minHeight: 160, padding: 8, boxSizing: 'border-box' }}
@@ -464,21 +454,11 @@ export function PresaleFlow() {
           />
         </div>
         {artError && (
-          <div
-            style={{
-              padding: '6px 10px',
-              marginBottom: 12,
-              color: 'var(--rainier-color-danger, #d4380d)',
-              fontSize: 12,
-              background: 'rgba(212, 56, 13, 0.08)',
-              borderRadius: 4,
-            }}
-            data-testid="presale-artifact-error"
-          >
+          <div className="rainier-error-banner" data-testid="presale-artifact-error">
             {artError}
           </div>
         )}
-        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+        <div className="rainier-form-footer">
           <Button type="button" variant="secondary" onClick={() => setArtifactReq(null)}>
             取消
           </Button>
@@ -513,8 +493,8 @@ export function PresaleFlow() {
           onChange={(e) => setTitle(e.target.value)}
           data-testid="presale-new-title"
         />
-        <div style={{ marginBottom: 12 }}>
-          <label style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }}>备注（可空）</label>
+        <div className="rainier-form-group">
+          <label className="rainier-form-label">备注（可空）</label>
           <textarea
             className="rainier-input"
             style={{ width: '100%', minHeight: 80, padding: 8, boxSizing: 'border-box' }}
@@ -523,8 +503,8 @@ export function PresaleFlow() {
             data-testid="presale-new-note"
           />
         </div>
-        <div style={{ marginBottom: 12 }}>
-          <label style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }}>
+        <div className="rainier-form-group">
+          <label className="rainier-form-label">
             产品（可空，不确定先留空）
           </label>
           <select
@@ -552,21 +532,11 @@ export function PresaleFlow() {
           data-testid="presale-new-amount"
         />
         {formError && (
-          <div
-            style={{
-              padding: '6px 10px',
-              marginBottom: 12,
-              color: 'var(--rainier-color-danger, #d4380d)',
-              fontSize: 12,
-              background: 'rgba(212, 56, 13, 0.08)',
-              borderRadius: 4,
-            }}
-            data-testid="presale-form-error"
-          >
+          <div className="rainier-error-banner" data-testid="presale-form-error">
             {formError}
           </div>
         )}
-        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+        <div className="rainier-form-footer">
           <Button type="button" variant="secondary" onClick={() => setDrawerOpen(false)}>
             取消
           </Button>
@@ -647,7 +617,7 @@ export function PresaleFlow() {
                   data-testid={`presale-supp-title-${t}`}
                 />
                 <div style={{ marginBottom: 8 }}>
-                  <label style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }}>
+                  <label className="rainier-form-label">
                     正文（支持 Markdown）
                   </label>
                   <textarea
@@ -663,21 +633,11 @@ export function PresaleFlow() {
           </div>
         ))}
         {suppError && (
-          <div
-            style={{
-              padding: '6px 10px',
-              marginBottom: 8,
-              color: 'var(--rainier-color-danger, #d4380d)',
-              fontSize: 12,
-              background: 'rgba(212, 56, 13, 0.08)',
-              borderRadius: 4,
-            }}
-            data-testid="presale-supp-error"
-          >
+          <div className="rainier-error-banner" data-testid="presale-supp-error">
             {suppError}
           </div>
         )}
-        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+        <div className="rainier-form-footer">
           <Button type="button" variant="secondary" onClick={() => setSuppOpp(null)}>
             取消
           </Button>

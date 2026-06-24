@@ -173,7 +173,7 @@ export function ProjectsPage() {
     <div className="rainier-page">
       <div className="rainier-page-head">
         <h2>项目</h2>
-        <div style={{ flex: 1 }} />
+        <span className="rainier-spacer" />
         <select
           className="rainier-select"
           value={typeFilter}
@@ -225,8 +225,8 @@ export function ProjectsPage() {
           value={description}
           onChange={(e) => setDescription(e.target.value)}
         />
-        <div style={{ marginBottom: 12 }}>
-          <label style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }}>状态</label>
+        <div className="rainier-form-group">
+          <label className="rainier-form-label">状态</label>
           <select
             className="rainier-form-select"
             value={status}
@@ -240,8 +240,8 @@ export function ProjectsPage() {
             ))}
           </select>
         </div>
-        <div style={{ marginBottom: 12 }}>
-          <label style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }}>项目类型</label>
+        <div className="rainier-form-group">
+          <label className="rainier-form-label">项目类型</label>
           <select
             className="rainier-form-select"
             value={projectType}
@@ -255,8 +255,8 @@ export function ProjectsPage() {
             ))}
           </select>
         </div>
-        <div style={{ marginBottom: 12 }}>
-          <label style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }}>
+        <div className="rainier-form-group">
+          <label className="rainier-form-label">
             负责人（默认为当前登录用户，可改）
           </label>
           <select
@@ -277,17 +277,7 @@ export function ProjectsPage() {
           </select>
         </div>
         {formError && (
-          <div
-            style={{
-              padding: '6px 10px',
-              marginBottom: 12,
-              color: 'var(--rainier-color-danger, #d4380d)',
-              fontSize: 12,
-              background: 'rgba(212, 56, 13, 0.08)',
-              borderRadius: 4,
-            }}
-            data-testid="projects-form-error"
-          >
+          <div className="rainier-error-banner" data-testid="projects-form-error">
             {formError}
           </div>
         )}
@@ -301,7 +291,7 @@ export function ProjectsPage() {
           value={endDate}
           onChange={(e) => setEndDate(e.target.value)}
         />
-        <div style={{ marginBottom: 12 }}>
+        <div className="rainier-form-group">
           <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
             <input
               type="checkbox"
@@ -311,7 +301,7 @@ export function ProjectsPage() {
             启用
           </label>
         </div>
-        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+        <div className="rainier-form-footer">
           <Button type="button" variant="secondary" onClick={() => setDrawerOpen(false)}>
             取消
           </Button>

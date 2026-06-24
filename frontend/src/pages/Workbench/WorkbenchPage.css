@@ -1,55 +1,143 @@
-/* v0.0.36 — 我的工作台 home, 飞书项目 / Linear "My Work" style. */
+/* v0.0.36 → v0.0.60 — 我的工作台 home, 飞书项目 / Linear "My Work" style. */
 
-.wb-hello {
+/* hero strip: greeting + roles + date — single line, never stacks even on long names. */
+.wb-hero {
   display: flex;
-  align-items: baseline;
-  gap: 12px;
-  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 20px;
+  background: linear-gradient(120deg, #EFF4FF 0%, #FFFFFF 70%);
+  border: 1px solid var(--rainier-border);
+  border-radius: var(--rainier-radius-card);
+  box-shadow: var(--rainier-shadow-card);
 }
-.wb-hello h2 {
+.wb-hero-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.wb-hero h2 {
   margin: 0;
+  font-size: 19px;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.wb-hero-sub {
+  font-size: 12px;
+  color: var(--rainier-color-text-3);
+  margin-top: 4px;
 }
 .wb-roles {
   display: flex;
   gap: 6px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  max-width: 100%;
+  scrollbar-width: none;
+}
+.wb-roles::-webkit-scrollbar {
+  display: none;
 }
 .wb-role-chip {
   padding: 3px 10px;
   border-radius: 12px;
-  background: var(--rainier-bg-selected);
+  background: rgba(51, 112, 255, 0.10);
   color: var(--rainier-color-primary);
   font-size: 12px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.wb-hero-spacer {
+  flex: 1;
+  min-width: 0;
+}
+.wb-hero-date {
+  font-size: 12px;
+  color: var(--rainier-color-text-2);
+  white-space: nowrap;
 }
 
-/* KPI tiles */
+/* KPI tiles: bigger, with left color stripe + clickable feel. */
 .wb-kpis {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 12px;
 }
 .wb-kpi {
+  position: relative;
   background: var(--rainier-bg-card);
   border: 1px solid var(--rainier-border);
   border-radius: var(--rainier-radius-card);
-  padding: 14px 16px;
+  padding: 14px 16px 14px 20px;
+  transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+  cursor: pointer;
+  overflow: hidden;
+}
+.wb-kpi::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 12px;
+  bottom: 12px;
+  width: 3px;
+  border-radius: 0 2px 2px 0;
+  background: var(--rainier-status-gray);
+}
+.wb-kpi[data-tier='blue']::before {
+  background: var(--rainier-color-primary);
+}
+.wb-kpi[data-tier='yellow']::before {
+  background: var(--rainier-status-yellow);
+}
+.wb-kpi[data-tier='red']::before {
+  background: var(--rainier-status-red);
+}
+.wb-kpi[data-tier='green']::before {
+  background: var(--rainier-status-green);
+}
+.wb-kpi:hover {
+  border-color: var(--rainier-border-strong);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+.wb-kpi[data-active='true'] {
+  border-color: var(--rainier-color-primary);
+  background: var(--rainier-bg-selected);
 }
 .wb-kpi-num {
-  font-size: 26px;
+  font-size: 28px;
   font-weight: 600;
   line-height: 1.1;
   color: var(--rainier-color-text-1);
+  font-variant-numeric: tabular-nums;
 }
 .wb-kpi-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   font-size: 13px;
   color: var(--rainier-color-text-2);
-  margin-top: 4px;
+  margin-top: 6px;
 }
-.wb-kpi.is-red .wb-kpi-num {
+.wb-kpi-trend {
+  font-size: 11px;
+  padding: 0 6px;
+  border-radius: 8px;
+  background: var(--rainier-bg-hover);
+  color: var(--rainier-color-text-3);
+}
+.wb-kpi[data-tier='red'] .wb-kpi-num {
   color: var(--rainier-status-red);
 }
-.wb-kpi.is-yellow .wb-kpi-num {
+.wb-kpi[data-tier='yellow'] .wb-kpi-num {
   color: var(--rainier-status-yellow);
+}
+.wb-kpi[data-tier='blue'] .wb-kpi-num {
+  color: var(--rainier-color-primary);
+}
+.wb-kpi[data-tier='green'] .wb-kpi-num {
+  color: var(--rainier-status-green);
 }
 
 /* two-column body */
@@ -78,6 +166,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 8px;
   margin-bottom: 10px;
 }
 .wb-card-head h3 {
@@ -86,20 +175,27 @@
 .wb-count {
   font-size: 12px;
   color: var(--rainier-color-text-3);
+  flex-shrink: 0;
 }
 .wb-empty {
   color: var(--rainier-color-text-2);
   font-size: 14px;
-  margin: 4px 0;
+  margin: 12px 0 4px;
+  padding: 16px 0;
+  text-align: center;
 }
 
-/* dense task rows */
+/* dense task rows — keep on a single line */
 .wb-task {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 9px 4px;
+  padding: 10px 4px;
   border-bottom: 1px solid #f2f3f5;
+  border-left: 3px solid transparent;
+  padding-left: 9px;
+  margin-left: -12px;
+  transition: background 0.12s;
 }
 .wb-task:last-child {
   border-bottom: none;
@@ -107,11 +203,18 @@
 .wb-task:hover {
   background: var(--rainier-bg-hover);
 }
+.wb-task[data-flag='overdue'] {
+  border-left-color: var(--rainier-status-red);
+}
+.wb-task[data-flag='today'] {
+  border-left-color: var(--rainier-status-yellow);
+}
 .wb-flag {
   padding: 1px 6px;
   border-radius: 8px;
   font-size: 11px;
   flex-shrink: 0;
+  font-weight: 500;
 }
 .wb-task-title {
   flex: 1;
@@ -119,18 +222,48 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  color: var(--rainier-color-text-1);
+  font-weight: 500;
+}
+.wb-task-title:hover {
+  color: var(--rainier-color-primary);
+  text-decoration: none;
 }
 .wb-task-meta {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   flex-shrink: 0;
+}
+.wb-prio-chip {
+  padding: 1px 7px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 500;
+  flex-shrink: 0;
+}
+.wb-prio-chip[data-prio='URGENT'] {
+  background: var(--rainier-status-red-bg);
+  color: var(--rainier-status-red);
+}
+.wb-prio-chip[data-prio='HIGH'] {
+  background: var(--rainier-status-yellow-bg);
+  color: var(--rainier-status-yellow);
+}
+.wb-prio-chip[data-prio='MEDIUM'] {
+  background: var(--rainier-bg-hover);
+  color: var(--rainier-color-text-2);
+}
+.wb-prio-chip[data-prio='LOW'],
+.wb-prio-chip[data-prio='LOWEST'] {
+  background: var(--rainier-bg-hover);
+  color: var(--rainier-color-text-3);
 }
 .wb-proj-chip {
   font-size: 12px;
   color: var(--rainier-color-text-2);
   background: var(--rainier-bg-hover);
-  padding: 1px 8px;
+  padding: 2px 8px;
   border-radius: 8px;
   max-width: 130px;
   overflow: hidden;
@@ -142,18 +275,31 @@
   color: var(--rainier-color-text-3);
   min-width: 70px;
   text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.wb-due[data-state='overdue'] {
+  color: var(--rainier-status-red);
+  font-weight: 500;
 }
 
-/* secondary list rows (stories / projects) */
+/* secondary list rows (stories / projects) — same density discipline */
 .wb-list-row {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 4px;
+  padding: 9px 4px;
   border-bottom: 1px solid #f2f3f5;
+  margin-left: -4px;
+  margin-right: -4px;
+  padding-left: 8px;
+  padding-right: 8px;
+  transition: background 0.12s;
 }
 .wb-list-row:last-child {
   border-bottom: none;
+}
+.wb-list-row:hover {
+  background: var(--rainier-bg-hover);
 }
 .wb-list-row-title {
   flex: 1;
@@ -161,4 +307,14 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  color: var(--rainier-color-text-1);
+}
+.wb-list-row-title:hover {
+  color: var(--rainier-color-primary);
+  text-decoration: none;
+}
+.wb-list-row-code {
+  color: var(--rainier-color-text-3);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
 }

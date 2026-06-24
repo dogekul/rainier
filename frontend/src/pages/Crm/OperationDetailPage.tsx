@@ -92,12 +92,6 @@ export default function OperationDetailPage() {
   // v0.0.59 — 问题清单状态过滤：null=全部，否则按 status 过滤
   const [issueFilter, setIssueFilter] = useState<IssueStatus | null>(null);
 
-  const SEVERITY_STRIPE: Record<IssueSeverity, string> = {
-    HIGH: 'var(--rainier-status-red)',
-    MEDIUM: 'var(--rainier-status-yellow)',
-    LOW: 'var(--rainier-color-text-3)',
-  };
-
   // issues
   const [issues, setIssues] = useState<OperationIssue[]>([]);
   const [issueOpen, setIssueOpen] = useState(false);
@@ -321,42 +315,24 @@ export default function OperationDetailPage() {
               padding: editing ? '14px 16px' : '10px 14px',
             }}
           >
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 16,
-                flexWrap: 'wrap',
-              }}
-            >
-              <span
-                style={{ fontSize: 12, color: 'var(--rainier-color-text-3)', display: 'flex', alignItems: 'center', gap: 6 }}
-                data-testid="op-detail-meta-owner"
-              >
-                运营负责人 <strong style={{ color: 'var(--rainier-color-text-1)', fontWeight: 600 }}>{op.opsOwnerName || '未指定'}</strong>
+            <div className="rainier-meta-row">
+              <span data-testid="op-detail-meta-owner">
+                运营负责人 <strong>{op.opsOwnerName || '未指定'}</strong>
               </span>
-              <span style={{ color: 'var(--rainier-border-strong)' }}>·</span>
-              <span
-                style={{ fontSize: 12, color: 'var(--rainier-color-text-3)', display: 'flex', alignItems: 'center', gap: 6 }}
-              >
-                项目 <strong style={{ color: 'var(--rainier-color-text-1)', fontWeight: 600 }}>{op.projectId != null ? `#${op.projectId}` : '—'}</strong>
-              </span>
-              <span style={{ color: 'var(--rainier-border-strong)' }}>·</span>
-              <span style={{ fontSize: 12, color: 'var(--rainier-color-text-3)', display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span className="rainier-meta-sep">·</span>
+              <span>项目 <strong>{op.projectId != null ? `#${op.projectId}` : '—'}</strong></span>
+              <span className="rainier-meta-sep">·</span>
+              <span>
                 来源商机{' '}
                 {op.opportunityId != null ? (
-                  <Link
-                    to={`/crm/opportunities/${op.opportunityId}`}
-                    data-testid="op-detail-opp-link"
-                    style={{ color: 'var(--rainier-color-primary)', fontWeight: 600 }}
-                  >
+                  <Link to={`/crm/opportunities/${op.opportunityId}`} data-testid="op-detail-opp-link">
                     #{op.opportunityId} ↗
                   </Link>
                 ) : (
-                  <strong style={{ color: 'var(--rainier-color-text-1)', fontWeight: 600 }}>—</strong>
+                  <strong>—</strong>
                 )}
               </span>
-              <span style={{ flex: 1 }} />
+              <span className="rainier-spacer" />
               {!editing && (
                 <Button
                   type="button"
@@ -604,45 +580,26 @@ export default function OperationDetailPage() {
               )}
             </div>
 
-            {/* v0.0.59 — 状态过滤 chips（点击切换；OPEN/IN_PROGRESS 计数高亮） */}
-            <div
-              style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10, marginTop: 4 }}
-              data-testid="op-issue-filter-chips"
-            >
-              {(() => {
-                const all: { key: IssueStatus | null; label: string; count: number }[] = [
-                  { key: null, label: '全部', count: issues.length },
-                  { key: 'OPEN', label: '待处理', count: issues.filter((i) => i.status === 'OPEN').length },
-                  { key: 'IN_PROGRESS', label: '处理中', count: issues.filter((i) => i.status === 'IN_PROGRESS').length },
-                  { key: 'RESOLVED', label: '已解决', count: issues.filter((i) => i.status === 'RESOLVED').length },
-                  { key: 'CLOSED', label: '已关闭', count: issues.filter((i) => i.status === 'CLOSED').length },
-                ];
-                return all.map((c) => {
-                  const active = issueFilter === c.key;
-                  return (
-                    <button
-                      key={c.key ?? 'all'}
-                      type="button"
-                      onClick={() => setIssueFilter(c.key)}
-                      data-testid={`op-issue-filter-${c.key ?? 'all'}`}
-                      style={{
-                        padding: '4px 10px',
-                        borderRadius: 999,
-                        border: '1px solid',
-                        borderColor: active ? 'var(--rainier-color-primary)' : 'var(--rainier-border)',
-                        background: active ? 'var(--rainier-color-primary)' : 'transparent',
-                        color: active ? '#fff' : 'var(--rainier-color-text-2)',
-                        cursor: 'pointer',
-                        fontSize: 12,
-                        fontWeight: active ? 600 : 500,
-                        transition: 'all 0.15s',
-                      }}
-                    >
-                      {c.label} <span style={{ opacity: active ? 0.9 : 0.6 }}>· {c.count}</span>
-                    </button>
-                  );
-                });
-              })()}
+            {/* v0.0.59/60 — 状态过滤 chips（点击切换；OPEN/IN_PROGRESS 计数高亮）—— 用全局 .rainier-filter-bar/.rainier-filter-chip */}
+            <div className="rainier-filter-bar" data-testid="op-issue-filter-chips">
+              {([
+                { key: null, label: '全部', count: issues.length },
+                { key: 'OPEN', label: '待处理', count: issues.filter((i) => i.status === 'OPEN').length },
+                { key: 'IN_PROGRESS', label: '处理中', count: issues.filter((i) => i.status === 'IN_PROGRESS').length },
+                { key: 'RESOLVED', label: '已解决', count: issues.filter((i) => i.status === 'RESOLVED').length },
+                { key: 'CLOSED', label: '已关闭', count: issues.filter((i) => i.status === 'CLOSED').length },
+              ] as { key: IssueStatus | null; label: string; count: number }[]).map((c) => (
+                <button
+                  key={c.key ?? 'all'}
+                  type="button"
+                  className="rainier-filter-chip"
+                  data-active={issueFilter === c.key}
+                  onClick={() => setIssueFilter(c.key)}
+                  data-testid={`op-issue-filter-${c.key ?? 'all'}`}
+                >
+                  {c.label} · {c.count}
+                </button>
+              ))}
             </div>
 
             {issueOpen && (
@@ -746,10 +703,10 @@ export default function OperationDetailPage() {
                 <div
                   key={issue.id}
                   data-testid={`op-issue-${issue.id}`}
-                  className="opp-art"
-                  style={{ borderLeft: `3px solid ${SEVERITY_STRIPE[issue.severity]}`, paddingLeft: 10 }}
+                  className="op-issue"
+                  data-sev={issue.severity}
                 >
-                  <div className="opp-art-head" style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                  <div className="op-issue-main">
                     <StatusChip
                       status={issue.status}
                       label={ISSUE_STATUS_LABELS[issue.status]}
@@ -757,22 +714,47 @@ export default function OperationDetailPage() {
                     />
                     <StatusChip
                       status={issue.severity}
-                      label={`严重度·${ISSUE_SEVERITY_LABELS[issue.severity]}`}
+                      label={ISSUE_SEVERITY_LABELS[issue.severity]}
                       tier={issue.severity === 'HIGH' ? 'red' : issue.severity === 'MEDIUM' ? 'yellow' : 'gray'}
                     />
-                    <span style={{ flex: 1 }}>{issue.title}</span>
-                  </div>
-                  <div className="opp-art-meta">
-                    上报：{issue.reporterName ?? `#${issue.reporterUserId}`}
-                    {issue.assigneeName ? ` · 负责：${issue.assigneeName}` : ''}
+                    <span className="op-issue-title">{issue.title}</span>
+                    <span className="op-issue-meta">
+                      <span>上报 {issue.reporterName ?? `#${issue.reporterUserId}`}</span>
+                      {issue.assigneeName && (
+                        <>
+                          <span className="op-issue-meta-sep">·</span>
+                          <span>负责 {issue.assigneeName}</span>
+                        </>
+                      )}
+                    </span>
+                    {editIssueId !== issue.id && (
+                      <span className="op-issue-actions">
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          onClick={() => startEditIssue(issue)}
+                          data-testid={`op-issue-edit-${issue.id}`}
+                        >
+                          编辑
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          onClick={() => void removeIssue(issue.id)}
+                          data-testid={`op-issue-delete-${issue.id}`}
+                        >
+                          删除
+                        </Button>
+                      </span>
+                    )}
                   </div>
                   {issue.description ? (
-                    <div style={{ fontSize: 13, marginBottom: 6 }}>
+                    <div className="op-issue-desc">
                       <MarkdownView content={issue.description} />
                     </div>
                   ) : null}
-                  {editIssueId === issue.id ? (
-                    <div style={{ borderTop: '1px solid var(--rainier-bg-hover)', paddingTop: 8 }}>
+                  {editIssueId === issue.id && (
+                    <div className="op-issue-edit">
                       <div className="opp-form-block">
                         <label className="opp-form-label">状态</label>
                         <select
@@ -825,25 +807,6 @@ export default function OperationDetailPage() {
                           保存
                         </Button>
                       </div>
-                    </div>
-                  ) : (
-                    <div className="opp-art-actions">
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        onClick={() => startEditIssue(issue)}
-                        data-testid={`op-issue-edit-${issue.id}`}
-                      >
-                        编辑/状态
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        onClick={() => void removeIssue(issue.id)}
-                        data-testid={`op-issue-delete-${issue.id}`}
-                      >
-                        删除
-                      </Button>
                     </div>
                   )}
                 </div>

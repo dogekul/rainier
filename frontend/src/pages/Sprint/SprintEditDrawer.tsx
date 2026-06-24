@@ -88,8 +88,8 @@ export function SprintEditDrawer({
       title={editing ? '编辑 Sprint' : '新建 Sprint'}
       onClose={onClose}
     >
-      <div style={{ marginBottom: 12 }}>
-        <label style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }}>所属需求</label>
+      <div className="rainier-form-group">
+        <label className="rainier-form-label">所属需求</label>
         <div
           style={{
             padding: '6px 10px',
@@ -115,8 +115,8 @@ export function SprintEditDrawer({
         onChange={(e) => setDescription(e.target.value)}
       />
       <Input label="目标 (Goal)" value={goal} onChange={(e) => setGoal(e.target.value)} />
-      <div style={{ marginBottom: 12 }}>
-        <label style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }}>状态</label>
+      <div className="rainier-form-group">
+        <label className="rainier-form-label">状态</label>
         <select
           className="rainier-form-select"
           value={status}
@@ -130,8 +130,8 @@ export function SprintEditDrawer({
           ))}
         </select>
       </div>
-      <div style={{ marginBottom: 12 }}>
-        <label style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }}>
+      <div className="rainier-form-group">
+        <label className="rainier-form-label">
           负责人（默认为当前登录用户，可改）
         </label>
         <select
@@ -176,7 +176,7 @@ export function SprintEditDrawer({
           {formError}
         </div>
       )}
-      <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+      <div className="rainier-form-footer">
         <Button type="button" variant="secondary" onClick={onClose}>
           取消
         </Button>

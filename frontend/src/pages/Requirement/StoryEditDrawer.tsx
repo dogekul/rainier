@@ -113,8 +113,8 @@ export function StoryEditDrawer({
       title={editing ? '编辑 Story' : '新建 Story'}
       onClose={onClose}
     >
-      <div style={{ marginBottom: 12 }}>
-        <label style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }}>所属 Sprint</label>
+      <div className="rainier-form-group">
+        <label className="rainier-form-label">所属 Sprint</label>
         <div
           style={{
             padding: '6px 10px',
@@ -157,8 +157,8 @@ export function StoryEditDrawer({
         value={acceptanceCriteria}
         onChange={(e) => setAcceptanceCriteria(e.target.value)}
       />
-      <div style={{ marginBottom: 12 }}>
-        <label style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }}>状态</label>
+      <div className="rainier-form-group">
+        <label className="rainier-form-label">状态</label>
         <select
           className="rainier-form-select"
           value={status}
@@ -172,8 +172,8 @@ export function StoryEditDrawer({
           ))}
         </select>
       </div>
-      <div style={{ marginBottom: 12 }}>
-        <label style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }}>优先级</label>
+      <div className="rainier-form-group">
+        <label className="rainier-form-label">优先级</label>
         <select
           className="rainier-form-select"
           value={priority}
@@ -186,8 +186,8 @@ export function StoryEditDrawer({
           ))}
         </select>
       </div>
-      <div style={{ marginBottom: 12 }}>
-        <label style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }}>复杂度</label>
+      <div className="rainier-form-group">
+        <label className="rainier-form-label">复杂度</label>
         <select
           className="rainier-form-select"
           value={complexity}
@@ -201,8 +201,8 @@ export function StoryEditDrawer({
           ))}
         </select>
       </div>
-      <div style={{ marginBottom: 12 }}>
-        <label style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }}>
+      <div className="rainier-form-group">
+        <label className="rainier-form-label">
           负责人（默认为当前登录用户，可改）
         </label>
         <select
@@ -246,7 +246,7 @@ export function StoryEditDrawer({
       )}
       {/* v0.0.31: relate the PRD / 设计稿 once the Story exists (PO's core action). */}
       {editing && <LinkPanel targetType="STORY" targetId={editing.id} />}
-      <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+      <div className="rainier-form-footer">
         <Button type="button" variant="secondary" onClick={onClose}>
           取消
         </Button>

@@ -152,8 +152,8 @@ export function RequirementEditDrawer({
         value={description}
         onChange={(e) => setDescription(e.target.value)}
       />
-      <div style={{ marginBottom: 12 }}>
-        <label style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }}>负责 PO</label>
+      <div className="rainier-form-group">
+        <label className="rainier-form-label">负责 PO</label>
         <select
           className="rainier-form-select"
           value={ownerUserId}
@@ -170,8 +170,8 @@ export function RequirementEditDrawer({
           ))}
         </select>
       </div>
-      <div style={{ marginBottom: 12 }}>
-        <label style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }}>状态</label>
+      <div className="rainier-form-group">
+        <label className="rainier-form-label">状态</label>
         <select
           className="rainier-form-select"
           value={status}
@@ -184,8 +184,8 @@ export function RequirementEditDrawer({
           ))}
         </select>
       </div>
-      <div style={{ marginBottom: 12 }}>
-        <label style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }}>优先级</label>
+      <div className="rainier-form-group">
+        <label className="rainier-form-label">优先级</label>
         <select
           className="rainier-form-select"
           value={priority}
@@ -198,8 +198,8 @@ export function RequirementEditDrawer({
           ))}
         </select>
       </div>
-      <div style={{ marginBottom: 12 }}>
-        <label style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }}>复杂度</label>
+      <div className="rainier-form-group">
+        <label className="rainier-form-label">复杂度</label>
         <select
           className="rainier-form-select"
           value={complexity}
@@ -219,8 +219,8 @@ export function RequirementEditDrawer({
         onChange={(e) => setExpectedDate(e.target.value)}
         data-testid="req-expected-date"
       />
-      <div style={{ marginBottom: 12 }}>
-        <label style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }}>
+      <div className="rainier-form-group">
+        <label className="rainier-form-label">
           所属项目（可空）
         </label>
         <select

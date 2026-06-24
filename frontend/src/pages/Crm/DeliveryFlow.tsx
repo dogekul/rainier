@@ -287,17 +287,7 @@ export function DeliveryFlow() {
       />
 
       {advError && (
-        <div
-          style={{
-            padding: '6px 10px',
-            marginBottom: 8,
-            color: 'var(--rainier-color-danger, #d4380d)',
-            fontSize: 12,
-            background: 'rgba(212, 56, 13, 0.08)',
-            borderRadius: 4,
-          }}
-          data-testid="delivery-adv-error"
-        >
+        <div className="rainier-error-banner" data-testid="delivery-adv-error">
           {advError}
         </div>
       )}
@@ -422,8 +412,8 @@ export function DeliveryFlow() {
         </div>
 
         {mode === 'link' ? (
-          <div style={{ marginBottom: 12 }}>
-            <label style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }}>
+          <div className="rainier-form-group">
+            <label className="rainier-form-label">
               交付项目（仅列对外-交付）
             </label>
             {noProjects ? (
@@ -450,7 +440,7 @@ export function DeliveryFlow() {
             )}
           </div>
         ) : (
-          <div style={{ marginBottom: 12 }}>
+          <div className="rainier-form-group">
             <Input
               label="项目名称"
               value={newName}
@@ -458,7 +448,7 @@ export function DeliveryFlow() {
               data-testid="delivery-new-name"
             />
             <div style={{ marginBottom: 8 }}>
-              <label style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }}>项目负责人</label>
+              <label className="rainier-form-label">项目负责人</label>
               <select
                 className="rainier-form-select"
                 value={newOwnerUserId}
@@ -480,22 +470,12 @@ export function DeliveryFlow() {
         )}
 
         {handoffError && (
-          <div
-            style={{
-              padding: '6px 10px',
-              marginBottom: 8,
-              color: 'var(--rainier-color-danger, #d4380d)',
-              fontSize: 12,
-              background: 'rgba(212, 56, 13, 0.08)',
-              borderRadius: 4,
-            }}
-            data-testid="delivery-handoff-error"
-          >
+          <div className="rainier-error-banner" data-testid="delivery-handoff-error">
             {handoffError}
           </div>
         )}
 
-        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+        <div className="rainier-form-footer">
           <Button type="button" variant="secondary" onClick={() => setHandoffId(null)}>
             取消
           </Button>
@@ -576,7 +556,7 @@ export function DeliveryFlow() {
                   data-testid={`delivery-supp-title-${t}`}
                 />
                 <div style={{ marginBottom: 8 }}>
-                  <label style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }}>
+                  <label className="rainier-form-label">
                     正文（支持 Markdown）
                   </label>
                   <textarea
@@ -592,21 +572,11 @@ export function DeliveryFlow() {
           </div>
         ))}
         {suppError && (
-          <div
-            style={{
-              padding: '6px 10px',
-              marginBottom: 8,
-              color: 'var(--rainier-color-danger, #d4380d)',
-              fontSize: 12,
-              background: 'rgba(212, 56, 13, 0.08)',
-              borderRadius: 4,
-            }}
-            data-testid="delivery-supp-error"
-          >
+          <div className="rainier-error-banner" data-testid="delivery-supp-error">
             {suppError}
           </div>
         )}
-        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+        <div className="rainier-form-footer">
           <Button type="button" variant="secondary" onClick={() => setSuppOpp(null)}>
             取消
           </Button>

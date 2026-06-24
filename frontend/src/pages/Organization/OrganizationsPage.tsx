@@ -67,7 +67,7 @@ export function OrganizationsPage() {
     <div className="rainier-page">
       <div className="rainier-page-head">
         <h2>组织节点</h2>
-        <div style={{ flex: 1 }} />
+        <span className="rainier-spacer" />
         <Input
           label="搜索"
           placeholder="按 code / name / wholeName"

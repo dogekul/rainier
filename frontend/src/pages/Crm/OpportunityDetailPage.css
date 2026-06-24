@@ -138,6 +138,73 @@
   border-radius: var(--rainier-radius-card);
 }
 
+/* v0.0.60 — compact operation issue row (Feishu task-row pattern):
+ * primary line keeps status / severity / title / meta / actions on ONE line; description below is muted. */
+.op-issue {
+  border: 1px solid var(--rainier-border);
+  border-radius: var(--rainier-radius-card);
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  border-left-width: 3px;
+}
+.op-issue:hover {
+  border-color: var(--rainier-border-strong);
+  box-shadow: var(--rainier-shadow-card);
+}
+.op-issue[data-sev='HIGH'] {
+  border-left-color: var(--rainier-status-red);
+}
+.op-issue[data-sev='MEDIUM'] {
+  border-left-color: var(--rainier-status-yellow);
+}
+.op-issue[data-sev='LOW'] {
+  border-left-color: var(--rainier-color-text-3);
+}
+.op-issue-main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: nowrap;
+}
+.op-issue-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 500;
+  font-size: 14px;
+}
+.op-issue-meta {
+  font-size: 12px;
+  color: var(--rainier-color-text-3);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+.op-issue-meta-sep {
+  color: var(--rainier-border-strong);
+}
+.op-issue-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.op-issue-desc {
+  font-size: 13px;
+  color: var(--rainier-color-text-2);
+  margin-top: 6px;
+  padding-left: 0;
+}
+.op-issue-edit {
+  border-top: 1px solid var(--rainier-bg-hover);
+  margin-top: 10px;
+  padding-top: 10px;
+}
+
 .opp-add-form {
   border: 1px dashed var(--rainier-border-strong);
   border-radius: var(--rainier-radius-card);

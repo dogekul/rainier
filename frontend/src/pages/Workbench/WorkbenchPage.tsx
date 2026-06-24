@@ -13,7 +13,7 @@ import {
   type TaskStatus,
 } from '../../api/task';
 import { listStories, type Story } from '../../api/story';
-import type { Priority } from '../../api/demand';
+import { PRIORITY_LABELS, type Priority } from '../../api/demand';
 import './WorkbenchPage.css';
 
 const PRIORITY_RANK: Record<Priority, number> = {
@@ -108,13 +108,24 @@ export function WorkbenchPage() {
     };
   }, [tasks, today]);
 
+  // v0.0.60 — 更友好的日期问候：上午/下午/晚上 + 今天日期
+  const now = new Date();
+  const hour = now.getHours();
+  const period = hour < 6 ? '凌晨好' : hour < 12 ? '早上好' : hour < 14 ? '中午好' : hour < 18 ? '下午好' : '晚上好';
+  const dateStr = today.replace(/-/g, '/');
+
   return (
     <div className="rainier-page">
-      <div className="wb-hello">
-        <h2 data-testid="workbench-greeting">你好，{ctx?.name ?? ctx?.username ?? '...'} 👋</h2>
+      <div className="wb-hero">
+        <div className="wb-hero-text">
+          <h2 data-testid="workbench-greeting">
+            {period}，{ctx?.name ?? ctx?.username ?? '...'} 👋
+          </h2>
+          <div className="wb-hero-sub">今日待办 {kpi.todo} · 进行中 {kpi.progress} · 逾期 {kpi.overdue}</div>
+        </div>
         <div data-testid="workbench-roles" className="wb-roles">
           {roles.length === 0 ? (
-            <span style={{ color: 'var(--rainier-color-text-2)', fontSize: 12 }}>（暂无角色）</span>
+            <span style={{ color: 'var(--rainier-color-text-3)', fontSize: 12 }}>（暂无角色）</span>
           ) : (
             roles.map((r, i) => (
               <span key={i} className="wb-role-chip">
@@ -124,22 +135,24 @@ export function WorkbenchPage() {
             ))
           )}
         </div>
+        <span className="wb-hero-spacer" />
+        <span className="wb-hero-date">{dateStr}</span>
       </div>
 
       <div className="wb-kpis">
-        <div className="wb-kpi">
+        <div className="wb-kpi" data-tier="blue">
           <div className="wb-kpi-num">{kpi.todo}</div>
           <div className="wb-kpi-label">待办</div>
         </div>
-        <div className="wb-kpi">
+        <div className="wb-kpi" data-tier="green">
           <div className="wb-kpi-num">{kpi.progress}</div>
           <div className="wb-kpi-label">进行中</div>
         </div>
-        <div className={`wb-kpi${kpi.overdue > 0 ? ' is-red' : ''}`}>
+        <div className="wb-kpi" data-tier={kpi.overdue > 0 ? 'red' : 'gray'}>
           <div className="wb-kpi-num">{kpi.overdue}</div>
           <div className="wb-kpi-label">逾期</div>
         </div>
-        <div className={`wb-kpi${kpi.week > 0 ? ' is-yellow' : ''}`}>
+        <div className="wb-kpi" data-tier={kpi.week > 0 ? 'yellow' : 'gray'}>
           <div className="wb-kpi-num">{kpi.week}</div>
           <div className="wb-kpi-label">本周到期</div>
         </div>
@@ -157,8 +170,14 @@ export function WorkbenchPage() {
           ) : (
             sortedTasks.map((t) => {
               const flag = focusBucket(t, today).flag;
+              const flagAttr = flag === '逾期' ? 'overdue' : flag === '今天' ? 'today' : undefined;
               return (
-                <div key={t.id} className="wb-task" data-testid={`my-task-${t.id}`}>
+                <div
+                  key={t.id}
+                  className="wb-task"
+                  data-testid={`my-task-${t.id}`}
+                  data-flag={flagAttr}
+                >
                   {flag && (
                     <span
                       className="wb-flag"
@@ -176,8 +195,16 @@ export function WorkbenchPage() {
                     {t.title}
                   </Link>
                   <div className="wb-task-meta">
+                    <span className="wb-prio-chip" data-prio={t.priority}>
+                      {PRIORITY_LABELS[t.priority] ?? t.priority}
+                    </span>
                     {t.projectName && <span className="wb-proj-chip">{t.projectName}</span>}
-                    <span className="wb-due">{t.dueDate ?? ''}</span>
+                    <span
+                      className="wb-due"
+                      data-state={flagAttr === 'overdue' ? 'overdue' : undefined}
+                    >
+                      {t.dueDate ?? '—'}
+                    </span>
                     <select
                       className="rainier-select"
                       data-testid={`my-task-status-${t.id}`}
@@ -229,8 +256,7 @@ export function WorkbenchPage() {
               projects.map((p) => (
                 <div key={p.id} className="wb-list-row" data-testid={`my-project-${p.id}`}>
                   <Link to="/pm/projects" className="wb-list-row-title">
-                    <span style={{ color: 'var(--rainier-color-text-3)', fontSize: 12 }}>{p.code}</span>{' '}
-                    {p.name}
+                    <span className="wb-list-row-code">{p.code}</span> {p.name}
                   </Link>
                 </div>
               ))

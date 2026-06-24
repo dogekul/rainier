@@ -79,7 +79,7 @@ export function FeaturesPage() {
     <div className="rainier-page">
       <div className="rainier-page-head">
         <h2>功能</h2>
-        <div style={{ flex: 1 }} />
+        <span className="rainier-spacer" />
         <Button
           type="button"
           onClick={() => {

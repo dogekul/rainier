@@ -81,7 +81,7 @@ export function UserRolesPage() {
     <div className="rainier-page">
       <div className="rainier-page-head">
         <h2>用户角色</h2>
-        <div style={{ flex: 1 }} />
+        <span className="rainier-spacer" />
         <Button
           type="button"
           onClick={() => setDrawerOpen(true)}
@@ -100,8 +100,8 @@ export function UserRolesPage() {
         />
       </Card>
       <Drawer open={drawerOpen} title="新建用户角色" onClose={() => setDrawerOpen(false)}>
-        <div style={{ marginBottom: 12 }}>
-          <label style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }}>用户</label>
+        <div className="rainier-form-group">
+          <label className="rainier-form-label">用户</label>
           <select
             className="rainier-form-select"
             value={userId}
@@ -116,8 +116,8 @@ export function UserRolesPage() {
             ))}
           </select>
         </div>
-        <div style={{ marginBottom: 12 }}>
-          <label style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }}>角色</label>
+        <div className="rainier-form-group">
+          <label className="rainier-form-label">角色</label>
           <select
             className="rainier-form-select"
             value={roleId}
@@ -132,8 +132,8 @@ export function UserRolesPage() {
             ))}
           </select>
         </div>
-        <div style={{ marginBottom: 12 }}>
-          <label style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }}>
+        <div className="rainier-form-group">
+          <label className="rainier-form-label">
             项目（留白 = 公司级 hat）
           </label>
           <select
@@ -150,7 +150,7 @@ export function UserRolesPage() {
             ))}
           </select>
         </div>
-        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+        <div className="rainier-form-footer">
           <Button type="button" variant="secondary" onClick={() => setDrawerOpen(false)}>
             取消
           </Button>

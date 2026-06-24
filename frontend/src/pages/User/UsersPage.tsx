@@ -98,7 +98,7 @@ export function UsersPage() {
     <div className="rainier-page">
       <div className="rainier-page-head">
         <h2>用户</h2>
-        <div style={{ flex: 1 }} />
+        <span className="rainier-spacer" />
         <Input
           label="搜索"
           placeholder="按 login_name / name / code / email"
@@ -146,8 +146,8 @@ export function UsersPage() {
           value={emailAddress}
           onChange={(e) => setEmailAddress(e.target.value)}
         />
-        <div style={{ marginBottom: 12 }}>
-          <label style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }}>岗位</label>
+        <div className="rainier-form-group">
+          <label className="rainier-form-label">岗位</label>
           <select
             className="rainier-form-select"
             value={positionId}
@@ -164,7 +164,7 @@ export function UsersPage() {
             ))}
           </select>
         </div>
-        <div style={{ marginBottom: 12 }}>
+        <div className="rainier-form-group">
           <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
             <input
               type="checkbox"
@@ -178,7 +178,7 @@ export function UsersPage() {
             启用
           </label>
         </div>
-        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+        <div className="rainier-form-footer">
           <Button type="button" variant="secondary" onClick={() => setDrawerOpen(false)}>
             取消
           </Button>

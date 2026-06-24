@@ -109,7 +109,7 @@ export function UserOrganizationsPage() {
     <div className="rainier-page">
       <div className="rainier-page-head">
         <h2>用户-组织关系</h2>
-        <div style={{ flex: 1 }} />
+        <span className="rainier-spacer" />
         <Button
           type="button"
           onClick={() => {
@@ -135,8 +135,8 @@ export function UserOrganizationsPage() {
         title={editing ? '编辑归属' : '新建归属'}
         onClose={() => setDrawerOpen(false)}
       >
-        <div style={{ marginBottom: 12 }}>
-          <label style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }}>用户</label>
+        <div className="rainier-form-group">
+          <label className="rainier-form-label">用户</label>
           <select
             className="rainier-form-select"
             value={userId}
@@ -152,8 +152,8 @@ export function UserOrganizationsPage() {
             ))}
           </select>
         </div>
-        <div style={{ marginBottom: 12 }}>
-          <label style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }}>组织</label>
+        <div className="rainier-form-group">
+          <label className="rainier-form-label">组织</label>
           <TreeSelect
             value={organizationId}
             nodes={orgTree}
@@ -161,8 +161,8 @@ export function UserOrganizationsPage() {
             allowClear={false}
           />
         </div>
-        <div style={{ marginBottom: 12 }}>
-          <label style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }}>角色</label>
+        <div className="rainier-form-group">
+          <label className="rainier-form-label">角色</label>
           <select
             className="rainier-form-select"
             value={role}
@@ -204,7 +204,7 @@ export function UserOrganizationsPage() {
           value={leftAt}
           onChange={(e) => setLeftAt(e.target.value)}
         />
-        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+        <div className="rainier-form-footer">
           <Button type="button" variant="secondary" onClick={() => setDrawerOpen(false)}>
             取消
           </Button>

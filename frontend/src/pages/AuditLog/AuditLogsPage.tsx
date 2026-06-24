@@ -43,7 +43,7 @@ export function AuditLogsPage() {
     <div className="rainier-page">
       <div className="rainier-page-head">
         <h2>审计日志</h2>
-        <div style={{ flex: 1 }} />
+        <span className="rainier-spacer" />
         <div
           style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'flex-end' }}
           data-testid="audit-filters"
@@ -55,8 +55,8 @@ export function AuditLogsPage() {
             onChange={(e) => setEntityType(e.target.value)}
           />
           <Input label="实体ID" value={entityId} onChange={(e) => setEntityId(e.target.value)} />
-          <div style={{ marginBottom: 12 }}>
-            <label style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }}>动作</label>
+          <div className="rainier-form-group">
+            <label className="rainier-form-label">动作</label>
             <select
               className="rainier-select"
               value={action}

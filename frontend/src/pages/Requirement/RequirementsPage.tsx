@@ -138,7 +138,7 @@ export function RequirementsPage() {
     <div className="rainier-page">
       <div className="rainier-page-head">
         <h2>需求</h2>
-        <div style={{ flex: 1 }} />
+        <span className="rainier-spacer" />
         <Button
           type="button"
           onClick={() => {

@@ -141,8 +141,8 @@ export function TaskEditDrawer({
         value={description}
         onChange={(e) => setDescription(e.target.value)}
       />
-      <div style={{ marginBottom: 12 }}>
-        <label style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }}>项目</label>
+      <div className="rainier-form-group">
+        <label className="rainier-form-label">项目</label>
         <select
           className="rainier-form-select"
           value={projectId}
@@ -160,8 +160,8 @@ export function TaskEditDrawer({
           ))}
         </select>
       </div>
-      <div style={{ marginBottom: 12 }}>
-        <label style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }}>
+      <div className="rainier-form-group">
+        <label className="rainier-form-label">
           Sprint（可选）
         </label>
         <select
@@ -183,8 +183,8 @@ export function TaskEditDrawer({
           ))}
         </select>
       </div>
-      <div style={{ marginBottom: 12 }}>
-        <label style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }}>
+      <div className="rainier-form-group">
+        <label className="rainier-form-label">
           Story（可选）
         </label>
         <select
@@ -204,8 +204,8 @@ export function TaskEditDrawer({
           ))}
         </select>
       </div>
-      <div style={{ marginBottom: 12 }}>
-        <label style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }}>
+      <div className="rainier-form-group">
+        <label className="rainier-form-label">
           指派人（可选 — 留空 = 未分配）
         </label>
         <select
@@ -224,8 +224,8 @@ export function TaskEditDrawer({
           ))}
         </select>
       </div>
-      <div style={{ marginBottom: 12 }}>
-        <label style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }}>状态</label>
+      <div className="rainier-form-group">
+        <label className="rainier-form-label">状态</label>
         <select
           className="rainier-form-select"
           value={status}
@@ -238,8 +238,8 @@ export function TaskEditDrawer({
           ))}
         </select>
       </div>
-      <div style={{ marginBottom: 12 }}>
-        <label style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }}>优先级</label>
+      <div className="rainier-form-group">
+        <label className="rainier-form-label">优先级</label>
         <select
           className="rainier-form-select"
           value={priority}
@@ -276,7 +276,7 @@ export function TaskEditDrawer({
       )}
       {/* v0.0.31: relate external artifacts (PR/缺陷/用例…) once the task exists. */}
       {editing && <LinkPanel targetType="TASK" targetId={editing.id} />}
-      <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+      <div className="rainier-form-footer">
         <Button type="button" variant="secondary" onClick={onClose}>
           取消
         </Button>

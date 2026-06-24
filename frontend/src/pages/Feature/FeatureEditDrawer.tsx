@@ -127,8 +127,8 @@ export function FeatureEditDrawer({
         value={description}
         onChange={(e) => setDescription(e.target.value)}
       />
-      <div style={{ marginBottom: 12 }}>
-        <label style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }}>
+      <div className="rainier-form-group">
+        <label className="rainier-form-label">
           所属产品（用于过滤模块下拉）
         </label>
         <select
@@ -148,8 +148,8 @@ export function FeatureEditDrawer({
           ))}
         </select>
       </div>
-      <div style={{ marginBottom: 12 }}>
-        <label style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }}>
+      <div className="rainier-form-group">
+        <label className="rainier-form-label">
           所属模块（创建时锁定）
         </label>
         <select
@@ -170,8 +170,8 @@ export function FeatureEditDrawer({
           ))}
         </select>
       </div>
-      <div style={{ marginBottom: 12 }}>
-        <label style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }}>状态</label>
+      <div className="rainier-form-group">
+        <label className="rainier-form-label">状态</label>
         <select
           className="rainier-form-select"
           value={status}
@@ -185,8 +185,8 @@ export function FeatureEditDrawer({
           ))}
         </select>
       </div>
-      <div style={{ marginBottom: 12 }}>
-        <label style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }}>
+      <div className="rainier-form-group">
+        <label className="rainier-form-label">
           负责人（默认为当前登录用户，可改）
         </label>
         <select
@@ -221,7 +221,7 @@ export function FeatureEditDrawer({
           {formError}
         </div>
       )}
-      <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+      <div className="rainier-form-footer">
         <Button type="button" variant="secondary" onClick={onClose}>
           取消
         </Button>

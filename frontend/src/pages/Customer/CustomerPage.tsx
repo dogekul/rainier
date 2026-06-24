@@ -91,7 +91,7 @@ export function CustomerPage() {
       <div className="rainier-page-head">
         <h2>客户</h2>
         <span className="cust-count">共 {list.total} 家</span>
-        <div style={{ flex: 1 }} />
+        <span className="rainier-spacer" />
         <Input
           placeholder="搜索客户/行业/联系人"
           value={list.search}
@@ -214,7 +214,7 @@ export function CustomerPage() {
             {formError}
           </div>
         )}
-        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+        <div className="rainier-form-footer">
           <Button type="button" variant="secondary" onClick={() => setDrawerOpen(false)}>
             取消
           </Button>

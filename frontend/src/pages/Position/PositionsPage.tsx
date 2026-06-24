@@ -87,7 +87,7 @@ export function PositionsPage() {
     <div className="rainier-page">
       <div className="rainier-page-head">
         <h2>岗位</h2>
-        <div style={{ flex: 1 }} />
+        <span className="rainier-spacer" />
         <Button
           type="button"
           onClick={() => {
@@ -125,8 +125,8 @@ export function PositionsPage() {
           value={description}
           onChange={(e) => setDescription(e.target.value)}
         />
-        <div style={{ marginBottom: 12 }}>
-          <label style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }}>类别</label>
+        <div className="rainier-form-group">
+          <label className="rainier-form-label">类别</label>
           <select
             className="rainier-form-select"
             value={category}
@@ -139,7 +139,7 @@ export function PositionsPage() {
             ))}
           </select>
         </div>
-        <div style={{ marginBottom: 12 }}>
+        <div className="rainier-form-group">
           <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
             <input
               type="checkbox"
@@ -149,7 +149,7 @@ export function PositionsPage() {
             启用
           </label>
         </div>
-        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+        <div className="rainier-form-footer">
           <Button type="button" variant="secondary" onClick={() => setDrawerOpen(false)}>
             取消
           </Button>
