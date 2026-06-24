@@ -1236,3 +1236,62 @@ CANCELLED=已取消）与 `TASK_STATUS_OPTIONS`。TasksPage 列表状态、TaskE
 - **WHEN** 打开任务编辑抽屉的状态下拉
 - **THEN** 选项 SHALL 显示中文（待办/进行中/已完成/阻塞/已取消）
 - **AND** 选中提交的 value SHALL 仍为对应英文枚举
+
+## MODIFIED Requirements (from change 2026-06-24-customer-page-redesign / v0.0.51)
+
+### Requirement: 客户管理页卡片网格视觉
+
+客户页 SHALL 以响应式卡片网格呈现客户：每卡含 首字母头像（按名字取色）+ 客户名 + 行业标签（缺省「未填行业」）+ 联系人 + 备注 + 编辑/删除。
+SHALL 在标题旁显示「共 N 家」计数、空态用 EmptyState。搜索/新建/编辑/删除的行为与 testid SHALL 保持不变（纯展示层改版）。
+
+#### Scenario: 卡片网格渲染客户
+
+- **GIVEN** 若干客户
+- **WHEN** 客户页渲染
+- **THEN** SHALL 出现 `customers-grid`，每个客户一张 `customer-card-{id}`（含名称文本）
+
+#### Scenario: CRUD 入口不回归
+
+- **WHEN** 客户页渲染
+- **THEN** `customers-new-btn` SHALL 在；卡片 SHALL 含 `customer-edit-{id}` / `customer-delete-{id}`
+- **AND** 新建/编辑抽屉 SHALL 保留 `customer-name`/`customer-save` 等输入与提交
+
+## MODIFIED Requirements (from change 2026-06-24-handoff-advance / v0.0.52)
+
+### Requirement: DeliveryFlow 立项行 = 立项移交（即推进）+ 驳回
+
+DeliveryFlow「立项(INITIATION)」行 SHALL 仅含 **立项移交**（主操作，关联/新建项目并由后端推进到现场调研）+ **驳回**（REJECT，停留）；
+SHALL NOT 再有独立「通过」按钮（其会绕过项目直接推进、不正确）。立项移交后刷新 SHALL 见商机进入「现场调研」。
+
+#### Scenario: 立项行无独立「通过」
+
+- **GIVEN** 一个 立项 商机
+- **WHEN** DeliveryFlow 渲染该行
+- **THEN** SHALL 含 `delivery-handoff-{id}` 与 `delivery-reject-{id}`
+- **AND** SHALL NOT 含 `delivery-pass-{id}`
+
+## MODIFIED Requirements (from change 2026-06-24-survey-artifacts / v0.0.53)
+
+### Requirement: DeliveryFlow 现场调研推进 = 补充产出物表单
+
+DeliveryFlow「现场调研(SURVEY)」行的「推进」SHALL 在缺必需产出物（《现场调研报告》《现场调研附件》）时打开「补充产出物并推进」表单：报告填标题+正文、附件填链接（可多份），提交 SHALL 逐个建档后再 advance；产出物齐备 SHALL 直接 advance。其它实施环节（产品诉求/交付）SHALL 仍为无门禁直接「推进」。
+
+#### Scenario: 现场调研行推进打开补充表单
+
+- **GIVEN** DeliveryFlow 渲染一个 现场调研(SURVEY) 商机行（无已存产出物）
+- **WHEN** 点击 `delivery-advance-{id}`
+- **THEN** SHALL 打开补充表单（含 `delivery-supp-SURVEY_REPORT` 与 `delivery-supp-SURVEY_ATTACHMENT`）
+- **AND** SHALL NOT 立即调用 advance
+
+#### Scenario: 补充表单提交逐个建档并推进
+
+- **GIVEN** 补充表单已打开，报告填了正文、附件填了链接
+- **WHEN** 点击 `delivery-supp-save`
+- **THEN** SHALL 为每类产出物调用 `createOpportunityArtifact`
+- **AND** SHALL 随后调用 `advanceOpportunity(id, undefined)` 并刷新列表
+
+#### Scenario: 产品诉求行仍直接推进
+
+- **GIVEN** DeliveryFlow 渲染一个 产品诉求(REQUIREMENT) 商机行
+- **WHEN** 点击 `delivery-advance-{id}`
+- **THEN** SHALL 直接调用 `advanceOpportunity(id, undefined)`（不打开补充表单）

@@ -1,0 +1,33 @@
+change:
+  id: 2026-06-24-handoff-advance
+  title: v0.0.52-handoff-advance — 立项移交即推进（建/关联项目 + 进入现场调研）
+  baseline: {tag: v0.0.51-customer-page-redesign, commit: TBD}
+  type: feature
+  source: "用户：立项移交建立项目之后为什么状态没有变化"
+
+phase:
+  current: archived
+  understand: {status: completed, confirmed_at: '2026-06-24'}
+  spec: {status: completed, gate_2: auto_proceed}
+  slice: {status: completed}
+  build: {status: completed}
+  verify:
+    status: completed
+    metrics: {backend: OpportunityControllerTest 30/30 (temurin-8, +TC-INI-08), frontend: 248/248 (DeliveryFlow 7/7), tsc: clean, lint: clean}
+    awaiting: gate_3_user_review_then_commit
+  deliver: {status: completed, archived_at: '2026-06-24'}
+
+long_range:
+  enabled: true
+  mode: full_auto
+  pre_auth: {git_ops: allow_up_to_commit_and_tag, gate_2: auto_proceed, gate_3: require_user_confirmation}
+
+scope:
+  type: feature
+  capabilities_modified: [opportunity, frontend-scaffold]
+  capabilities_new: []
+  new_tables: 0
+  new_columns: []
+  new_deps: []
+  new_apis: []
+  behavior_change: "initiate PASS 现在推进 INITIATION→SURVEY (之前仅 setProjectId)"
