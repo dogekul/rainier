@@ -31,6 +31,8 @@ public final class ArtifactType {
   // v0.0.53 现场调研(SURVEY)-gate types：报告类正文 + 附件类 URL（现场照片/记录等外部材料）。
   public static final String SURVEY_REPORT = "SURVEY_REPORT"; // 现场调研报告 (report)
   public static final String SURVEY_ATTACHMENT = "SURVEY_ATTACHMENT"; // 现场调研附件 (link)
+  // v0.0.57 交付实施(DELIVERY)-gate type：甲方验收报告（报告类，标题+富文本正文）。
+  public static final String DELIVERY_ACCEPTANCE_REPORT = "DELIVERY_ACCEPTANCE_REPORT"; // 甲方验收报告 (report)
 
   public static final Set<String> ALL =
       Collections.unmodifiableSet(
@@ -49,7 +51,8 @@ public final class ArtifactType {
                   REVIEW_EMAIL_ARCHIVE,
                   SIGNED_CONTRACT,
                   SURVEY_REPORT,
-                  SURVEY_ATTACHMENT)));
+                  SURVEY_ATTACHMENT,
+                  DELIVERY_ACCEPTANCE_REPORT)));
 
   /** LINK-kind types carry a URL (the {@code link} field); others carry rich-text {@code content}. */
   public static final Set<String> LINK_TYPES =
@@ -83,6 +86,7 @@ public final class ArtifactType {
     m.put(SIGNED_CONTRACT, "已盖章合同");
     m.put(SURVEY_REPORT, "现场调研报告");
     m.put(SURVEY_ATTACHMENT, "现场调研附件");
+    m.put(DELIVERY_ACCEPTANCE_REPORT, "甲方验收报告");
     LABELS = Collections.unmodifiableMap(m);
   }
 

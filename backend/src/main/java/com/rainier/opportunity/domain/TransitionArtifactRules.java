@@ -60,6 +60,10 @@ public final class TransitionArtifactRules {
         OpportunityStage.SURVEY,
         Collections.unmodifiableList(
             Arrays.asList(ArtifactType.SURVEY_REPORT, ArtifactType.SURVEY_ATTACHMENT)));
+    // v0.0.57 交付实施 → 验收：甲方验收报告（报告类，单件）。
+    m.put(
+        OpportunityStage.DELIVERY,
+        Collections.singletonList(ArtifactType.DELIVERY_ACCEPTANCE_REPORT));
     RULES = Collections.unmodifiableMap(m);
   }
 

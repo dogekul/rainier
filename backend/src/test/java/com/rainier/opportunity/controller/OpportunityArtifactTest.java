@@ -173,17 +173,24 @@ class OpportunityArtifactTest {
   }
 
   /**
-   * TC-OAR-006: 非门禁转换 (实施 DELIVERY → ACCEPTANCE) 无 artifact 照常推进。
-   * v0.0.56: 产品诉求(REQUIREMENT) 现有转化卡点 → 改用 交付实施(DELIVERY) 作非门禁样例。
+   * TC-OAR-006: 交付实施(DELIVERY) → 验收(ACCEPTANCE) 备齐《甲方验收报告》后推进。
+   * v0.0.57: DELIVERY 现有验收报告门禁 → 测试单产出物 Path A 的端到端正确性。
    */
   @Test
-  void nonGatedTransition_noArtifactNeeded() throws Exception {
+  void deliveryAdvance_withAcceptanceReport_advancesToAcceptance() throws Exception {
     Long id = seedOpp(OpportunityStage.DELIVERY, OpportunityStatus.WON);
+    ObjectNode body = json.createObjectNode();
+    body.set("artifact", artifact("验收报告", "验收通过 — 客户签字确认"));
     mockMvc
-        .perform(post("/api/opportunities/" + id + "/advance"))
+        .perform(
+            post("/api/opportunities/" + id + "/advance")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(body.toString()))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.stage").value("ACCEPTANCE"));
-    assertTrue(artifactRepo.findByOpportunityIdOrderByIdDesc(id).isEmpty());
+    List<OpportunityArtifact> arts = artifactRepo.findByOpportunityIdOrderByIdDesc(id);
+    assertEquals(1, arts.size());
+    assertEquals(ArtifactType.DELIVERY_ACCEPTANCE_REPORT, arts.get(0).getType());
   }
 
   private void postArtifact(Long id, String type, String title, String content, String link)

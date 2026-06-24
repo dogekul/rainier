@@ -266,8 +266,9 @@ class OpportunityControllerTest {
   /** TC-OSEA-02: a stage-advancing PASS refreshes stageEnteredAt forward (计时归零). */
   @Test
   void advance_refreshesStageEnteredAt() throws Exception {
-    // v0.0.56: 产品诉求(REQUIREMENT) 现有转化卡点 → 用 交付实施(DELIVERY，非关口、无门禁) 作样例。
+    // v0.0.57: 交付实施(DELIVERY) 现有甲方验收报告门禁 → 先 seed 报告再 advance。
     Long id = seedOpp(OpportunityStage.DELIVERY, OpportunityStatus.WON);
+    seedArtifact(id, ArtifactType.DELIVERY_ACCEPTANCE_REPORT, "全部功能通过验收");
     Instant t0 = Instant.now().minusSeconds(3600);
     Opportunity seeded = repo.findById(id).get();
     seeded.setStageEnteredAt(t0);
@@ -537,6 +538,34 @@ class OpportunityControllerTest {
                 .content("{}"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.stage").value("DELIVERY"));
+  }
+
+  /** TC-ACPT-01: 交付实施(DELIVERY) 未提交《甲方验收报告》→ advance 400，消息含报告名。 */
+  @Test
+  void advance_delivery_noAcceptanceReport_returns400() throws Exception {
+    Long id = seedOpp(OpportunityStage.DELIVERY, OpportunityStatus.WON);
+    mockMvc
+        .perform(
+            post("/api/opportunities/" + id + "/advance")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{}"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.message", containsString("甲方验收报告")));
+  }
+
+  /** TC-ACPT-02: 交付实施 已备《甲方验收报告》→ advance 200，stage=ACCEPTANCE，status=WON。 */
+  @Test
+  void advance_delivery_withAcceptanceReport_advancesToAcceptance() throws Exception {
+    Long id = seedOpp(OpportunityStage.DELIVERY, OpportunityStatus.WON);
+    seedArtifact(id, ArtifactType.DELIVERY_ACCEPTANCE_REPORT, "验收通过 — 客户签字确认");
+    mockMvc
+        .perform(
+            post("/api/opportunities/" + id + "/advance")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.stage").value("ACCEPTANCE"))
+        .andExpect(jsonPath("$.status").value("WON"));
   }
 
   /** TC-OPP-013: 验收 (ACCEPTANCE) is terminal → advancing → 409. */
