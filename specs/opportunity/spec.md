@@ -413,3 +413,9 @@ SHALL 将 stage 推进到下一阶段「现场调研」(SURVEY)、刷新 stageEn
 - **GIVEN** 一个 交付实施 商机
 - **WHEN** `POST /{id}/artifacts` body `{type:"DELIVERY_ACCEPTANCE_REPORT", title:"X验收", content:"功能全部通过"}`
 - **THEN** SHALL 返回 201 并持久化（type=DELIVERY_ACCEPTANCE_REPORT, content 非空）
+
+## MODIFIED Requirements (from change 2026-06-25-acceptance-to-operation / v0.0.58)
+
+### Requirement: 商机推进至 ACCEPTANCE 自动建 Operation
+
+`OpportunityService.advance` 推进至 ACCEPTANCE 后 SHALL 调用 `OperationService.createForAcceptedOpportunity` 自动建一条 Operation（customerName/title/opsOwnerUserId/projectId 同源、opportunityId=opp.id、stage=MAINTENANCE/status=ACTIVE）；同 opportunityId 已存在 SHALL 跳过（幂等）。advance 返回原 OpportunityDetail（stage=ACCEPTANCE），副作用在事务内完成；后续可经 `GET /api/operations?opportunityId={oppId}` 查到该 Operation。

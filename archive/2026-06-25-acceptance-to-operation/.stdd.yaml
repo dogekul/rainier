@@ -1,0 +1,34 @@
+change:
+  id: 2026-06-25-acceptance-to-operation
+  title: v0.0.58-acceptance-to-operation — 验收自动进运营 + 运营详情页 + 运营问题清单
+  baseline: {tag: v0.0.57-delivery-acceptance-gate, commit: 77de9b9}
+  type: feature
+  source: "用户：验收完成的商机自动进入运营，运营环节预览项目所有内容 + 维护运营问题清单"
+
+phase:
+  current: verify
+  understand: {status: completed, confirmed_at: '2026-06-25', gate_1: "标准 issue 字段 + 详情页含产出物/诉求需求/问题清单"}
+  spec: {status: completed, gate_2: auto_proceed}
+  slice: {status: completed}
+  build: {status: completed}
+  verify:
+    status: completed
+    metrics: {backend: "temurin-8 544/544 (含 LegacyProductCategoryCleanupTest 表数 26)", frontend: "265/265", tsc: clean, lint: clean}
+    review: "skipped — auto-create 沿用既有 service-to-service 注入模式；OperationIssue 是标准 CRUD 实体（同 Demand/Requirement 模板）；前端复用 OpportunityDetailPage css 与组件"
+    awaiting: gate_3_user_review_then_commit
+  deliver: {status: archived, archived_at: '2026-06-25'}
+
+long_range:
+  enabled: true
+  mode: full_auto
+  pre_auth: {git_ops: allow_up_to_commit_and_tag, gate_2: auto_proceed, gate_3: require_user_confirmation}
+
+scope:
+  type: feature
+  capabilities_modified: [operation, opportunity, frontend-scaffold]
+  capabilities_new: [entity-operation-issue]
+  new_tables: 1
+  new_columns: [rainier_operation.opportunity_id]
+  new_deps: []
+  new_apis: ["GET/POST /api/operations/{id}/issues", "GET/PUT/DELETE /api/operation-issues/{id}"]
+  behavior_change: "ACCEPTANCE 自动建 Operation（幂等）；新 OperationDetailPage 与 OperationIssue CRUD"
