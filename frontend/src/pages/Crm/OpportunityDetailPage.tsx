@@ -457,8 +457,8 @@ export default function OpportunityDetailPage() {
         </div>
       ) : opp ? (
         <div className="opp-detail-grid">
-          {/* 概览 */}
-          <div className="opp-card">
+          {/* 概览 — order 1 */}
+          <div className="opp-card" style={{ order: 1 }}>
             <div className="opp-hero">
               <div
                 className="opp-hero-avatar"
@@ -600,8 +600,8 @@ export default function OpportunityDetailPage() {
             )}
           </div>
 
-          {/* 流转产出物 */}
-          <div className="opp-card">
+          {/* 流转产出物 — order 3（诉求/需求 之后） */}
+          <div className="opp-card" style={{ order: 3 }}>
             <div className="opp-card-title">
               流转产出物
               {!addArtOpen && (
@@ -741,16 +741,14 @@ export default function OpportunityDetailPage() {
               ))
             )}
           </div>
-        </div>
-      ) : null}
 
-      {!loading && !error && opp ? (
-        <div
-          className="opp-card"
-          data-testid="opp-gen-card"
-          ref={genCardRef}
-          style={{ marginTop: 12 }}
-        >
+          {/* 产品诉求 / 需求 — order 2（紧跟概览，在产出物之前） */}
+          <div
+            className="opp-card"
+            data-testid="opp-gen-card"
+            ref={genCardRef}
+            style={{ order: 2 }}
+          >
           {convertHint && (
             <div
               data-testid="opp-gen-convert-prompt"
@@ -944,23 +942,50 @@ export default function OpportunityDetailPage() {
             ) : (
               <>
                 {genDemands.map((d) => (
-                  <div key={`d-${d.id}`} data-testid={`opp-gen-demand-${d.id}`} className="opp-art">
+                  <div
+                    key={`d-${d.id}`}
+                    data-testid={`opp-gen-demand-${d.id}`}
+                    className="opp-art"
+                    role="link"
+                    tabIndex={0}
+                    style={{ cursor: 'pointer' }}
+                    onClick={() => navigate(`/pm/demands?openId=${d.id}`)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') navigate(`/pm/demands?openId=${d.id}`);
+                    }}
+                    title="打开诉求"
+                  >
                     <div className="opp-art-head">
-                      <StatusChip status="DEMAND" label="诉求" tier="yellow" /> {d.title}
+                      <StatusChip status="DEMAND" label="诉求" tier="yellow" /> {d.title}{' '}
+                      <span style={{ color: 'var(--rainier-color-text-3)', fontWeight: 400 }}>↗</span>
                     </div>
                     <div className="opp-art-meta">{d.status}</div>
                   </div>
                 ))}
                 {genRequirements.map((r) => (
-                  <div key={`r-${r.id}`} data-testid={`opp-gen-requirement-${r.id}`} className="opp-art">
+                  <div
+                    key={`r-${r.id}`}
+                    data-testid={`opp-gen-requirement-${r.id}`}
+                    className="opp-art"
+                    role="link"
+                    tabIndex={0}
+                    style={{ cursor: 'pointer' }}
+                    onClick={() => navigate(`/pm/requirements?openId=${r.id}`)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') navigate(`/pm/requirements?openId=${r.id}`);
+                    }}
+                    title="打开需求"
+                  >
                     <div className="opp-art-head">
-                      <StatusChip status="REQ" label="需求" tier="green" /> {r.code} · {r.title}
+                      <StatusChip status="REQ" label="需求" tier="green" /> {r.code} · {r.title}{' '}
+                      <span style={{ color: 'var(--rainier-color-text-3)', fontWeight: 400 }}>↗</span>
                     </div>
                     <div className="opp-art-meta">{r.status}</div>
                   </div>
                 ))}
               </>
             )}
+          </div>
           </div>
         </div>
       ) : null}

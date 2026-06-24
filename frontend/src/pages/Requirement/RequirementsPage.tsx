@@ -1,4 +1,5 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
@@ -7,6 +8,7 @@ import { Table, type TableColumn } from '../../components/ui/Table';
 import {
   createRequirement,
   deleteRequirement,
+  getRequirement,
   listRequirements,
   updateRequirement,
   REQUIREMENT_STATUS_LABELS,
@@ -29,6 +31,28 @@ export function RequirementsPage() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [editing, setEditing] = useState<Requirement | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<Requirement | null>(null);
+
+  // v0.0.59 — 深链 ?openId=N：来自 商机详情页/运营详情页 的「跳转到此需求」，自动打开编辑抽屉。
+  const [searchParams, setSearchParams] = useSearchParams();
+  useEffect(() => {
+    const openId = Number(searchParams.get('openId'));
+    if (Number.isFinite(openId) && openId > 0) {
+      void getRequirement(openId)
+        .then((r) => {
+          setEditing(r);
+          setDrawerOpen(true);
+        })
+        .catch(() => {
+          // ignore — id 不存在/无权限
+        })
+        .finally(() => {
+          const next = new URLSearchParams(searchParams);
+          next.delete('openId');
+          setSearchParams(next, { replace: true });
+        });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   // v0.0.9: track which Requirement rows are expanded to reveal Story sub-list.
   const [expanded, setExpanded] = useState<Set<number>>(new Set());
   const toggleExpanded = (id: number) => {

@@ -1,5 +1,6 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { MemoryRouter } from 'react-router-dom';
 import { RequirementsPage } from './RequirementsPage';
 import { useAuthStore } from '../../store/auth';
 
@@ -84,7 +85,11 @@ describe('RequirementsPage drilldown', () => {
 
   /** TC-FES-SPR-05 (v0.0.10): 表格含 "Sprint 数" 列 + 单元格显示 r.sprintCount. */
   it('renders Sprint 数 column with sprintCount value (TC-FES-SPR-05)', async () => {
-    render(<RequirementsPage />);
+    render(
+      <MemoryRouter>
+        <RequirementsPage />
+      </MemoryRouter>,
+    );
     await waitFor(() => {
       expect(screen.getByText('REQ-1')).toBeInTheDocument();
     });
@@ -95,7 +100,11 @@ describe('RequirementsPage drilldown', () => {
 
   /** TC-FES-SPR-05 part B (v0.0.10): expanding a row renders SprintListPanel + sub-table. */
   it('expanding a row renders the SprintListPanel sub-table (TC-FES-SPR-05)', async () => {
-    render(<RequirementsPage />);
+    render(
+      <MemoryRouter>
+        <RequirementsPage />
+      </MemoryRouter>,
+    );
     await waitFor(() => {
       expect(screen.getByTestId('req-expand-btn-1')).toBeInTheDocument();
     });

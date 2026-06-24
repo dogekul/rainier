@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
@@ -10,6 +11,7 @@ import { StatusChip } from '../../components/board';
 import {
   createDemand,
   deleteDemand,
+  getDemand,
   listDemands,
   updateDemand,
   PRIORITY_LABELS,
@@ -36,6 +38,29 @@ export function DemandsPage() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [editing, setEditing] = useState<Demand | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<Demand | null>(null);
+
+  // v0.0.59 — 深链 ?openId=N：来自 商机详情页/运营详情页 的「跳转到此诉求」，自动打开编辑抽屉。
+  const [searchParams, setSearchParams] = useSearchParams();
+  useEffect(() => {
+    const openId = Number(searchParams.get('openId'));
+    if (Number.isFinite(openId) && openId > 0) {
+      void getDemand(openId)
+        .then((d) => {
+          setEditing(d);
+          setDrawerOpen(true);
+        })
+        .catch(() => {
+          // ignore — id 不存在/无权限：保留 URL 不弹抽屉
+        })
+        .finally(() => {
+          // 用完即清，刷新页面不再弹
+          const next = new URLSearchParams(searchParams);
+          next.delete('openId');
+          setSearchParams(next, { replace: true });
+        });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const [userOptions, setUserOptions] = useState<User[]>([]);
   const [title, setTitle] = useState('');
