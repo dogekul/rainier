@@ -493,13 +493,12 @@ class OpportunityControllerTest {
         .andExpect(status().isBadRequest());
   }
 
-  /** TC-INI-03: initiate inline-creates an 对外-交付 project and links it. */
+  /** TC-INI-03: initiate inline-creates an 对外-交付 project (仅 name+owner, 编号自动生成 ED-{id}) and links it. */
   @Test
   void initiate_inlineCreatesExternalDeliveryProject() throws Exception {
     Long id = seedOpp(OpportunityStage.CONTRACT, OpportunityStatus.WON);
     Long owner = seedUser("deliv-owner");
     ObjectNode body = json.createObjectNode();
-    body.put("projectCode", "DLV-NEW-1");
     body.put("projectName", "交付项目一");
     body.put("projectOwnerUserId", owner);
     body.put("decision", "PASS");
@@ -515,8 +514,9 @@ class OpportunityControllerTest {
             .getContentAsString();
     Long newProjId = json.readTree(resp).get("projectId").asLong();
     assertNotNull(newProjId);
-    assertEquals(
-        ProjectType.EXTERNAL_DELIVERY, projectRepo.findById(newProjId).get().getProjectType());
+    Project created = projectRepo.findById(newProjId).get();
+    assertEquals(ProjectType.EXTERNAL_DELIVERY, created.getProjectType());
+    assertTrue(created.getCode().matches("ED-\\d+"), "auto code: " + created.getCode());
   }
 
   /** TC-INI-04: initiate with neither projectId nor create fields → 400. */
@@ -539,7 +539,6 @@ class OpportunityControllerTest {
     Long id = seedOpp(OpportunityStage.CONTRACT, OpportunityStatus.WON); // seedOpp 不设 pmUserId
     ObjectNode body = json.createObjectNode();
     body.put("decision", "PASS");
-    body.put("projectCode", "DLV-NOOWNER");
     body.put("projectName", "缺负责人");
     mockMvc
         .perform(
@@ -557,7 +556,6 @@ class OpportunityControllerTest {
     ObjectNode body = json.createObjectNode();
     body.put("decision", "PASS");
     body.put("projectId", proj);
-    body.put("projectCode", "DLV-DUP");
     body.put("projectName", "重复");
     mockMvc
         .perform(

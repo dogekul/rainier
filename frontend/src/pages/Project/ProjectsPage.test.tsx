@@ -73,8 +73,7 @@ describe('ProjectsPage', () => {
     // Owner select remains '' because no user matches "nobody" loginName.
     const sel = screen.getByTestId('projects-owner-select') as HTMLSelectElement;
     expect(sel.value).toBe('');
-    // Fill required text fields so only owner is missing.
-    fireEvent.change(screen.getByLabelText(/编码/), { target: { value: 'PROJ-X' } });
+    // Fill required text field so only owner is missing (编号自动生成，无输入).
     fireEvent.change(screen.getByLabelText(/^名称/), { target: { value: 'X' } });
     fireEvent.click(screen.getByRole('button', { name: '保存' }));
     await waitFor(() => {
@@ -208,8 +207,7 @@ describe('ProjectsPage', () => {
     await waitFor(() => {
       expect(screen.getByTestId('projects-type-select')).toBeInTheDocument();
     });
-    // Owner auto-defaults to the logged-in user (alice → id 1), so only type + text fields remain.
-    fireEvent.change(screen.getByLabelText(/编码/), { target: { value: 'PROJ-NEW' } });
+    // Owner auto-defaults to the logged-in user (alice → id 1); 编号自动生成，仅填名称+类型.
     fireEvent.change(screen.getByLabelText(/^名称/), { target: { value: 'X' } });
     fireEvent.change(screen.getByTestId('projects-type-select'), {
       target: { value: 'CORE_TECH' },
@@ -220,6 +218,8 @@ describe('ProjectsPage', () => {
         expect.objectContaining({ projectType: 'CORE_TECH' }),
       );
     });
+    // v0.0.49: 创建不再发送 code（自动生成）
+    expect(createProject).not.toHaveBeenCalledWith(expect.objectContaining({ code: expect.anything() }));
   });
 
   /** TC-FES-MILE-001: 里程碑按钮展开内联面板 + listMilestones(projectId). */

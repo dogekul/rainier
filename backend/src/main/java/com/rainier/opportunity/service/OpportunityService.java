@@ -286,11 +286,11 @@ public class OpportunityService {
   }
 
   /**
-   * 立项 PASS 的交付项目解析：传 projectId → 校验存在且为 EXTERNAL_DELIVERY 后关联；否则按 code/name 内联新建一个
-   * EXTERNAL_DELIVERY 项目（复用 {@link ProjectService#create}，同事务）。二者缺一/兼有 → 400。
+   * 立项 PASS 的交付项目解析：传 projectId → 校验存在且为 EXTERNAL_DELIVERY 后关联；否则按 name 内联新建一个
+   * EXTERNAL_DELIVERY 项目（复用 {@link ProjectService#create}，编号自动生成，同事务）。二者缺一/兼有 → 400。
    */
   private Long resolveDeliveryProject(Opportunity o, OpportunityInitiateRequest req) {
-    boolean hasCreate = !isBlank(req.getProjectName()) || !isBlank(req.getProjectCode());
+    boolean hasCreate = !isBlank(req.getProjectName());
     if (req.getProjectId() != null) {
       if (hasCreate) {
         throw new BadRequestException("提供 projectId 或新建项目信息，二者只能其一");
@@ -304,18 +304,17 @@ public class OpportunityService {
       }
       return req.getProjectId();
     }
-    if (isBlank(req.getProjectCode()) || isBlank(req.getProjectName())) {
-      throw new BadRequestException("立项需提供 projectId，或新建交付项目的 code 与 name");
+    if (isBlank(req.getProjectName())) {
+      throw new BadRequestException("立项需提供 projectId，或新建交付项目的名称");
     }
     Long ownerUserId = req.getProjectOwnerUserId() != null ? req.getProjectOwnerUserId() : o.getPmUserId();
     if (ownerUserId == null) {
       throw new BadRequestException("新建交付项目需指定负责人（projectOwnerUserId），或商机先设项目经理");
     }
     ProjectCreateRequest pcr = new ProjectCreateRequest();
-    pcr.setCode(req.getProjectCode().trim());
     pcr.setName(req.getProjectName().trim());
     pcr.setOwnerUserId(ownerUserId);
-    pcr.setProjectType(ProjectType.EXTERNAL_DELIVERY);
+    pcr.setProjectType(ProjectType.EXTERNAL_DELIVERY); // code 自动生成
     return projectService.create(pcr).getId();
   }
 

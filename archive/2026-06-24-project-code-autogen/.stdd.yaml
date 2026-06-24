@@ -1,0 +1,42 @@
+change:
+  id: 2026-06-24-project-code-autogen
+  title: v0.0.49-project-code-autogen — 项目编号自动生成（类型前缀 + 自增ID）
+  baseline: {tag: v0.0.48-project-types, commit: c23f441}
+  type: feature
+  source: "用户：项目不再要求输入编号；编号 = 类型枚举前缀(轻量=LT 等) + 项目自增ID"
+
+phase:
+  current: archived
+  understand:
+    status: completed
+    confirmed_at: '2026-06-24'
+    decisions:
+      prefixes: {CASUAL: LT, CORE_FEATURE: CF, CORE_TECH: CT, EXTERNAL_DELIVERY: ED}
+      format: "{prefix}-{自增id}"
+      immutable: true   # 创建时定，改类型不变
+      existing_codes: 不回填（保留原 code）
+      request_code: 可空且服务端忽略
+      mode: auto（auto-mode 直接做，停 Gate 3）
+  spec: {status: completed, gate_2: auto_proceed}
+  slice: {status: completed}
+  build: {status: completed}
+  verify:
+    status: completed
+    artifact: test-report.md
+    confirmed_at: '2026-06-24'   # Gate 3 用户「push」
+    metrics: {backend: 527/527 (temurin-8), frontend: 248/248, e2e: green (LT-14/CF-15/CT-16/ED-17, code ignored), review: "前台对抗式 agent; 14 类核查 → 1 L 已修"}
+  deliver: {status: completed, archived_to: archive/2026-06-24-project-code-autogen, tag: v0.0.49-project-code-autogen, pushed: true}
+
+long_range:
+  enabled: true
+  mode: full_auto
+  pre_auth: {git_ops: allow_up_to_commit_and_tag, gate_2: auto_proceed, gate_3: require_user_confirmation}
+
+scope:
+  type: feature
+  capabilities_modified: [entity-project, opportunity, frontend-scaffold]
+  capabilities_new: []
+  new_tables: 0
+  new_columns: []
+  new_deps: []
+  new_apis: []

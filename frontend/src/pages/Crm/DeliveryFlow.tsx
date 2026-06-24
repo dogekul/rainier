@@ -23,8 +23,8 @@ type HandoffMode = 'link' | 'create';
 
 /**
  * v0.0.44 —「实施流转」(delivery operations). v0.0.48 立项移交 改为「关联或新建」对外-交付项目：
- * 关联模式从 `EXTERNAL_DELIVERY` 项目下拉里选；新建模式填 code/name（owner 默认商机 pmUserId），类型固定对外-交付。
- * 后端 initiate 原子接受二选一；无项目时不再死路。
+ * 关联模式从 `EXTERNAL_DELIVERY` 项目下拉里选；新建模式填 名称 + 负责人（v0.0.49 编号自动生成、不再手填），类型固定对外-交付。
+ * 默认「新建」模式（立项主流动作）。后端 initiate 原子接受二选一；无项目时不再死路。
  */
 export function DeliveryFlow() {
   const [rows, setRows] = useState<Opportunity[]>([]);
@@ -39,7 +39,6 @@ export function DeliveryFlow() {
   // 不按项目数量切默认值 —— 真实使用中对外-交付项目会很多，按数量判断会让「新建」长期被埋。
   const [mode, setMode] = useState<HandoffMode>('create');
   const [projectId, setProjectId] = useState<number | ''>('');
-  const [newCode, setNewCode] = useState('');
   const [newName, setNewName] = useState('');
   const [newOwnerUserId, setNewOwnerUserId] = useState<number | ''>('');
   const [handoffSaving, setHandoffSaving] = useState(false);
@@ -58,7 +57,6 @@ export function DeliveryFlow() {
   useEffect(() => {
     if (handoffId == null) {
       setProjectId('');
-      setNewCode('');
       setNewName('');
       setNewOwnerUserId('');
       setMode('create');
@@ -101,8 +99,8 @@ export function DeliveryFlow() {
         return;
       }
     } else {
-      if (!newCode.trim() || !newName.trim()) {
-        setHandoffError('请填写新建项目的编号与名称');
+      if (!newName.trim()) {
+        setHandoffError('请填写新建项目的名称');
         return;
       }
       if (newOwnerUserId === '') {
@@ -117,7 +115,6 @@ export function DeliveryFlow() {
           ? { decision: 'PASS' as const, projectId: projectId as number }
           : {
               decision: 'PASS' as const,
-              projectCode: newCode.trim(),
               projectName: newName.trim(),
               projectOwnerUserId: newOwnerUserId as number,
             };
@@ -299,12 +296,6 @@ export function DeliveryFlow() {
           </div>
         ) : (
           <div style={{ marginBottom: 12 }}>
-            <Input
-              label="项目编号"
-              value={newCode}
-              onChange={(e) => setNewCode(e.target.value)}
-              data-testid="delivery-new-code"
-            />
             <Input
               label="项目名称"
               value={newName}

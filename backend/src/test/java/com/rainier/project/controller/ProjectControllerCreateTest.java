@@ -48,12 +48,11 @@ class ProjectControllerCreateTest {
     return userRepo.saveAndFlush(u).getId();
   }
 
-  /** TC-PRJ-001: 最小 payload + 默认值 + 富化. */
+  /** TC-PRJ-001: 最小 payload + 默认值 + 富化 + 自动编号（默认 CASUAL → LT-{id}）. */
   @Test
   void post_minimalPayload_returns201WithDefaultsAndEnrichment() throws Exception {
     Long userId = createUser();
     ObjectNode body = json.createObjectNode();
-    body.put("code", "PROJ-001");
     body.put("name", "采购系统改造");
     body.put("ownerUserId", userId);
     mockMvc
@@ -62,7 +61,7 @@ class ProjectControllerCreateTest {
         .andExpect(status().isCreated())
         .andExpect(header().string("Location", matchesPattern("/api/projects/\\d+")))
         .andExpect(jsonPath("$.id").isNumber())
-        .andExpect(jsonPath("$.code").value("PROJ-001"))
+        .andExpect(jsonPath("$.code", matchesPattern("LT-\\d+"))) // v0.0.49 自动编号
         .andExpect(jsonPath("$.name").value("采购系统改造"))
         .andExpect(jsonPath("$.status").value("PLANNING"))
         .andExpect(jsonPath("$.enabled").value(true))
@@ -71,23 +70,40 @@ class ProjectControllerCreateTest {
         .andExpect(jsonPath("$.ownerLoginName").value("alice"));
   }
 
-  /** TC-PRJ-002: code 重复 → 409. */
+  /** TC-PRJ-002: v0.0.49 — 编号自动生成，两次创建得到不同编号（不再因 code 重复 409）. */
   @Test
-  void post_duplicateCode_returns409() throws Exception {
+  void post_twoCreates_getDistinctAutoCodes() throws Exception {
     Long userId = createUser();
     ObjectNode body = json.createObjectNode();
-    body.put("code", "PROJ-001");
     body.put("name", "X");
     body.put("ownerUserId", userId);
-    mockMvc
-        .perform(
-            post("/api/projects").contentType(MediaType.APPLICATION_JSON).content(body.toString()))
-        .andExpect(status().isCreated());
-    mockMvc
-        .perform(
-            post("/api/projects").contentType(MediaType.APPLICATION_JSON).content(body.toString()))
-        .andExpect(status().isConflict())
-        .andExpect(jsonPath("$.message", startsWith("code already exists")));
+    String code1 =
+        json.readTree(
+                mockMvc
+                    .perform(
+                        post("/api/projects")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(body.toString()))
+                    .andExpect(status().isCreated())
+                    .andReturn()
+                    .getResponse()
+                    .getContentAsString())
+            .get("code")
+            .asText();
+    String code2 =
+        json.readTree(
+                mockMvc
+                    .perform(
+                        post("/api/projects")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(body.toString()))
+                    .andExpect(status().isCreated())
+                    .andReturn()
+                    .getResponse()
+                    .getContentAsString())
+            .get("code")
+            .asText();
+    org.junit.jupiter.api.Assertions.assertNotEquals(code1, code2, "auto codes must be unique");
   }
 
   /** TC-PRJ-003: 缺 ownerUserId → 400. */

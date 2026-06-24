@@ -183,13 +183,12 @@ export async function advanceOpportunity(
 
 /**
  * 立项 (v0.0.48): link an existing 对外-交付 Project OR inline-create one (atomic, backend-side).
- * 二选一：传 `projectId`，或传 `projectCode`+`projectName`（可选 `projectOwnerUserId`，默认商机 pmUserId）。
+ * 二选一：传 `projectId`，或传 `projectName`（可选 `projectOwnerUserId`，默认商机 pmUserId）。v0.0.49：项目编号自动生成，不再传 code。
  */
 export interface OpportunityInitiate {
   decision: GateDecision;
   note?: string;
   projectId?: number;
-  projectCode?: string;
   projectName?: string;
   projectOwnerUserId?: number;
 }

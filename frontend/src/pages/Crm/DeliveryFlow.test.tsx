@@ -132,23 +132,21 @@ describe('DeliveryFlow (实施流转 operations)', () => {
     );
   });
 
-  /** TC-FDH-02: 立项新建对外-交付项目（默认路径，无需切换）— initiate({projectCode, projectName, owner}). */
+  /** TC-FDH-02: 立项新建对外-交付项目（默认路径，仅名称+负责人，编号自动生成）— initiate({projectName, owner}). */
   it('inline-creates an 对外-交付 Project via initiate (TC-FDH-02)', async () => {
     vi.mocked(listOpportunities).mockResolvedValue(page([opp(7, 'INITIATION')]));
     renderPage();
     await waitFor(() => expect(screen.getByTestId('delivery-handoff-7')).toBeInTheDocument());
     fireEvent.click(screen.getByTestId('delivery-handoff-7'));
-    // create is the default mode — new-code field is shown immediately, no toggle click
-    await waitFor(() => expect(screen.getByTestId('delivery-new-code')).toBeInTheDocument());
-    fireEvent.change(screen.getByTestId('delivery-new-code'), { target: { value: 'DLV-NEW' } });
+    // create is the default mode — name field shown immediately; NO 编号 input (auto-generated)
+    await waitFor(() => expect(screen.getByTestId('delivery-new-name')).toBeInTheDocument());
+    expect(screen.queryByTestId('delivery-new-code')).not.toBeInTheDocument();
     fireEvent.change(screen.getByTestId('delivery-new-name'), { target: { value: '交付新项目' } });
-    await waitFor(() => expect(screen.getByTestId('delivery-new-owner')).toBeInTheDocument());
     fireEvent.change(screen.getByTestId('delivery-new-owner'), { target: { value: '5' } });
     fireEvent.click(screen.getByTestId('delivery-handoff-save'));
     await waitFor(() =>
       expect(initiateOpportunity).toHaveBeenCalledWith(7, {
         decision: 'PASS',
-        projectCode: 'DLV-NEW',
         projectName: '交付新项目',
         projectOwnerUserId: 5,
       }),
@@ -165,10 +163,8 @@ describe('DeliveryFlow (实施流转 operations)', () => {
     renderPage();
     await waitFor(() => expect(screen.getByTestId('delivery-handoff-7')).toBeInTheDocument());
     fireEvent.click(screen.getByTestId('delivery-handoff-7'));
-    await waitFor(() => expect(screen.getByTestId('delivery-new-code')).toBeInTheDocument());
-    fireEvent.change(screen.getByTestId('delivery-new-code'), { target: { value: 'DLV-DUP' } });
+    await waitFor(() => expect(screen.getByTestId('delivery-new-name')).toBeInTheDocument());
     fireEvent.change(screen.getByTestId('delivery-new-name'), { target: { value: '重复' } });
-    await waitFor(() => expect(screen.getByTestId('delivery-new-owner')).toBeInTheDocument());
     fireEvent.change(screen.getByTestId('delivery-new-owner'), { target: { value: '5' } });
     fireEvent.click(screen.getByTestId('delivery-handoff-save'));
     await waitFor(() =>
@@ -184,17 +180,14 @@ describe('DeliveryFlow (实施流转 operations)', () => {
     await waitFor(() => expect(screen.getByTestId('delivery-handoff-7')).toBeInTheDocument());
     fireEvent.click(screen.getByTestId('delivery-handoff-7'));
     // smart default: nothing to link → create form shown directly, with NO extra mode-toggle click
-    await waitFor(() => expect(screen.getByTestId('delivery-new-code')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByTestId('delivery-new-name')).toBeInTheDocument());
     expect(screen.queryByTestId('delivery-project-select')).not.toBeInTheDocument();
-    fireEvent.change(screen.getByTestId('delivery-new-code'), { target: { value: 'DLV-X' } });
     fireEvent.change(screen.getByTestId('delivery-new-name'), { target: { value: '交付' } });
-    await waitFor(() => expect(screen.getByTestId('delivery-new-owner')).toBeInTheDocument());
     fireEvent.change(screen.getByTestId('delivery-new-owner'), { target: { value: '6' } });
     fireEvent.click(screen.getByTestId('delivery-handoff-save'));
     await waitFor(() =>
       expect(initiateOpportunity).toHaveBeenCalledWith(7, {
         decision: 'PASS',
-        projectCode: 'DLV-X',
         projectName: '交付',
         projectOwnerUserId: 6,
       }),
@@ -208,7 +201,7 @@ describe('DeliveryFlow (实施流转 operations)', () => {
     await waitFor(() => expect(screen.getByTestId('delivery-handoff-7')).toBeInTheDocument());
     fireEvent.click(screen.getByTestId('delivery-handoff-7'));
     // create form shown by default; the link dropdown is only reached via the secondary toggle
-    await waitFor(() => expect(screen.getByTestId('delivery-new-code')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByTestId('delivery-new-name')).toBeInTheDocument());
     expect(screen.queryByTestId('delivery-project-select')).not.toBeInTheDocument();
     // 关联 is available as a secondary one-click option
     fireEvent.click(screen.getByTestId('delivery-mode-link'));

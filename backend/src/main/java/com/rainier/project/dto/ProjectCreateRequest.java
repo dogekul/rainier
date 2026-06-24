@@ -9,7 +9,7 @@ import javax.validation.constraints.Size;
 /** Payload for {@code POST /api/projects}. */
 public class ProjectCreateRequest {
 
-  @NotBlank
+  /** v0.0.49 — 服务端自动生成（{类型前缀}-{自增id}），此处输入一律忽略；保留字段仅为向后兼容。 */
   @Size(max = 64)
   private String code;
 

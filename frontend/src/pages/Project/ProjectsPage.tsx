@@ -72,7 +72,6 @@ export function ProjectsPage() {
   };
 
   const [users, setUsers] = useState<User[]>([]);
-  const [code, setCode] = useState('');
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [status, setStatus] = useState<ProjectStatus>('PLANNING');
@@ -103,7 +102,6 @@ export function ProjectsPage() {
       }
     });
     if (editing) {
-      setCode(editing.code);
       setName(editing.name);
       setDescription(editing.description ?? '');
       setStatus(editing.status);
@@ -112,7 +110,6 @@ export function ProjectsPage() {
       setEndDate(editing.endDate ?? '');
       setEnabled(editing.enabled);
     } else {
-      setCode('');
       setName('');
       setDescription('');
       setStatus('PLANNING');
@@ -221,12 +218,6 @@ export function ProjectsPage() {
         title={editing ? '编辑项目' : '新建项目'}
         onClose={() => setDrawerOpen(false)}
       >
-        <Input
-          label="编码 (e.g. PROJ-001)"
-          value={code}
-          onChange={(e) => setCode(e.target.value)}
-          disabled={editing !== null}
-        />
         <Input label="名称" value={name} onChange={(e) => setName(e.target.value)} />
         <Input
           label="描述"
@@ -347,7 +338,6 @@ export function ProjectsPage() {
                 });
               } else {
                 await createProject({
-                  code,
                   name,
                   description: description || undefined,
                   status,

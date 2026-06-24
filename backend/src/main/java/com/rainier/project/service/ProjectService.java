@@ -67,9 +67,6 @@ public class ProjectService {
     if (!userRepo.existsById(req.getOwnerUserId())) {
       throw new BadRequestException("owner user not found: id=" + req.getOwnerUserId());
     }
-    if (repo.existsByCode(req.getCode())) {
-      throw new ConflictException("code already exists: " + req.getCode());
-    }
     String status = req.getStatus() == null ? ProjectStatus.PLANNING : req.getStatus();
     if (!ProjectStatus.ALL.contains(status)) {
       throw new BadRequestException("invalid status: " + status);
@@ -79,7 +76,9 @@ public class ProjectService {
       throw new BadRequestException("invalid project type: " + projectType);
     }
     Project p = new Project();
-    p.setCode(req.getCode());
+    // v0.0.49 — code 不再手填：先用临时占位 insert（code 列非空、无 DB UNIQUE），拿到自增 id 后回填
+    // {类型前缀}-{id}。请求中的 code 一律忽略。同事务两步保存，占位 code 不外泄。
+    p.setCode("__pending__");
     p.setName(req.getName());
     p.setDescription(req.getDescription());
     p.setStatus(status);
@@ -89,7 +88,9 @@ public class ProjectService {
     p.setEndDate(req.getEndDate());
     p.setEnabled(req.getEnabled() == null ? Boolean.TRUE : req.getEnabled());
     p.setProjectType(projectType);
-    return enrich(repo.saveAndFlush(p));
+    Project saved = repo.saveAndFlush(p);
+    saved.setCode(ProjectType.codePrefix(projectType) + "-" + saved.getId());
+    return enrich(repo.saveAndFlush(saved));
   }
 
   public ProjectDetail findById(Long id) {

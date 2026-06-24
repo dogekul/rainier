@@ -56,7 +56,8 @@ export interface Project {
 }
 
 export interface ProjectCreate {
-  code: string;
+  /** v0.0.49 — 服务端自动生成（{类型前缀}-{自增id}）；前端不再发送。 */
+  code?: string;
   name: string;
   description?: string;
   status?: ProjectStatus;

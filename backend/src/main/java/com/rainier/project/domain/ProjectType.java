@@ -3,7 +3,9 @@ package com.rainier.project.domain;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -28,6 +30,23 @@ public final class ProjectType {
   public static final Set<String> ALL =
       Collections.unmodifiableSet(
           new HashSet<>(Arrays.asList(CASUAL, CORE_FEATURE, CORE_TECH, EXTERNAL_DELIVERY)));
+
+  /** v0.0.49 — 项目编号前缀（code = {prefix}-{自增id}）。轻量=LT，其余取英文首字母。 */
+  private static final Map<String, String> PREFIXES;
+
+  static {
+    Map<String, String> m = new HashMap<>();
+    m.put(CASUAL, "LT"); // 轻量 (lightweight)
+    m.put(CORE_FEATURE, "CF"); // 主业-功能建设 (core feature)
+    m.put(CORE_TECH, "CT"); // 主业-技术改造 (core tech)
+    m.put(EXTERNAL_DELIVERY, "ED"); // 对外-交付 (external delivery)
+    PREFIXES = Collections.unmodifiableMap(m);
+  }
+
+  /** Code prefix for a project type; unknown/legacy → "PRJ". */
+  public static String codePrefix(String type) {
+    return PREFIXES.getOrDefault(type, "PRJ");
+  }
 
   private ProjectType() {}
 }
