@@ -10,12 +10,22 @@ import {
 } from '../../api/opportunity';
 import { listProjects } from '../../api/project';
 import { listUsers } from '../../api/user';
+import {
+  createOpportunityArtifact,
+  listOpportunityArtifacts,
+  type OpportunityArtifact,
+} from '../../api/opportunityArtifact';
 
 vi.mock('../../api/opportunity', async (orig) => ({
   ...(await orig<typeof import('../../api/opportunity')>()),
   listOpportunities: vi.fn(),
   advanceOpportunity: vi.fn(() => Promise.resolve({} as Opportunity)),
   initiateOpportunity: vi.fn(() => Promise.resolve({} as Opportunity)),
+}));
+vi.mock('../../api/opportunityArtifact', async (orig) => ({
+  ...(await orig<typeof import('../../api/opportunityArtifact')>()),
+  listOpportunityArtifacts: vi.fn(() => Promise.resolve([] as OpportunityArtifact[])),
+  createOpportunityArtifact: vi.fn(() => Promise.resolve({} as OpportunityArtifact)),
 }));
 vi.mock('../../api/project', async (orig) => ({
   ...(await orig<typeof import('../../api/project')>()),
@@ -72,6 +82,8 @@ describe('DeliveryFlow (实施流转 operations)', () => {
     vi.mocked(listProjects).mockClear();
     vi.mocked(listUsers).mockClear();
     vi.mocked(listOpportunities).mockReset();
+    vi.mocked(listOpportunityArtifacts).mockClear().mockResolvedValue([] as OpportunityArtifact[]);
+    vi.mocked(createOpportunityArtifact).mockClear();
   });
 
   /** TC-DEL-01: lists only WON 实施 opps; 立项→移交+驳回（无独立「通过」）, non-gate→推进, 验收→已验收, OPEN/售前 excluded. */
@@ -102,16 +114,62 @@ describe('DeliveryFlow (实施流转 operations)', () => {
     expect(screen.queryByTestId('delivery-row-11')).not.toBeInTheDocument();
   });
 
-  /** TC-DEL-02: 现场调研（非关口）「推进」calls advance(id) and refetches. */
-  it('advances a non-gate 实施 stage and refetches (TC-DEL-02)', async () => {
+  /** TC-DEL-02: 现场调研「推进」缺产出物 → 打开补充表单（报告+附件），不立即 advance。 */
+  it('opens the supplement form for 现场调研 instead of advancing (TC-DEL-02)', async () => {
+    vi.mocked(listOpportunities).mockResolvedValue(page([opp(7, 'SURVEY')]));
+    renderPage();
+    await waitFor(() => expect(screen.getByTestId('delivery-advance-7')).toBeInTheDocument());
+    fireEvent.click(screen.getByTestId('delivery-advance-7'));
+    await waitFor(() =>
+      expect(screen.getByTestId('delivery-supp-SURVEY_REPORT')).toBeInTheDocument(),
+    );
+    expect(screen.getByTestId('delivery-supp-SURVEY_ATTACHMENT')).toBeInTheDocument();
+    expect(advanceOpportunity).not.toHaveBeenCalled();
+  });
+
+  /** TC-DEL-08: 补充表单填报告正文+附件链接，提交 → 逐个建档 + advance(id) + 刷新。 */
+  it('submits 现场调研 报告+附件 then advances (TC-DEL-08)', async () => {
     vi.mocked(listOpportunities)
       .mockResolvedValueOnce(page([opp(7, 'SURVEY')]))
       .mockResolvedValueOnce(page([opp(7, 'REQUIREMENT')]));
     renderPage();
     await waitFor(() => expect(screen.getByTestId('delivery-advance-7')).toBeInTheDocument());
     fireEvent.click(screen.getByTestId('delivery-advance-7'));
+    await waitFor(() =>
+      expect(screen.getByTestId('delivery-supp-content-SURVEY_REPORT')).toBeInTheDocument(),
+    );
+    fireEvent.change(screen.getByTestId('delivery-supp-content-SURVEY_REPORT'), {
+      target: { value: '现场走访纪要' },
+    });
+    fireEvent.change(screen.getByTestId('delivery-supp-link-SURVEY_ATTACHMENT-0'), {
+      target: { value: 'https://x/site.jpg' },
+    });
+    fireEvent.click(screen.getByTestId('delivery-supp-save'));
+    await waitFor(() =>
+      expect(createOpportunityArtifact).toHaveBeenCalledWith(
+        7,
+        expect.objectContaining({ type: 'SURVEY_REPORT', content: '现场走访纪要' }),
+      ),
+    );
+    expect(createOpportunityArtifact).toHaveBeenCalledWith(
+      7,
+      expect.objectContaining({ type: 'SURVEY_ATTACHMENT', link: 'https://x/site.jpg' }),
+    );
     await waitFor(() => expect(advanceOpportunity).toHaveBeenCalledWith(7, undefined));
     expect(listOpportunities).toHaveBeenCalledTimes(2);
+  });
+
+  /** TC-DEL-09: 产品诉求（无门禁）「推进」直接 advance(id)，不开补充表单。 */
+  it('advances a non-gated 实施 stage directly (TC-DEL-09)', async () => {
+    vi.mocked(listOpportunities)
+      .mockResolvedValueOnce(page([opp(7, 'REQUIREMENT')]))
+      .mockResolvedValueOnce(page([opp(7, 'DELIVERY')]));
+    renderPage();
+    await waitFor(() => expect(screen.getByTestId('delivery-advance-7')).toBeInTheDocument());
+    fireEvent.click(screen.getByTestId('delivery-advance-7'));
+    await waitFor(() => expect(advanceOpportunity).toHaveBeenCalledWith(7, undefined));
+    expect(listOpportunityArtifacts).not.toHaveBeenCalled();
+    expect(screen.queryByTestId('delivery-supp-SURVEY_REPORT')).not.toBeInTheDocument();
   });
 
   /** TC-DEL-03 / TC-FDH-01: 立项关联已有对外-交付项目（次要路径，先切到「关联已有」）— initiate({projectId}). */

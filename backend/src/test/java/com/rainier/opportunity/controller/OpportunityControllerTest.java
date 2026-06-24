@@ -1,6 +1,7 @@
 /* (C) 2026 Rainier — internal use only. */
 package com.rainier.opportunity.controller;
 
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.everyItem;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -251,7 +252,8 @@ class OpportunityControllerTest {
   /** TC-OSEA-02: a stage-advancing PASS refreshes stageEnteredAt forward (计时归零). */
   @Test
   void advance_refreshesStageEnteredAt() throws Exception {
-    Long id = seedOpp(OpportunityStage.SURVEY, OpportunityStatus.WON); // 非关口、无产出物门禁
+    // v0.0.53: 现场调研(SURVEY) 现已有产出物门禁 → 用 产品诉求(REQUIREMENT，非关口、无门禁) 作样例。
+    Long id = seedOpp(OpportunityStage.REQUIREMENT, OpportunityStatus.WON);
     Instant t0 = Instant.now().minusSeconds(3600);
     Opportunity seeded = repo.findById(id).get();
     seeded.setStageEnteredAt(t0);
@@ -262,7 +264,7 @@ class OpportunityControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{}"))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.stage").value("REQUIREMENT"));
+        .andExpect(jsonPath("$.stage").value("DELIVERY"));
     em.clear();
     Opportunity after = repo.findById(id).get();
     assertNotNull(after.getStageEnteredAt());
@@ -433,6 +435,67 @@ class OpportunityControllerTest {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.stage").value("SURVEY"))
         .andExpect(jsonPath("$.status").value("WON"));
+  }
+
+  /** TC-SUR-01: 现场调研(SURVEY) 未备产出物 → advance 400，消息列出两类缺件。 */
+  @Test
+  void advance_survey_noArtifacts_returns400() throws Exception {
+    Long id = seedOpp(OpportunityStage.SURVEY, OpportunityStatus.WON);
+    mockMvc
+        .perform(
+            post("/api/opportunities/" + id + "/advance")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{}"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.message", containsString("现场调研报告")))
+        .andExpect(jsonPath("$.message", containsString("现场调研附件")));
+  }
+
+  /** TC-SUR-02: 现场调研 备齐 报告+附件 → advance 200，stage=产品诉求(REQUIREMENT)，status=WON。 */
+  @Test
+  void advance_survey_allArtifacts_advancesToRequirement() throws Exception {
+    Long id = seedOpp(OpportunityStage.SURVEY, OpportunityStatus.WON);
+    seedArtifact(id, ArtifactType.SURVEY_REPORT, "现场调研报告正文");
+    seedArtifact(id, ArtifactType.SURVEY_ATTACHMENT, "https://x/site-photo.jpg");
+    mockMvc
+        .perform(
+            post("/api/opportunities/" + id + "/advance")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.stage").value("REQUIREMENT"))
+        .andExpect(jsonPath("$.status").value("WON"));
+  }
+
+  /** TC-SUR-03: 现场调研 仅备报告(缺附件) → advance 400，消息列出缺失的附件。 */
+  @Test
+  void advance_survey_missingAttachment_returns400() throws Exception {
+    Long id = seedOpp(OpportunityStage.SURVEY, OpportunityStatus.WON);
+    seedArtifact(id, ArtifactType.SURVEY_REPORT, "现场调研报告正文");
+    mockMvc
+        .perform(
+            post("/api/opportunities/" + id + "/advance")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{}"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.message", containsString("现场调研附件")));
+  }
+
+  /** TC-SUR-04: 新产出物类型 SURVEY_ATTACHMENT 可经 POST /artifacts 独立提交。 */
+  @Test
+  void createArtifact_surveyAttachment_persisted() throws Exception {
+    Long id = seedOpp(OpportunityStage.SURVEY, OpportunityStatus.WON);
+    ObjectNode body = json.createObjectNode();
+    body.put("type", ArtifactType.SURVEY_ATTACHMENT);
+    body.put("link", "https://x/site.jpg");
+    mockMvc
+        .perform(
+            post("/api/opportunities/" + id + "/artifacts")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(body.toString()))
+        .andExpect(status().isCreated())
+        .andExpect(jsonPath("$.type").value("SURVEY_ATTACHMENT"))
+        .andExpect(jsonPath("$.link").value("https://x/site.jpg"));
   }
 
   /** TC-OPP-013: 验收 (ACCEPTANCE) is terminal → advancing → 409. */

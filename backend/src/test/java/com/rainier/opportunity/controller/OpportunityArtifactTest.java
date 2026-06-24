@@ -172,14 +172,17 @@ class OpportunityArtifactTest {
     assertEquals("REJECT", arts.get(0).getDecision());
   }
 
-  /** TC-OAR-006: 非门禁转换 (实施 SURVEY → REQUIREMENT) 无 artifact 照常推进. */
+  /**
+   * TC-OAR-006: 非门禁转换 (实施 REQUIREMENT → DELIVERY) 无 artifact 照常推进。
+   * v0.0.53: 现场调研(SURVEY) 现已有产出物门禁 → 改用 产品诉求(REQUIREMENT) 作非门禁样例。
+   */
   @Test
   void nonGatedTransition_noArtifactNeeded() throws Exception {
-    Long id = seedOpp(OpportunityStage.SURVEY, OpportunityStatus.WON);
+    Long id = seedOpp(OpportunityStage.REQUIREMENT, OpportunityStatus.WON);
     mockMvc
         .perform(post("/api/opportunities/" + id + "/advance"))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.stage").value("REQUIREMENT"));
+        .andExpect(jsonPath("$.stage").value("DELIVERY"));
     assertTrue(artifactRepo.findByOpportunityIdOrderByIdDesc(id).isEmpty());
   }
 

@@ -55,6 +55,11 @@ public final class TransitionArtifactRules {
                 ArtifactType.CONTRACT_REVIEW_MINUTES,
                 ArtifactType.REVIEW_EMAIL_ARCHIVE,
                 ArtifactType.SIGNED_CONTRACT)));
+    // v0.0.53 现场调研 → 产品诉求：现场调研报告 + 现场调研附件 全齐才能推进（非关口，仅前进强制）。
+    m.put(
+        OpportunityStage.SURVEY,
+        Collections.unmodifiableList(
+            Arrays.asList(ArtifactType.SURVEY_REPORT, ArtifactType.SURVEY_ATTACHMENT)));
     RULES = Collections.unmodifiableMap(m);
   }
 

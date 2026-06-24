@@ -13,7 +13,10 @@ export type ArtifactType =
   | 'CONTRACT_DRAFT'
   | 'CONTRACT_REVIEW_MINUTES'
   | 'REVIEW_EMAIL_ARCHIVE'
-  | 'SIGNED_CONTRACT';
+  | 'SIGNED_CONTRACT'
+  // v0.0.53 现场调研(SURVEY)-gate types：报告类正文 + 附件类 URL。
+  | 'SURVEY_REPORT'
+  | 'SURVEY_ATTACHMENT';
 
 /** Mirrors backend ArtifactType.LABELS. */
 export const ARTIFACT_TYPE_LABELS: Record<ArtifactType, string> = {
@@ -29,6 +32,8 @@ export const ARTIFACT_TYPE_LABELS: Record<ArtifactType, string> = {
   CONTRACT_REVIEW_MINUTES: '评审会议纪要',
   REVIEW_EMAIL_ARCHIVE: '邮件归档',
   SIGNED_CONTRACT: '已盖章合同',
+  SURVEY_REPORT: '现场调研报告',
+  SURVEY_ATTACHMENT: '现场调研附件',
 };
 
 /** LINK-kind types carry a URL; others carry rich-text content (mirrors backend ArtifactType.LINK_TYPES). */
@@ -40,6 +45,7 @@ export const ARTIFACT_LINK_TYPES: ArtifactType[] = [
   'CONTRACT_DRAFT',
   'REVIEW_EMAIL_ARCHIVE',
   'SIGNED_CONTRACT',
+  'SURVEY_ATTACHMENT',
 ];
 export function isLinkArtifact(type: string): boolean {
   return (ARTIFACT_LINK_TYPES as string[]).includes(type);
@@ -61,6 +67,8 @@ export const STAGE_REQUIRED_ARTIFACTS: Record<string, ArtifactType[]> = {
     'REVIEW_EMAIL_ARCHIVE',
     'SIGNED_CONTRACT',
   ],
+  // v0.0.53 现场调研 → 产品诉求：报告 + 附件 全齐才能推进。
+  SURVEY: ['SURVEY_REPORT', 'SURVEY_ATTACHMENT'],
 };
 
 /** Types offerable in the「添加产出物」picker. */
@@ -77,6 +85,8 @@ export const ADDABLE_ARTIFACT_TYPES: ArtifactType[] = [
   'CONTRACT_REVIEW_MINUTES',
   'REVIEW_EMAIL_ARCHIVE',
   'SIGNED_CONTRACT',
+  'SURVEY_REPORT',
+  'SURVEY_ATTACHMENT',
 ];
 
 export interface OpportunityArtifact {
