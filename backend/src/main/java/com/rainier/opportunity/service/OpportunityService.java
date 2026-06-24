@@ -16,13 +16,18 @@ import com.rainier.opportunity.domain.TransitionArtifactRules;
 import com.rainier.opportunity.dto.ArtifactInput;
 import com.rainier.opportunity.dto.OpportunityCreateRequest;
 import com.rainier.opportunity.dto.OpportunityDetail;
+import com.rainier.opportunity.dto.OpportunityInitiateRequest;
 import com.rainier.opportunity.dto.OpportunityUpdateRequest;
 import com.rainier.customer.domain.Customer;
 import com.rainier.customer.repository.CustomerRepository;
 import com.rainier.opportunity.repository.OpportunityArtifactRepository;
 import com.rainier.opportunity.repository.OpportunityRepository;
 import com.rainier.product.repository.ProductRepository;
+import com.rainier.project.domain.Project;
+import com.rainier.project.domain.ProjectType;
+import com.rainier.project.dto.ProjectCreateRequest;
 import com.rainier.project.repository.ProjectRepository;
+import com.rainier.project.service.ProjectService;
 import com.rainier.user.domain.User;
 import com.rainier.user.repository.UserRepository;
 import java.time.Instant;
@@ -55,6 +60,7 @@ public class OpportunityService {
   private final OpportunityArtifactRepository artifactRepo;
   private final ProductRepository productRepo;
   private final CustomerRepository customerRepo;
+  private final ProjectService projectService;
 
   public OpportunityService(
       OpportunityRepository repo,
@@ -62,13 +68,15 @@ public class OpportunityService {
       ProjectRepository projectRepo,
       OpportunityArtifactRepository artifactRepo,
       ProductRepository productRepo,
-      CustomerRepository customerRepo) {
+      CustomerRepository customerRepo,
+      ProjectService projectService) {
     this.repo = repo;
     this.userRepo = userRepo;
     this.projectRepo = projectRepo;
     this.artifactRepo = artifactRepo;
     this.productRepo = productRepo;
     this.customerRepo = customerRepo;
+    this.projectService = projectService;
   }
 
   @Transactional
@@ -256,25 +264,59 @@ public class OpportunityService {
     return s == null || s.trim().isEmpty();
   }
 
-  /** 立项评审 gate: a WON opportunity is initiated into a delivery Project on PASS. */
+  /**
+   * 立项评审 gate: a WON opportunity is initiated into a delivery Project on PASS. v0.0.48 — PASS may
+   * either link an existing 对外-交付 (EXTERNAL_DELIVERY) project OR inline-create one (atomic).
+   */
   @Transactional
-  public OpportunityDetail initiate(
-      Long id, Long projectId, String decision, String note, String decidedBy) {
+  public OpportunityDetail initiate(Long id, OpportunityInitiateRequest req, String decidedBy) {
     Opportunity o = getOrThrow(id);
     if (!OpportunityStatus.WON.equals(o.getStatus())) {
       throw new ConflictException("opportunity must be WON to initiate (立项): status=" + o.getStatus());
     }
+    String decision = req.getDecision();
     if (decision == null || !GateDecision.ALL.contains(decision)) {
       throw new BadRequestException("decision required (PASS|REJECT)");
     }
-    if (!projectRepo.existsById(projectId)) {
-      throw new BadRequestException("project not found: id=" + projectId);
-    }
     o.setGateDecidedBy(decidedBy);
     if (GateDecision.PASS.equals(decision)) {
-      o.setProjectId(projectId); // 立项 → 链入实施 Project
+      o.setProjectId(resolveDeliveryProject(o, req)); // 立项 → 链入实施 Project
     }
     return enrich(repo.saveAndFlush(o));
+  }
+
+  /**
+   * 立项 PASS 的交付项目解析：传 projectId → 校验存在且为 EXTERNAL_DELIVERY 后关联；否则按 code/name 内联新建一个
+   * EXTERNAL_DELIVERY 项目（复用 {@link ProjectService#create}，同事务）。二者缺一/兼有 → 400。
+   */
+  private Long resolveDeliveryProject(Opportunity o, OpportunityInitiateRequest req) {
+    boolean hasCreate = !isBlank(req.getProjectName()) || !isBlank(req.getProjectCode());
+    if (req.getProjectId() != null) {
+      if (hasCreate) {
+        throw new BadRequestException("提供 projectId 或新建项目信息，二者只能其一");
+      }
+      Project p =
+          projectRepo
+              .findById(req.getProjectId())
+              .orElseThrow(() -> new BadRequestException("project not found: id=" + req.getProjectId()));
+      if (!ProjectType.EXTERNAL_DELIVERY.equals(p.getProjectType())) {
+        throw new BadRequestException("立项只能关联「对外-交付」项目：projectId=" + req.getProjectId());
+      }
+      return req.getProjectId();
+    }
+    if (isBlank(req.getProjectCode()) || isBlank(req.getProjectName())) {
+      throw new BadRequestException("立项需提供 projectId，或新建交付项目的 code 与 name");
+    }
+    Long ownerUserId = req.getProjectOwnerUserId() != null ? req.getProjectOwnerUserId() : o.getPmUserId();
+    if (ownerUserId == null) {
+      throw new BadRequestException("新建交付项目需指定负责人（projectOwnerUserId），或商机先设项目经理");
+    }
+    ProjectCreateRequest pcr = new ProjectCreateRequest();
+    pcr.setCode(req.getProjectCode().trim());
+    pcr.setName(req.getProjectName().trim());
+    pcr.setOwnerUserId(ownerUserId);
+    pcr.setProjectType(ProjectType.EXTERNAL_DELIVERY);
+    return projectService.create(pcr).getId();
   }
 
   private void validateOwners(Long... ownerIds) {

@@ -11,6 +11,8 @@ import {
   createProject,
   deleteProject,
   listProjects,
+  PROJECT_TYPE_LABELS,
+  PROJECT_TYPE_OPTIONS,
   updateProject,
   type Project,
   type ProjectStatus,
@@ -28,12 +30,6 @@ const STATUS_OPTIONS: ProjectStatus[] = [
   'DELIVERED',
   'ARCHIVED',
 ];
-
-const PROJECT_TYPE_OPTIONS: ProjectType[] = ['CASUAL', 'FORMAL'];
-const PROJECT_TYPE_LABELS: Record<ProjectType, string> = {
-  CASUAL: '轻量',
-  FORMAL: '正式',
-};
 
 export function ProjectsPage() {
   // v0.0.16 — type filter is folded into the fetcher closure; usePaginated only auto-refetches on

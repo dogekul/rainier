@@ -86,7 +86,7 @@ class ProjectControllerProjectTypeTest {
         .andExpect(jsonPath("$.projectType").value("CASUAL"));
   }
 
-  /** TC-PROJTYPE-002: 显式 FORMAL. */
+  /** TC-PROJTYPE-002: 显式 CORE_FEATURE. */
   @Test
   void post_explicitFormal_persisted() throws Exception {
     Long userId = createUser();
@@ -94,12 +94,12 @@ class ProjectControllerProjectTypeTest {
     body.put("code", "PT-002");
     body.put("name", "X");
     body.put("ownerUserId", userId);
-    body.put("projectType", "FORMAL");
+    body.put("projectType", "CORE_FEATURE");
     mockMvc
         .perform(
             post("/api/projects").contentType(MediaType.APPLICATION_JSON).content(body.toString()))
         .andExpect(status().isCreated())
-        .andExpect(jsonPath("$.projectType").value("FORMAL"));
+        .andExpect(jsonPath("$.projectType").value("CORE_FEATURE"));
   }
 
   /** TC-PROJTYPE-003: 非法 projectType → 400. */
@@ -118,7 +118,7 @@ class ProjectControllerProjectTypeTest {
         .andExpect(jsonPath("$.message", startsWith("invalid project type")));
   }
 
-  /** TC-PROJTYPE-004: update CASUAL→FORMAL 完成转化. */
+  /** TC-PROJTYPE-004: update CASUAL→CORE_FEATURE 完成转化. */
   @Test
   void put_casualToFormal_converts() throws Exception {
     Long userId = createUser();
@@ -127,33 +127,33 @@ class ProjectControllerProjectTypeTest {
     body.put("name", "X");
     body.put("status", "ACTIVE");
     body.put("ownerUserId", userId);
-    body.put("projectType", "FORMAL");
+    body.put("projectType", "CORE_FEATURE");
     mockMvc
         .perform(
             put("/api/projects/" + id)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(body.toString()))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.projectType").value("FORMAL"));
+        .andExpect(jsonPath("$.projectType").value("CORE_FEATURE"));
   }
 
   /** TC-PROJTYPE-005: update 省略 projectType → 保留原值（防静默降级）. */
   @Test
   void put_omitProjectType_preservesExisting() throws Exception {
     Long userId = createUser();
-    Long id = createProject(userId, "PT-005", "FORMAL"); // created FORMAL
+    Long id = createProject(userId, "PT-005", "CORE_FEATURE"); // created CORE_FEATURE
     ObjectNode body = json.createObjectNode();
     body.put("name", "X-renamed");
     body.put("status", "ACTIVE");
     body.put("ownerUserId", userId);
-    // NB: no projectType in payload — must NOT downgrade FORMAL → CASUAL.
+    // NB: no projectType in payload — must NOT downgrade CORE_FEATURE → CASUAL.
     mockMvc
         .perform(
             put("/api/projects/" + id)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(body.toString()))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.projectType").value("FORMAL"));
+        .andExpect(jsonPath("$.projectType").value("CORE_FEATURE"));
   }
 
   /** TC-PROJTYPE-006: update 非法 projectType → 400. */
@@ -179,24 +179,56 @@ class ProjectControllerProjectTypeTest {
   @Test
   void getList_filterByProjectType_returnsOnlyMatching() throws Exception {
     Long userId = createUser();
-    createProject(userId, "PT-007a", "FORMAL");
-    createProject(userId, "PT-007b", "FORMAL");
+    createProject(userId, "PT-007a", "CORE_FEATURE");
+    createProject(userId, "PT-007b", "CORE_FEATURE");
     createProject(userId, "PT-007c", "CASUAL");
     mockMvc
-        .perform(get("/api/projects?projectType=FORMAL"))
+        .perform(get("/api/projects?projectType=CORE_FEATURE"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.total").value(2))
-        .andExpect(jsonPath("$.content[*].projectType", everyItem(is("FORMAL"))));
+        .andExpect(jsonPath("$.content[*].projectType", everyItem(is("CORE_FEATURE"))));
   }
 
-  /** TC-PROJTYPE-008: 详情含 projectType（create-with-FORMAL round-trips to the detail read）. */
+  /** TC-PROJTYPE-008: 详情含 projectType（create-with-CORE_FEATURE round-trips to the detail read）. */
   @Test
   void get_detail_includesProjectType() throws Exception {
     Long userId = createUser();
-    Long id = createProject(userId, "PT-008", "FORMAL");
+    Long id = createProject(userId, "PT-008", "CORE_FEATURE");
     mockMvc
         .perform(get("/api/projects/" + id))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.projectType").value("FORMAL"));
+        .andExpect(jsonPath("$.projectType").value("CORE_FEATURE"));
+  }
+
+  /** TC-PROJTYPE-011 (v0.0.48): 对外-交付 EXTERNAL_DELIVERY 为合法类型. */
+  @Test
+  void post_externalDelivery_persisted() throws Exception {
+    Long userId = createUser();
+    ObjectNode body = json.createObjectNode();
+    body.put("code", "PT-009");
+    body.put("name", "X");
+    body.put("ownerUserId", userId);
+    body.put("projectType", "EXTERNAL_DELIVERY");
+    mockMvc
+        .perform(
+            post("/api/projects").contentType(MediaType.APPLICATION_JSON).content(body.toString()))
+        .andExpect(status().isCreated())
+        .andExpect(jsonPath("$.projectType").value("EXTERNAL_DELIVERY"));
+  }
+
+  /** TC-PROJTYPE-012 (v0.0.48): 退役的 FORMAL 不再是合法 create 类型 → 400. */
+  @Test
+  void post_retiredFormal_returns400() throws Exception {
+    Long userId = createUser();
+    ObjectNode body = json.createObjectNode();
+    body.put("code", "PT-010");
+    body.put("name", "X");
+    body.put("ownerUserId", userId);
+    body.put("projectType", "FORMAL");
+    mockMvc
+        .perform(
+            post("/api/projects").contentType(MediaType.APPLICATION_JSON).content(body.toString()))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.message", startsWith("invalid project type")));
   }
 }

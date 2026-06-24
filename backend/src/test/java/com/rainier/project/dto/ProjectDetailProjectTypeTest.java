@@ -24,7 +24,7 @@ class ProjectDetailProjectTypeTest {
   @Test
   void from_presentProjectType_passesThrough() {
     Project p = new Project();
-    p.setProjectType("FORMAL");
-    assertEquals("FORMAL", ProjectDetail.from(p).getProjectType());
+    p.setProjectType("EXTERNAL_DELIVERY");
+    assertEquals("EXTERNAL_DELIVERY", ProjectDetail.from(p).getProjectType());
   }
 }

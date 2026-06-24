@@ -35,8 +35,8 @@ public class ProjectCreateRequest {
   private LocalDate endDate;
   private Boolean enabled;
 
-  /** v0.0.16 — optional; omitted → defaults to CASUAL in the service. */
-  @Size(max = 16)
+  /** v0.0.16 — optional; omitted → defaults to CASUAL in the service. v0.0.48 widens to 32 (EXTERNAL_DELIVERY=17). */
+  @Size(max = 32)
   private String projectType;
 
   public String getCode() {

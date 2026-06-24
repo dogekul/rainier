@@ -1,0 +1,44 @@
+change:
+  id: 2026-06-23-project-types
+  title: v0.0.48-project-types — 项目类型拓展(轻量+三正式子类) + 立项创建/关联对外-交付项目
+  baseline: {tag: v0.0.47-board-redesign, commit: 5c20dab}
+  type: feature
+  source: "用户：轻量一如既往；正式分 主业-功能建设/主业-技术改造/对外-交付；实施流转立项可创建或关联 对外-交付 项目"
+
+phase:
+  current: archived
+  understand:
+    status: completed
+    confirmed_at: '2026-06-23'
+    gate1_decisions:
+      formal_migration: 自动迁移 FORMAL→CORE_FEATURE(主业-功能建设)
+      initiate_impl: 后端原子扩展 initiate(projectId 或内联新建，复用 ProjectService.create，同事务)
+      link_scope: 关联仅限 EXTERNAL_DELIVERY；新建强制 EXTERNAL_DELIVERY
+      mode: 全自动到 Phase 5，停 Gate 3
+  spec: {status: completed, gate_2: auto_proceed}
+  slice: {status: completed}
+  build: {status: completed}
+  verify:
+    status: completed
+    artifact: test-report.md
+    metrics: {backend: 524/524 (temurin-8), frontend: 248/248, e2e: green (docker real-mysql; 4 types + FORMAL reject + initiate link/create + 2 真栈 bug 修复), review: "4 维度 + 对抗式 verify; 14 raw -> 确认 8 (C:0 H:2 M:4 L:6) 全处置 (journal 恢复)", bugs_fixed_live: [VARCHAR16->32 widen + ProjectTypeColumnWiden, 立项新建负责人下拉], ux_foldins: [立项抽屉智能默认模式, 后端 message 透出], business_data: "FORMAL->CORE_FEATURE 迁移(已确认); 误改 opp30/33 已还原; 5 __E2E 测试项目待授权清理"}
+    confirmed_at: '2026-06-24'   # Gate 3 用户「清理；直接push」
+    new_files: [ProjectTypeColumnWiden]
+  deliver: {status: completed, archived_to: archive/2026-06-23-project-types, tag: v0.0.48-project-types, pushed: true}
+
+long_range:
+  enabled: true
+  mode: full_auto
+  pre_auth: {git_ops: allow_up_to_commit_and_tag, gate_2: auto_proceed, gate_3: require_user_confirmation}
+  user_directive: '全自动到 Phase 5，停 Gate 3 验收 (NO push until user says)'
+
+scope:
+  type: feature
+  capabilities_modified: [entity-project, opportunity, frontend-scaffold]
+  capabilities_new: []
+  new_tables: 0
+  new_columns: []
+  new_deps: []
+  new_apis: []   # 复用 POST /{id}/initiate (请求体扩展) + ProjectService.create
+  type_values_added: [CORE_FEATURE, CORE_TECH, EXTERNAL_DELIVERY]
+  type_values_retired: [FORMAL]

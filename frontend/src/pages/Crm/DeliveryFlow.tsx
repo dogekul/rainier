@@ -2,7 +2,10 @@ import { useCallback, useEffect, useState } from 'react';
 import { DashboardCard, EmptyState, StatTiles, StatusChip } from '../../components/board';
 import { Button } from '../../components/ui/Button';
 import { Drawer } from '../../components/ui/Drawer';
-import { listProjects, type Project } from '../../api/project';
+import { Input } from '../../components/ui/Input';
+import { listProjects, PROJECT_TYPE_LABELS, type Project } from '../../api/project';
+import { listUsers, type User } from '../../api/user';
+import { useAuthStore } from '../../store/auth';
 import {
   advanceOpportunity,
   initiateOpportunity,
@@ -16,20 +19,31 @@ const DELIVERY_SET = new Set<string>(OPP_DELIVERY_STAGES);
 const INITIATION = 'INITIATION';
 const ACCEPTANCE = 'ACCEPTANCE';
 
+type HandoffMode = 'link' | 'create';
+
 /**
- * v0.0.44 —「实施流转」(delivery operations). The actionable surface for WON opportunities in 实施环节
- * (stage ∈ 立项..验收): 立项移交(链入交付 Project) + 立项评审(通过→现场调研 / 否决→停在立项) + 逐节点推进 + 验收终态.
- * 售前操作在「售前流转」；只读总览在「商机看板」。「立项移交」是商机→交付 Project 的显式入口 (POST /initiate)。
+ * v0.0.44 —「实施流转」(delivery operations). v0.0.48 立项移交 改为「关联或新建」对外-交付项目：
+ * 关联模式从 `EXTERNAL_DELIVERY` 项目下拉里选；新建模式填 code/name（owner 默认商机 pmUserId），类型固定对外-交付。
+ * 后端 initiate 原子接受二选一；无项目时不再死路。
  */
 export function DeliveryFlow() {
   const [rows, setRows] = useState<Opportunity[]>([]);
   const [busyId, setBusyId] = useState<number | null>(null);
+  const currentLoginName = useAuthStore((s) => s.user?.username ?? null);
 
   // 立项移交 drawer state
   const [handoffId, setHandoffId] = useState<number | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
+  // 立项的主流动作 = 为本次赢单新建一个交付项目（1:1），所以默认「新建」；「关联已有」是次要例外。
+  // 不按项目数量切默认值 —— 真实使用中对外-交付项目会很多，按数量判断会让「新建」长期被埋。
+  const [mode, setMode] = useState<HandoffMode>('create');
   const [projectId, setProjectId] = useState<number | ''>('');
+  const [newCode, setNewCode] = useState('');
+  const [newName, setNewName] = useState('');
+  const [newOwnerUserId, setNewOwnerUserId] = useState<number | ''>('');
   const [handoffSaving, setHandoffSaving] = useState(false);
+  const [handoffError, setHandoffError] = useState<string | null>(null);
 
   const load = useCallback(() => {
     return listOpportunities({ size: 100 })
@@ -44,10 +58,24 @@ export function DeliveryFlow() {
   useEffect(() => {
     if (handoffId == null) {
       setProjectId('');
+      setNewCode('');
+      setNewName('');
+      setNewOwnerUserId('');
+      setMode('create');
+      setHandoffError(null);
       return;
     }
-    void listProjects({ size: 100 }).then((r) => setProjects(r.content));
-  }, [handoffId]);
+    void listProjects({ size: 100, projectType: 'EXTERNAL_DELIVERY' }).then((r) =>
+      setProjects(r.content),
+    );
+    // 新建对外-交付项目需指定负责人；候选用户 + 默认当前登录用户（商机多无 PM）。
+    void listUsers({ size: 100 }).then((r) => {
+      setUsers(r.content);
+      const me = r.content.find((u) => u.loginName === currentLoginName);
+      const opp = rows.find((x) => x.id === handoffId);
+      setNewOwnerUserId(opp?.pmUserId ?? (me ? me.id : ''));
+    });
+  }, [handoffId, currentLoginName, rows]);
 
   // 实施中 = WON 且 stage ∈ 实施环节。
   const items = rows.filter((r) => r.status === 'WON' && DELIVERY_SET.has(r.stage));
@@ -65,16 +93,47 @@ export function DeliveryFlow() {
   };
 
   const doHandoff = async () => {
-    if (handoffId == null || projectId === '') return;
+    if (handoffId == null) return;
+    setHandoffError(null);
+    if (mode === 'link') {
+      if (projectId === '') {
+        setHandoffError('请选择一个对外-交付项目');
+        return;
+      }
+    } else {
+      if (!newCode.trim() || !newName.trim()) {
+        setHandoffError('请填写新建项目的编号与名称');
+        return;
+      }
+      if (newOwnerUserId === '') {
+        setHandoffError('请选择项目负责人');
+        return;
+      }
+    }
     setHandoffSaving(true);
     try {
-      await initiateOpportunity(handoffId, projectId, 'PASS');
+      const body =
+        mode === 'link'
+          ? { decision: 'PASS' as const, projectId: projectId as number }
+          : {
+              decision: 'PASS' as const,
+              projectCode: newCode.trim(),
+              projectName: newName.trim(),
+              projectOwnerUserId: newOwnerUserId as number,
+            };
+      await initiateOpportunity(handoffId, body);
       setHandoffId(null);
       await load();
+    } catch (e) {
+      // surface the backend's friendly 400 message (e.g. 项目编号已存在 / 须关联对外-交付项目), not axios's generic string
+      const err = e as { response?: { data?: { message?: string } }; message?: string };
+      setHandoffError(err?.response?.data?.message ?? err?.message ?? '立项失败，请检查项目信息后重试');
     } finally {
       setHandoffSaving(false);
     }
   };
+
+  const noProjects = projects.length === 0;
 
   return (
     <div className="rainier-page">
@@ -185,41 +244,118 @@ export function DeliveryFlow() {
 
       <Drawer
         open={handoffId != null}
-        title="立项移交 — 关联交付项目"
+        title="立项移交 — 关联或新建对外-交付项目"
         onClose={() => setHandoffId(null)}
       >
-        <div style={{ marginBottom: 12 }}>
-          <label style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }}>交付项目</label>
-          {projects.length === 0 ? (
-            <div
-              style={{ fontSize: 12, color: 'var(--rainier-color-text-2)', padding: '6px 0' }}
-              data-testid="delivery-no-projects"
-            >
-              暂无可用项目，请先在「项目地图」创建交付项目后再移交。
-            </div>
-          ) : (
-            <select
-              className="rainier-treeselect-trigger"
-              value={projectId}
-              onChange={(e) => setProjectId(e.target.value === '' ? '' : Number(e.target.value))}
-              data-testid="delivery-project-select"
-            >
-              <option value="">（选择项目）</option>
-              {projects.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.code} {p.name}
-                </option>
-              ))}
-            </select>
-          )}
+        {/* 新建为主（默认），关联已有为次要例外 */}
+        <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+          <button
+            type="button"
+            data-testid="delivery-mode-create"
+            onClick={() => setMode('create')}
+            style={modeTabStyle(mode === 'create')}
+          >
+            新建对外-交付
+          </button>
+          <button
+            type="button"
+            data-testid="delivery-mode-link"
+            onClick={() => setMode('link')}
+            style={modeTabStyle(mode === 'link')}
+            disabled={noProjects}
+            title={noProjects ? '暂无对外-交付项目可关联' : ''}
+          >
+            关联已有
+          </button>
         </div>
+
+        {mode === 'link' ? (
+          <div style={{ marginBottom: 12 }}>
+            <label style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }}>
+              交付项目（仅列对外-交付）
+            </label>
+            {noProjects ? (
+              <div
+                style={{ fontSize: 12, color: 'var(--rainier-color-text-2)', padding: '6px 0' }}
+                data-testid="delivery-no-projects"
+              >
+                暂无对外-交付项目，切到「新建对外-交付」即可同时创建并移交。
+              </div>
+            ) : (
+              <select
+                className="rainier-treeselect-trigger"
+                value={projectId}
+                onChange={(e) => setProjectId(e.target.value === '' ? '' : Number(e.target.value))}
+                data-testid="delivery-project-select"
+              >
+                <option value="">（选择项目）</option>
+                {projects.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.code} {p.name}
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
+        ) : (
+          <div style={{ marginBottom: 12 }}>
+            <Input
+              label="项目编号"
+              value={newCode}
+              onChange={(e) => setNewCode(e.target.value)}
+              data-testid="delivery-new-code"
+            />
+            <Input
+              label="项目名称"
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              data-testid="delivery-new-name"
+            />
+            <div style={{ marginBottom: 8 }}>
+              <label style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }}>项目负责人</label>
+              <select
+                className="rainier-treeselect-trigger"
+                value={newOwnerUserId}
+                onChange={(e) => setNewOwnerUserId(e.target.value === '' ? '' : Number(e.target.value))}
+                data-testid="delivery-new-owner"
+              >
+                <option value="">（选择负责人）</option>
+                {users.map((u) => (
+                  <option key={u.id} value={u.id}>
+                    {u.name ?? u.loginName}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div style={{ fontSize: 12, color: 'var(--rainier-color-text-2)', marginTop: 4 }}>
+              类型：{PROJECT_TYPE_LABELS.EXTERNAL_DELIVERY}（固定）
+            </div>
+          </div>
+        )}
+
+        {handoffError && (
+          <div
+            style={{
+              padding: '6px 10px',
+              marginBottom: 8,
+              color: 'var(--rainier-color-danger, #d4380d)',
+              fontSize: 12,
+              background: 'rgba(212, 56, 13, 0.08)',
+              borderRadius: 4,
+            }}
+            data-testid="delivery-handoff-error"
+          >
+            {handoffError}
+          </div>
+        )}
+
         <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
           <Button type="button" variant="secondary" onClick={() => setHandoffId(null)}>
             取消
           </Button>
           <Button
             type="button"
-            disabled={handoffSaving || projectId === ''}
+            disabled={handoffSaving}
             onClick={() => void doHandoff()}
             data-testid="delivery-handoff-save"
           >
@@ -229,4 +365,16 @@ export function DeliveryFlow() {
       </Drawer>
     </div>
   );
+}
+
+function modeTabStyle(active: boolean): React.CSSProperties {
+  return {
+    fontSize: 13,
+    padding: '5px 14px',
+    border: '1px solid var(--rainier-border)',
+    borderRadius: 4,
+    background: active ? 'var(--rainier-bg-hover)' : 'transparent',
+    color: active ? 'var(--rainier-color-text-1)' : 'var(--rainier-color-text-2)',
+    cursor: 'pointer',
+  };
 }

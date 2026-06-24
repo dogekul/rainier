@@ -20,6 +20,7 @@ import com.rainier.opportunity.domain.Opportunity;
 import com.rainier.opportunity.domain.OpportunityArtifact;
 import com.rainier.opportunity.domain.OpportunityStage;
 import com.rainier.opportunity.domain.OpportunityStatus;
+import com.rainier.project.domain.ProjectType;
 import com.rainier.customer.domain.Customer;
 import com.rainier.customer.repository.CustomerRepository;
 import com.rainier.opportunity.repository.OpportunityArtifactRepository;
@@ -88,13 +89,14 @@ class OpportunityControllerTest {
     return userRepo.saveAndFlush(u).getId();
   }
 
-  private Long seedProject(String code) {
+  private Long seedProject(String code, String projectType) {
     Project p = new Project();
     p.setCode(code);
     p.setName(code);
     p.setStatus("ACTIVE");
     p.setOwnerUserId(seedUser("owner-" + code));
     p.setEnabled(true);
+    p.setProjectType(projectType);
     return projectRepo.saveAndFlush(p).getId();
   }
 
@@ -458,11 +460,11 @@ class OpportunityControllerTest {
         .andExpect(jsonPath("$.status").value("WON"));
   }
 
-  /** TC-OPP-009: initiate a WON opp with PASS links the projectId. */
+  /** TC-OPP-009 / TC-INI-01: initiate WON+PASS links an existing 对外-交付 project. */
   @Test
-  void initiate_wonPass_linksProject() throws Exception {
+  void initiate_wonPass_linksExternalDeliveryProject() throws Exception {
     Long id = seedOpp(OpportunityStage.CONTRACT, OpportunityStatus.WON);
-    Long proj = seedProject("PRJ-1");
+    Long proj = seedProject("PRJ-1", ProjectType.EXTERNAL_DELIVERY);
     ObjectNode body = json.createObjectNode();
     body.put("projectId", proj);
     body.put("decision", "PASS");
@@ -473,6 +475,111 @@ class OpportunityControllerTest {
                 .content(body.toString()))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.projectId").value(proj));
+  }
+
+  /** TC-INI-02: initiate linking a non-对外-交付 (CASUAL) project → 400. */
+  @Test
+  void initiate_linkNonDeliveryProject_returns400() throws Exception {
+    Long id = seedOpp(OpportunityStage.CONTRACT, OpportunityStatus.WON);
+    Long proj = seedProject("PRJ-CASUAL", ProjectType.CASUAL);
+    ObjectNode body = json.createObjectNode();
+    body.put("projectId", proj);
+    body.put("decision", "PASS");
+    mockMvc
+        .perform(
+            post("/api/opportunities/" + id + "/initiate")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(body.toString()))
+        .andExpect(status().isBadRequest());
+  }
+
+  /** TC-INI-03: initiate inline-creates an 对外-交付 project and links it. */
+  @Test
+  void initiate_inlineCreatesExternalDeliveryProject() throws Exception {
+    Long id = seedOpp(OpportunityStage.CONTRACT, OpportunityStatus.WON);
+    Long owner = seedUser("deliv-owner");
+    ObjectNode body = json.createObjectNode();
+    body.put("projectCode", "DLV-NEW-1");
+    body.put("projectName", "交付项目一");
+    body.put("projectOwnerUserId", owner);
+    body.put("decision", "PASS");
+    String resp =
+        mockMvc
+            .perform(
+                post("/api/opportunities/" + id + "/initiate")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(body.toString()))
+            .andExpect(status().isOk())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+    Long newProjId = json.readTree(resp).get("projectId").asLong();
+    assertNotNull(newProjId);
+    assertEquals(
+        ProjectType.EXTERNAL_DELIVERY, projectRepo.findById(newProjId).get().getProjectType());
+  }
+
+  /** TC-INI-04: initiate with neither projectId nor create fields → 400. */
+  @Test
+  void initiate_noProjectInfo_returns400() throws Exception {
+    Long id = seedOpp(OpportunityStage.CONTRACT, OpportunityStatus.WON);
+    ObjectNode body = json.createObjectNode();
+    body.put("decision", "PASS");
+    mockMvc
+        .perform(
+            post("/api/opportunities/" + id + "/initiate")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(body.toString()))
+        .andExpect(status().isBadRequest());
+  }
+
+  /** TC-INI-05: 内联新建但缺负责人（商机无 pm 且未传 projectOwnerUserId）→ 400（用户实测命中的分支）。 */
+  @Test
+  void initiate_inlineCreateMissingOwner_returns400() throws Exception {
+    Long id = seedOpp(OpportunityStage.CONTRACT, OpportunityStatus.WON); // seedOpp 不设 pmUserId
+    ObjectNode body = json.createObjectNode();
+    body.put("decision", "PASS");
+    body.put("projectCode", "DLV-NOOWNER");
+    body.put("projectName", "缺负责人");
+    mockMvc
+        .perform(
+            post("/api/opportunities/" + id + "/initiate")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(body.toString()))
+        .andExpect(status().isBadRequest());
+  }
+
+  /** TC-INI-06: 同时提供 projectId 与新建字段 → 400（二选一守卫）。 */
+  @Test
+  void initiate_bothProjectIdAndCreate_returns400() throws Exception {
+    Long id = seedOpp(OpportunityStage.CONTRACT, OpportunityStatus.WON);
+    Long proj = seedProject("PRJ-BOTH", ProjectType.EXTERNAL_DELIVERY);
+    ObjectNode body = json.createObjectNode();
+    body.put("decision", "PASS");
+    body.put("projectId", proj);
+    body.put("projectCode", "DLV-DUP");
+    body.put("projectName", "重复");
+    mockMvc
+        .perform(
+            post("/api/opportunities/" + id + "/initiate")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(body.toString()))
+        .andExpect(status().isBadRequest());
+  }
+
+  /** TC-INI-07: 关联不存在的 projectId → 400。 */
+  @Test
+  void initiate_unknownProjectId_returns400() throws Exception {
+    Long id = seedOpp(OpportunityStage.CONTRACT, OpportunityStatus.WON);
+    ObjectNode body = json.createObjectNode();
+    body.put("decision", "PASS");
+    body.put("projectId", 999_999L);
+    mockMvc
+        .perform(
+            post("/api/opportunities/" + id + "/initiate")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(body.toString()))
+        .andExpect(status().isBadRequest());
   }
 
   /** TC-OPP-010: initiate a non-WON opp → 409. */

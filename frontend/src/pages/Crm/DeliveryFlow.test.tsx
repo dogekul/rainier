@@ -9,6 +9,7 @@ import {
   type Opportunity,
 } from '../../api/opportunity';
 import { listProjects } from '../../api/project';
+import { listUsers } from '../../api/user';
 
 vi.mock('../../api/opportunity', async (orig) => ({
   ...(await orig<typeof import('../../api/opportunity')>()),
@@ -16,10 +17,24 @@ vi.mock('../../api/opportunity', async (orig) => ({
   advanceOpportunity: vi.fn(() => Promise.resolve({} as Opportunity)),
   initiateOpportunity: vi.fn(() => Promise.resolve({} as Opportunity)),
 }));
-vi.mock('../../api/project', () => ({
+vi.mock('../../api/project', async (orig) => ({
+  ...(await orig<typeof import('../../api/project')>()),
   listProjects: vi.fn().mockResolvedValue({
-    content: [{ id: 3, code: 'PRJ-3', name: '交付项目三', status: 'ACTIVE' }],
+    content: [
+      { id: 3, code: 'PRJ-3', name: '交付项目三', status: 'ACTIVE', projectType: 'EXTERNAL_DELIVERY' },
+    ],
     total: 1,
+    page: 0,
+    size: 100,
+  }),
+}));
+vi.mock('../../api/user', () => ({
+  listUsers: vi.fn().mockResolvedValue({
+    content: [
+      { id: 5, loginName: 'pm1', name: '项目经理一' },
+      { id: 6, loginName: 'pm2', name: '项目经理二' },
+    ],
+    total: 2,
     page: 0,
     size: 100,
   }),
@@ -55,6 +70,7 @@ describe('DeliveryFlow (实施流转 operations)', () => {
     vi.mocked(advanceOpportunity).mockClear();
     vi.mocked(initiateOpportunity).mockClear();
     vi.mocked(listProjects).mockClear();
+    vi.mocked(listUsers).mockClear();
     vi.mocked(listOpportunities).mockReset();
   });
 
@@ -98,30 +114,104 @@ describe('DeliveryFlow (实施流转 operations)', () => {
     expect(listOpportunities).toHaveBeenCalledTimes(2);
   });
 
-  /** TC-DEL-03: 立项移交 opens a Project picker; 移交 links the Project via initiate(id, projectId, 'PASS'). */
-  it('hands off to a delivery Project via initiate (TC-DEL-03)', async () => {
+  /** TC-DEL-03 / TC-FDH-01: 立项关联已有对外-交付项目（次要路径，先切到「关联已有」）— initiate({projectId}). */
+  it('hands off to an existing 对外-交付 Project via initiate (TC-DEL-03 / TC-FDH-01)', async () => {
     vi.mocked(listOpportunities).mockResolvedValue(page([opp(7, 'INITIATION')]));
     renderPage();
     await waitFor(() => expect(screen.getByTestId('delivery-handoff-7')).toBeInTheDocument());
     fireEvent.click(screen.getByTestId('delivery-handoff-7'));
+    // 关联 is the secondary path → switch to it first
+    await waitFor(() => expect(screen.getByTestId('delivery-mode-link')).toBeInTheDocument());
+    fireEvent.click(screen.getByTestId('delivery-mode-link'));
     await waitFor(() => expect(screen.getByTestId('delivery-project-select')).toBeInTheDocument());
-    expect(listProjects).toHaveBeenCalled();
+    expect(listProjects).toHaveBeenCalledWith({ size: 100, projectType: 'EXTERNAL_DELIVERY' });
     fireEvent.change(screen.getByTestId('delivery-project-select'), { target: { value: '3' } });
     fireEvent.click(screen.getByTestId('delivery-handoff-save'));
-    await waitFor(() => expect(initiateOpportunity).toHaveBeenCalledWith(7, 3, 'PASS'));
+    await waitFor(() =>
+      expect(initiateOpportunity).toHaveBeenCalledWith(7, { decision: 'PASS', projectId: 3 }),
+    );
   });
 
-  /** TC-DEL-04: 立项移交 drawer with no available projects shows guidance instead of an empty select. */
-  it('shows an empty-state when no projects are available (TC-DEL-04)', async () => {
+  /** TC-FDH-02: 立项新建对外-交付项目（默认路径，无需切换）— initiate({projectCode, projectName, owner}). */
+  it('inline-creates an 对外-交付 Project via initiate (TC-FDH-02)', async () => {
+    vi.mocked(listOpportunities).mockResolvedValue(page([opp(7, 'INITIATION')]));
+    renderPage();
+    await waitFor(() => expect(screen.getByTestId('delivery-handoff-7')).toBeInTheDocument());
+    fireEvent.click(screen.getByTestId('delivery-handoff-7'));
+    // create is the default mode — new-code field is shown immediately, no toggle click
+    await waitFor(() => expect(screen.getByTestId('delivery-new-code')).toBeInTheDocument());
+    fireEvent.change(screen.getByTestId('delivery-new-code'), { target: { value: 'DLV-NEW' } });
+    fireEvent.change(screen.getByTestId('delivery-new-name'), { target: { value: '交付新项目' } });
+    await waitFor(() => expect(screen.getByTestId('delivery-new-owner')).toBeInTheDocument());
+    fireEvent.change(screen.getByTestId('delivery-new-owner'), { target: { value: '5' } });
+    fireEvent.click(screen.getByTestId('delivery-handoff-save'));
+    await waitFor(() =>
+      expect(initiateOpportunity).toHaveBeenCalledWith(7, {
+        decision: 'PASS',
+        projectCode: 'DLV-NEW',
+        projectName: '交付新项目',
+        projectOwnerUserId: 5,
+      }),
+    );
+  });
+
+  /** TC-FDH-04: 立项失败时展示后端 400 message（而非 axios 通用串）. */
+  it('surfaces the backend 400 message on initiate failure (TC-FDH-04)', async () => {
+    vi.mocked(listOpportunities).mockResolvedValue(page([opp(7, 'INITIATION')]));
+    vi.mocked(initiateOpportunity).mockRejectedValueOnce({
+      response: { data: { message: '项目编号已存在: DLV-DUP' } },
+      message: 'Request failed with status code 400',
+    });
+    renderPage();
+    await waitFor(() => expect(screen.getByTestId('delivery-handoff-7')).toBeInTheDocument());
+    fireEvent.click(screen.getByTestId('delivery-handoff-7'));
+    await waitFor(() => expect(screen.getByTestId('delivery-new-code')).toBeInTheDocument());
+    fireEvent.change(screen.getByTestId('delivery-new-code'), { target: { value: 'DLV-DUP' } });
+    fireEvent.change(screen.getByTestId('delivery-new-name'), { target: { value: '重复' } });
+    await waitFor(() => expect(screen.getByTestId('delivery-new-owner')).toBeInTheDocument());
+    fireEvent.change(screen.getByTestId('delivery-new-owner'), { target: { value: '5' } });
+    fireEvent.click(screen.getByTestId('delivery-handoff-save'));
+    await waitFor(() =>
+      expect(screen.getByTestId('delivery-handoff-error')).toHaveTextContent('项目编号已存在'),
+    );
+  });
+
+  /** TC-FDH-03: 无对外-交付项目 → 抽屉直接进「新建」模式（智能默认，省去切换点击）即可提交. */
+  it('opens directly in 新建 mode when no 对外-交付 projects (TC-FDH-03)', async () => {
     vi.mocked(listOpportunities).mockResolvedValue(page([opp(7, 'INITIATION')]));
     vi.mocked(listProjects).mockResolvedValueOnce({ content: [], total: 0, page: 0, size: 100 });
     renderPage();
     await waitFor(() => expect(screen.getByTestId('delivery-handoff-7')).toBeInTheDocument());
     fireEvent.click(screen.getByTestId('delivery-handoff-7'));
-    await waitFor(() => expect(screen.getByTestId('delivery-no-projects')).toBeInTheDocument());
-    // no select rendered, and 移交 stays disabled (projectId can't be chosen)
+    // smart default: nothing to link → create form shown directly, with NO extra mode-toggle click
+    await waitFor(() => expect(screen.getByTestId('delivery-new-code')).toBeInTheDocument());
     expect(screen.queryByTestId('delivery-project-select')).not.toBeInTheDocument();
-    expect(screen.getByTestId('delivery-handoff-save')).toBeDisabled();
-    expect(initiateOpportunity).not.toHaveBeenCalled();
+    fireEvent.change(screen.getByTestId('delivery-new-code'), { target: { value: 'DLV-X' } });
+    fireEvent.change(screen.getByTestId('delivery-new-name'), { target: { value: '交付' } });
+    await waitFor(() => expect(screen.getByTestId('delivery-new-owner')).toBeInTheDocument());
+    fireEvent.change(screen.getByTestId('delivery-new-owner'), { target: { value: '6' } });
+    fireEvent.click(screen.getByTestId('delivery-handoff-save'));
+    await waitFor(() =>
+      expect(initiateOpportunity).toHaveBeenCalledWith(7, {
+        decision: 'PASS',
+        projectCode: 'DLV-X',
+        projectName: '交付',
+        projectOwnerUserId: 6,
+      }),
+    );
+  });
+
+  /** TC-FDH-01b: 即使已有对外-交付项目，抽屉仍默认进「新建」（create-first，不被项目数量埋没）. */
+  it('defaults to 新建 mode even when 对外-交付 projects exist (TC-FDH-01b)', async () => {
+    vi.mocked(listOpportunities).mockResolvedValue(page([opp(7, 'INITIATION')]));
+    renderPage();
+    await waitFor(() => expect(screen.getByTestId('delivery-handoff-7')).toBeInTheDocument());
+    fireEvent.click(screen.getByTestId('delivery-handoff-7'));
+    // create form shown by default; the link dropdown is only reached via the secondary toggle
+    await waitFor(() => expect(screen.getByTestId('delivery-new-code')).toBeInTheDocument());
+    expect(screen.queryByTestId('delivery-project-select')).not.toBeInTheDocument();
+    // 关联 is available as a secondary one-click option
+    fireEvent.click(screen.getByTestId('delivery-mode-link'));
+    await waitFor(() => expect(screen.getByTestId('delivery-project-select')).toBeInTheDocument());
   });
 });

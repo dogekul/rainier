@@ -32,8 +32,8 @@ public class ProjectUpdateRequest {
   private LocalDate endDate;
   private Boolean enabled;
 
-  /** v0.0.16 — optional on update; absent/null → preserve current value (no silent downgrade). */
-  @Size(max = 16)
+  /** v0.0.16 — optional on update; absent/null → preserve current value. v0.0.48 widens to 32. */
+  @Size(max = 32)
   private String projectType;
 
   public String getName() {

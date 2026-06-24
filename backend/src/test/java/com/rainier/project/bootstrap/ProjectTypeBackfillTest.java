@@ -53,4 +53,41 @@ class ProjectTypeBackfillTest {
     assertEquals(1L, reloaded.getOwnerUserId());
     assertTrue(reloaded.getEnabled());
   }
+
+  /** v0.0.48 — retired FORMAL is migrated to CORE_FEATURE; other (valid new) types are left untouched. */
+  @Test
+  void run_migratesFormalToCoreFeature_otherTypesUnchanged() {
+    Project legacy = new Project();
+    legacy.setCode("BF-FORMAL");
+    legacy.setName("Legacy formal");
+    legacy.setStatus("PLANNING");
+    legacy.setOwnerUserId(1L);
+    legacy.setEnabled(true);
+    legacy.setProjectType("FORMAL");
+    Long formalId = repo.saveAndFlush(legacy).getId();
+
+    Project tech = new Project();
+    tech.setCode("BF-TECH");
+    tech.setName("Tech");
+    tech.setStatus("PLANNING");
+    tech.setOwnerUserId(1L);
+    tech.setEnabled(true);
+    tech.setProjectType("CORE_TECH");
+    Long techId = repo.saveAndFlush(tech).getId();
+
+    backfill.run();
+
+    assertEquals(
+        "CORE_FEATURE",
+        repo.findById(formalId).orElseThrow(IllegalStateException::new).getProjectType(),
+        "FORMAL migrated to CORE_FEATURE");
+    assertEquals(
+        "BF-FORMAL",
+        repo.findById(formalId).orElseThrow(IllegalStateException::new).getCode(),
+        "other fields untouched");
+    assertEquals(
+        "CORE_TECH",
+        repo.findById(techId).orElseThrow(IllegalStateException::new).getProjectType(),
+        "non-FORMAL type left unchanged");
+  }
 }

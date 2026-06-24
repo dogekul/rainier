@@ -125,7 +125,7 @@ public class OpportunityController {
       @PathVariable Long id,
       @Valid @RequestBody OpportunityInitiateRequest req,
       HttpServletRequest request) {
-    return service.initiate(id, req.getProjectId(), req.getDecision(), req.getNote(), currentUser(request));
+    return service.initiate(id, req, currentUser(request));
   }
 
   private static String currentUser(HttpServletRequest request) {

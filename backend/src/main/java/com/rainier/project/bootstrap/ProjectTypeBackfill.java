@@ -41,5 +41,13 @@ public class ProjectTypeBackfill implements CommandLineRunner {
     if (updated > 0) {
       log.warn("ProjectTypeBackfill: backfilled {} rainier_project rows project_type → CASUAL", updated);
     }
+    // v0.0.48 — 正式拆分：退役的 FORMAL 迁移到 主业-功能建设 (CORE_FEATURE)。幂等：后续启动匹配 0 行。
+    int migrated =
+        em.createNativeQuery(
+                "UPDATE rainier_project SET project_type = 'CORE_FEATURE' WHERE project_type = 'FORMAL'")
+            .executeUpdate();
+    if (migrated > 0) {
+      log.warn("ProjectTypeBackfill: migrated {} rainier_project rows FORMAL → CORE_FEATURE", migrated);
+    }
   }
 }

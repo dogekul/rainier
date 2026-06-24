@@ -8,8 +8,31 @@ export type ProjectStatus =
   | 'DELIVERED'
   | 'ARCHIVED';
 
-/** v0.0.16 — extensible project type; seeded with 轻量(CASUAL)/正式(FORMAL). */
-export type ProjectType = 'CASUAL' | 'FORMAL';
+/**
+ * v0.0.16 seeded 轻量(CASUAL)/正式(FORMAL). v0.0.48 keeps 轻量 and splits 正式 into three formal
+ * sub-types — 主业-功能建设 / 主业-技术改造 / 对外-交付. FORMAL is retired (backend backfill migrates
+ * legacy FORMAL→CORE_FEATURE; frontend never emits it for create/update).
+ */
+export type ProjectType =
+  | 'CASUAL'
+  | 'CORE_FEATURE'
+  | 'CORE_TECH'
+  | 'EXTERNAL_DELIVERY';
+
+/** Shared by ProjectsPage (4 options) + DeliveryFlow (filter list to EXTERNAL_DELIVERY when 关联). */
+export const PROJECT_TYPE_OPTIONS: ProjectType[] = [
+  'CASUAL',
+  'CORE_FEATURE',
+  'CORE_TECH',
+  'EXTERNAL_DELIVERY',
+];
+
+export const PROJECT_TYPE_LABELS: Record<ProjectType, string> = {
+  CASUAL: '轻量',
+  CORE_FEATURE: '主业-功能建设',
+  CORE_TECH: '主业-技术改造',
+  EXTERNAL_DELIVERY: '对外-交付',
+};
 
 export interface Project {
   id: number;

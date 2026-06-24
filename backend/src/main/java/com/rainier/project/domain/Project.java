@@ -62,11 +62,12 @@ public class Project extends BaseEntity {
   private Boolean enabled = Boolean.TRUE;
 
   /**
-   * v0.0.16 — extensible project type (CASUAL/FORMAL seed; see {@link ProjectType}). Nullable column
-   * (so the ALTER is safe on existing MySQL rows); legacy NULLs are backfilled to CASUAL by {@code
-   * ProjectTypeBackfill} at startup and read-coalesced in {@code ProjectDetail.from}.
+   * v0.0.16 — extensible project type. v0.0.48 widens to length=32 to hold {@code EXTERNAL_DELIVERY}
+   * (17 chars). Nullable column (so the ALTER is safe on existing MySQL rows); legacy NULLs are
+   * backfilled to CASUAL and legacy FORMAL to CORE_FEATURE by {@code ProjectTypeBackfill} at startup;
+   * NULL reads coalesce to CASUAL in {@code ProjectDetail.from}.
    */
-  @Column(name = "project_type", length = 16)
+  @Column(name = "project_type", length = 32)
   private String projectType;
 
   public String getCode() {

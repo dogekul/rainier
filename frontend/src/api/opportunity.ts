@@ -181,15 +181,23 @@ export async function advanceOpportunity(
   return res.data;
 }
 
-/** 立项: link a WON opportunity to a delivery Project (PASS) — the 立项评审 gate. */
+/**
+ * 立项 (v0.0.48): link an existing 对外-交付 Project OR inline-create one (atomic, backend-side).
+ * 二选一：传 `projectId`，或传 `projectCode`+`projectName`（可选 `projectOwnerUserId`，默认商机 pmUserId）。
+ */
+export interface OpportunityInitiate {
+  decision: GateDecision;
+  note?: string;
+  projectId?: number;
+  projectCode?: string;
+  projectName?: string;
+  projectOwnerUserId?: number;
+}
+
 export async function initiateOpportunity(
   id: number,
-  projectId: number,
-  decision: GateDecision,
+  body: OpportunityInitiate,
 ): Promise<Opportunity> {
-  const res = await client.post<Opportunity>(`/opportunities/${id}/initiate`, {
-    projectId,
-    decision,
-  });
+  const res = await client.post<Opportunity>(`/opportunities/${id}/initiate`, body);
   return res.data;
 }

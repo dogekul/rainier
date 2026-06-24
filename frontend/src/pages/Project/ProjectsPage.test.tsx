@@ -138,9 +138,11 @@ describe('ProjectsPage', () => {
     });
     const typeSelect = screen.getByTestId('projects-type-select') as HTMLSelectElement;
     expect(typeSelect.value).toBe('CASUAL');
-    // Options scoped to this select (轻量/正式 also appear in the toolbar filter).
+    // v0.0.48: 4 options — 轻量 + 主业-功能建设 / 主业-技术改造 / 对外-交付
     expect(within(typeSelect).getByText('轻量')).toBeInTheDocument();
-    expect(within(typeSelect).getByText('正式')).toBeInTheDocument();
+    expect(within(typeSelect).getByText('主业-功能建设')).toBeInTheDocument();
+    expect(within(typeSelect).getByText('主业-技术改造')).toBeInTheDocument();
+    expect(within(typeSelect).getByText('对外-交付')).toBeInTheDocument();
   });
 
   /** TC-FES-PROJTYPE-002: 表格类型列显示中文. */
@@ -150,11 +152,11 @@ describe('ProjectsPage', () => {
       content: [
         {
           id: 11,
-          code: 'PROJ-FORMAL',
-          name: '正式项目',
+          code: 'PROJ-CORE',
+          name: '主业功能',
           description: null,
           status: 'ACTIVE',
-          projectType: 'FORMAL',
+          projectType: 'CORE_FEATURE',
           ownerUserId: 1,
           ownerName: 'Alice',
           ownerLoginName: 'alice',
@@ -169,13 +171,13 @@ describe('ProjectsPage', () => {
     });
     render(<ProjectsPage />);
     await waitFor(() => {
-      expect(screen.getByText('PROJ-FORMAL')).toBeInTheDocument();
+      expect(screen.getByText('PROJ-CORE')).toBeInTheDocument();
     });
     // Column header present.
     expect(screen.getByText('类型')).toBeInTheDocument();
-    // The row's type cell shows 正式 (scope to the row so the toolbar filter option doesn't match).
-    const row = screen.getByText('PROJ-FORMAL').closest('tr') as HTMLElement;
-    expect(within(row).getByText('正式')).toBeInTheDocument();
+    // The row's type cell shows the 4-option Chinese label.
+    const row = screen.getByText('PROJ-CORE').closest('tr') as HTMLElement;
+    expect(within(row).getByText('主业-功能建设')).toBeInTheDocument();
   });
 
   /** TC-FES-PROJTYPE-003: 类型过滤触发带 projectType 的查询. */
@@ -188,11 +190,11 @@ describe('ProjectsPage', () => {
     });
     (listProjects as ReturnType<typeof vi.fn>).mockClear();
     fireEvent.change(screen.getByTestId('projects-type-filter'), {
-      target: { value: 'FORMAL' },
+      target: { value: 'EXTERNAL_DELIVERY' },
     });
     await waitFor(() => {
       expect(listProjects).toHaveBeenCalledWith(
-        expect.objectContaining({ projectType: 'FORMAL' }),
+        expect.objectContaining({ projectType: 'EXTERNAL_DELIVERY' }),
       );
     });
   });
@@ -210,12 +212,12 @@ describe('ProjectsPage', () => {
     fireEvent.change(screen.getByLabelText(/编码/), { target: { value: 'PROJ-NEW' } });
     fireEvent.change(screen.getByLabelText(/^名称/), { target: { value: 'X' } });
     fireEvent.change(screen.getByTestId('projects-type-select'), {
-      target: { value: 'FORMAL' },
+      target: { value: 'CORE_TECH' },
     });
     fireEvent.click(screen.getByRole('button', { name: '保存' }));
     await waitFor(() => {
       expect(createProject).toHaveBeenCalledWith(
-        expect.objectContaining({ projectType: 'FORMAL' }),
+        expect.objectContaining({ projectType: 'CORE_TECH' }),
       );
     });
   });
