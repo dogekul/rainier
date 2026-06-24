@@ -1,0 +1,34 @@
+change:
+  id: 2026-06-24-opportunity-detail-page
+  title: v0.0.55-opportunity-detail-page — 统一商机详情页 + CRM 商机页面视觉优化
+  baseline: {tag: v0.0.54-delivery-detail, commit: 8f409e8}
+  type: feature
+  source: "用户：详情内容多，不要用抽屉，改独立详情页；售前+实施统一"
+
+phase:
+  current: archived
+  understand: {status: completed, confirmed_at: '2026-06-24', gate_1: "独立详情页 + 售前实施统一 + 三页视觉优化；推进留行上"}
+  spec: {status: completed, gate_2: auto_proceed}
+  slice: {status: completed}
+  build: {status: completed}
+  verify:
+    status: completed
+    metrics: {frontend: "256/256", tsc: clean, lint: clean, backend: "无改动", e2e: "GET /{id} 200 + SPA route 200; 视觉优化已部署"}
+    review: {C: 0, H: 0, M: 0, L: 3, fixed: "补 TC-ODP-07/08；视觉优化纯展示层、testid 全保留、256 全绿"}
+    awaiting: gate_3_user_review_then_commit
+  deliver: {status: completed, archived_at: '2026-06-24'}
+
+long_range:
+  enabled: true
+  mode: full_auto
+  pre_auth: {git_ops: allow_up_to_commit_and_tag, gate_2: auto_proceed, gate_3: require_user_confirmation}
+
+scope:
+  type: feature
+  capabilities_modified: [frontend-scaffold]
+  capabilities_new: []
+  new_tables: 0
+  new_columns: []
+  new_deps: []
+  new_apis: []
+  behavior_change: "新增 /crm/opportunities/:id 详情页；售前/实施行详情改跳转；移除两页详情抽屉（取代 v0.0.54）"
