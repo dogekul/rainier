@@ -1,0 +1,105 @@
+/* v0.0.55 — 售前/实施流转 行卡片视觉（取代朴素表格行）。复用 global.css 令牌。 */
+
+.oppflow-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.oppflow-card {
+  /* 固定列模板：每张卡片用相同的列轨，使 stage / 主体 / meta / 操作 在多行卡片间垂直对齐成列 */
+  display: grid;
+  grid-template-columns: 132px minmax(0, 1fr) 220px 250px;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 14px;
+  border: 1px solid var(--rainier-border);
+  border-radius: var(--rainier-radius-card);
+  background: var(--rainier-bg-card);
+  transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+}
+.oppflow-card:hover {
+  border-color: var(--rainier-border-strong);
+  box-shadow: var(--rainier-shadow-card);
+  transform: translateY(-1px);
+}
+
+.oppflow-stage {
+  min-width: 0;
+}
+
+.oppflow-main {
+  min-width: 0;
+}
+.oppflow-customer {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--rainier-color-text-1);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.oppflow-title {
+  font-size: 12px;
+  color: var(--rainier-color-text-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* labeled mini-cells (金额 / 负责人 / PM / 项目) — 两等分子列，跨卡片对齐 */
+.oppflow-meta {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.oppflow-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.oppflow-cell-label {
+  font-size: 11px;
+  color: var(--rainier-color-text-3);
+}
+.oppflow-cell-value {
+  font-size: 13px;
+  color: var(--rainier-color-text-1);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.oppflow-cell-value.muted {
+  color: var(--rainier-color-text-3);
+}
+
+.oppflow-actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+/* 详情 固定在操作列最左（跨行左对齐）；阶段操作组推到最右（跨行右对齐），宽度可不同。 */
+.oppflow-actions-stage {
+  margin-left: auto;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.oppflow-done {
+  font-size: 12px;
+  color: var(--rainier-color-text-3);
+}
+
+@media (max-width: 860px) {
+  .oppflow-card {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .oppflow-meta {
+    max-width: 320px;
+  }
+  .oppflow-actions {
+    justify-content: flex-start;
+  }
+}

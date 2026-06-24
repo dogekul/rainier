@@ -224,8 +224,10 @@ export function OpportunityBoard() {
           gridTemplateColumns: `repeat(${OPP_STAGE_ORDER.length}, 1fr)`,
           gap: 4,
           border: '1px solid var(--rainier-border)',
-          borderRadius: 8,
-          padding: '8px 10px',
+          borderRadius: 'var(--rainier-radius-card)',
+          background: 'var(--rainier-bg-card)',
+          boxShadow: 'var(--rainier-shadow-card)',
+          padding: '12px 14px',
           marginBottom: 12,
           textAlign: 'center',
         }}
@@ -245,9 +247,20 @@ export function OpportunityBoard() {
       {view === 'board' ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {OPP_PHASES.map((phase) => (
-            <div key={phase.key} data-testid={`opp-phase-${phase.key}`}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                <span style={{ fontWeight: 600, fontSize: 13, color: phaseColor(phase.stages[0]) }}>
+            <div
+              key={phase.key}
+              data-testid={`opp-phase-${phase.key}`}
+              style={{
+                background: 'var(--rainier-bg-card)',
+                border: '1px solid var(--rainier-border)',
+                borderLeft: `3px solid ${phaseColor(phase.stages[0])}`,
+                borderRadius: 'var(--rainier-radius-card)',
+                boxShadow: 'var(--rainier-shadow-card)',
+                padding: '12px 14px',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                <span style={{ fontWeight: 600, fontSize: 14, color: phaseColor(phase.stages[0]) }}>
                   {phase.label}
                 </span>
                 <span style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }}>
@@ -303,6 +316,7 @@ export function OpportunityBoard() {
               <option value="dwell">按停留天数</option>
             </select>
           </div>
+          <div className="rainier-card" style={{ padding: '4px 14px', overflowX: 'auto' }}>
           <table data-testid="opp-list" className="rainier-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
             <thead>
               <tr style={{ textAlign: 'left', color: 'var(--rainier-color-text-2)' }}>
@@ -358,6 +372,7 @@ export function OpportunityBoard() {
               })}
             </tbody>
           </table>
+          </div>
         </div>
       )}
 

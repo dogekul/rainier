@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { DeliveryFlow } from './DeliveryFlow';
@@ -6,27 +6,26 @@ import {
   advanceOpportunity,
   initiateOpportunity,
   listOpportunities,
-  updateOpportunity,
   type Opportunity,
 } from '../../api/opportunity';
 import { listProjects } from '../../api/project';
 import { listUsers } from '../../api/user';
-import { listProducts } from '../../api/product';
-import { listCustomers } from '../../api/customer';
 import {
   createOpportunityArtifact,
   listOpportunityArtifacts,
   type OpportunityArtifact,
 } from '../../api/opportunityArtifact';
 
+const mockNavigate = vi.fn();
+vi.mock('react-router-dom', async (orig) => ({
+  ...(await orig<typeof import('react-router-dom')>()),
+  useNavigate: () => mockNavigate,
+}));
 vi.mock('../../api/opportunity', async (orig) => ({
   ...(await orig<typeof import('../../api/opportunity')>()),
   listOpportunities: vi.fn(),
   advanceOpportunity: vi.fn(() => Promise.resolve({} as Opportunity)),
   initiateOpportunity: vi.fn(() => Promise.resolve({} as Opportunity)),
-  updateOpportunity: vi.fn((id: number, body: Partial<Opportunity>) =>
-    Promise.resolve({ id, stage: 'SURVEY', status: 'WON', ...body } as Opportunity),
-  ),
 }));
 vi.mock('../../api/opportunityArtifact', async (orig) => ({
   ...(await orig<typeof import('../../api/opportunityArtifact')>()),
@@ -54,12 +53,6 @@ vi.mock('../../api/user', () => ({
     page: 0,
     size: 100,
   }),
-}));
-vi.mock('../../api/product', () => ({
-  listProducts: vi.fn().mockResolvedValue({ content: [], total: 0, page: 0, size: 100 }),
-}));
-vi.mock('../../api/customer', () => ({
-  listCustomers: vi.fn().mockResolvedValue({ content: [], total: 0, page: 0, size: 100 }),
 }));
 
 function opp(id: number, stage: Opportunity['stage'], over: Partial<Opportunity> = {}): Opportunity {
@@ -96,9 +89,7 @@ describe('DeliveryFlow (实施流转 operations)', () => {
     vi.mocked(listOpportunities).mockReset();
     vi.mocked(listOpportunityArtifacts).mockClear().mockResolvedValue([] as OpportunityArtifact[]);
     vi.mocked(createOpportunityArtifact).mockClear();
-    vi.mocked(updateOpportunity).mockClear();
-    vi.mocked(listProducts).mockClear();
-    vi.mocked(listCustomers).mockClear();
+    mockNavigate.mockClear();
   });
 
   /** TC-DEL-01: lists only WON 实施 opps; 立项→移交+驳回（无独立「通过」）, non-gate→推进, 验收→已验收, OPEN/售前 excluded. */
@@ -281,104 +272,14 @@ describe('DeliveryFlow (实施流转 operations)', () => {
     await waitFor(() => expect(screen.getByTestId('delivery-project-select')).toBeInTheDocument());
   });
 
-  /** TC-DDET-01: 行「详情」打开详情抽屉并加载产出物。 */
-  it('opens the detail drawer and loads artifacts (TC-DDET-01)', async () => {
+  /** TC-DEL-NAV: 行「详情」跳转到统一详情页 /crm/opportunities/:id（不再开抽屉）。 */
+  it('navigates to the unified detail page on 详情 (TC-DEL-NAV)', async () => {
     vi.mocked(listOpportunities).mockResolvedValue(page([opp(7, 'SURVEY')]));
     renderPage();
     await waitFor(() => expect(screen.getByTestId('delivery-detail-7')).toBeInTheDocument());
     fireEvent.click(screen.getByTestId('delivery-detail-7'));
-    await waitFor(() => expect(screen.getByTestId('delivery-detail-body')).toBeInTheDocument());
-    expect(screen.getByTestId('delivery-detail-body')).toHaveTextContent('X 集团');
-    expect(screen.getByTestId('delivery-detail-body')).toHaveTextContent('现场调研');
-    expect(listOpportunityArtifacts).toHaveBeenCalledWith(7);
-  });
-
-  /** TC-DDET-02: 详情列出流转产出物（报告类可导出、链接类可打开）。 */
-  it('lists artifacts with export (report) and link (TC-DDET-02)', async () => {
-    vi.mocked(listOpportunities).mockResolvedValue(page([opp(7, 'REQUIREMENT')]));
-    vi.mocked(listOpportunityArtifacts).mockResolvedValue([
-      {
-        id: 91,
-        opportunityId: 7,
-        type: 'SURVEY_REPORT',
-        typeLabel: '现场调研报告',
-        title: '现场调研报告',
-        content: '走访纪要',
-      },
-      {
-        id: 92,
-        opportunityId: 7,
-        type: 'SURVEY_ATTACHMENT',
-        typeLabel: '现场调研附件',
-        title: '现场调研附件',
-        link: 'https://x/site.jpg',
-      },
-    ] as OpportunityArtifact[]);
-    renderPage();
-    await waitFor(() => expect(screen.getByTestId('delivery-detail-7')).toBeInTheDocument());
-    fireEvent.click(screen.getByTestId('delivery-detail-7'));
-    await waitFor(() => expect(screen.getByTestId('delivery-detail-artifact-91')).toBeInTheDocument());
-    expect(screen.getByTestId('delivery-detail-export-91')).toBeInTheDocument(); // 报告类
-    expect(screen.getByTestId('delivery-detail-link-92')).toBeInTheDocument(); // 链接类
-  });
-
-  /** TC-DDET-03: 详情编辑标题并保存 → updateOpportunity 收到新值 + 按名匹配解析 customerId + 刷新。 */
-  it('edits and saves opportunity fields, resolving customerId by name (TC-DDET-03)', async () => {
-    vi.mocked(listOpportunities).mockResolvedValue(page([opp(7, 'SURVEY')]));
-    // 客户名「X 集团」(prefill 自商机) 命中已有客户 id=42 → saveDetail 应带 customerId:42
-    vi.mocked(listCustomers).mockResolvedValueOnce({
-      content: [{ id: 42, name: 'X 集团' }],
-      total: 1,
-      page: 0,
-      size: 100,
-    } as Awaited<ReturnType<typeof listCustomers>>);
-    renderPage();
-    await waitFor(() => expect(screen.getByTestId('delivery-detail-7')).toBeInTheDocument());
-    fireEvent.click(screen.getByTestId('delivery-detail-7'));
-    await waitFor(() => expect(screen.getByTestId('delivery-detail-edit')).toBeInTheDocument());
-    fireEvent.click(screen.getByTestId('delivery-detail-edit'));
-    await waitFor(() => expect(screen.getByTestId('delivery-detail-title')).toBeInTheDocument());
-    fireEvent.change(screen.getByTestId('delivery-detail-title'), { target: { value: '采购系统(改)' } });
-    fireEvent.click(screen.getByTestId('delivery-detail-save'));
-    await waitFor(() =>
-      expect(updateOpportunity).toHaveBeenCalledWith(
-        7,
-        expect.objectContaining({ title: '采购系统(改)', customerName: 'X 集团', customerId: 42 }),
-      ),
-    );
-  });
-
-  /** TC-DDET-04: 详情内添加产出物（报告类）→ createOpportunityArtifact 调用 + 重新拉列表。 */
-  it('adds an artifact from the detail drawer (TC-DDET-04)', async () => {
-    vi.mocked(listOpportunities).mockResolvedValue(page([opp(7, 'REQUIREMENT')]));
-    renderPage();
-    await waitFor(() => expect(screen.getByTestId('delivery-detail-7')).toBeInTheDocument());
-    fireEvent.click(screen.getByTestId('delivery-detail-7'));
-    await waitFor(() =>
-      expect(screen.getByTestId('delivery-detail-add-artifact')).toBeInTheDocument(),
-    );
-    fireEvent.click(screen.getByTestId('delivery-detail-add-artifact'));
-    await waitFor(() => expect(screen.getByTestId('delivery-add-content')).toBeInTheDocument());
-    fireEvent.change(screen.getByTestId('delivery-add-content'), { target: { value: '补充材料正文' } });
-    fireEvent.click(screen.getByTestId('delivery-add-save'));
-    await waitFor(() =>
-      expect(createOpportunityArtifact).toHaveBeenCalledWith(
-        7,
-        expect.objectContaining({ type: 'SURVEY_REPORT', content: '补充材料正文' }),
-      ),
-    );
-  });
-
-  /** TC-DDET-05: 详情抽屉内不含推进/立项移交/驳回（推进仍在行上）。 */
-  it('detail drawer has no advance controls (TC-DDET-05)', async () => {
-    vi.mocked(listOpportunities).mockResolvedValue(page([opp(7, 'SURVEY')]));
-    renderPage();
-    await waitFor(() => expect(screen.getByTestId('delivery-detail-7')).toBeInTheDocument());
-    fireEvent.click(screen.getByTestId('delivery-detail-7'));
-    await waitFor(() => expect(screen.getByTestId('delivery-detail-body')).toBeInTheDocument());
-    const body = screen.getByTestId('delivery-detail-body');
-    expect(within(body).queryByText('推进')).not.toBeInTheDocument();
-    expect(within(body).queryByText('立项移交')).not.toBeInTheDocument();
-    expect(within(body).queryByText('驳回')).not.toBeInTheDocument();
+    expect(mockNavigate).toHaveBeenCalledWith('/crm/opportunities/7');
+    // 不再有内联详情抽屉
+    expect(screen.queryByTestId('delivery-detail-body')).not.toBeInTheDocument();
   });
 });

@@ -5,22 +5,24 @@ import { PresaleFlow } from './PresaleFlow';
 import {
   advanceOpportunity,
   createOpportunity,
-  updateOpportunity,
   listOpportunities,
   type Opportunity,
 } from '../../api/opportunity';
 import {
   createOpportunityArtifact,
-  exportArtifactDocx,
   listOpportunityArtifacts,
 } from '../../api/opportunityArtifact';
 
+const mockNavigate = vi.fn();
+vi.mock('react-router-dom', async (orig) => ({
+  ...(await orig<typeof import('react-router-dom')>()),
+  useNavigate: () => mockNavigate,
+}));
 vi.mock('../../api/opportunity', async (orig) => ({
   ...(await orig<typeof import('../../api/opportunity')>()),
   listOpportunities: vi.fn(),
   advanceOpportunity: vi.fn(() => Promise.resolve({} as Opportunity)),
   createOpportunity: vi.fn(() => Promise.resolve({} as Opportunity)),
-  updateOpportunity: vi.fn(() => Promise.resolve({} as Opportunity)),
 }));
 vi.mock('../../api/user', () => ({
   listUsers: vi.fn().mockResolvedValue({
@@ -49,7 +51,6 @@ vi.mock('../../api/customer', () => ({
 vi.mock('../../api/opportunityArtifact', async (orig) => ({
   ...(await orig<typeof import('../../api/opportunityArtifact')>()),
   listOpportunityArtifacts: vi.fn(() => Promise.resolve([])),
-  exportArtifactDocx: vi.fn(() => Promise.resolve()),
   createOpportunityArtifact: vi.fn(() => Promise.resolve({ id: 1 } as never)),
 }));
 
@@ -88,9 +89,8 @@ describe('PresaleFlow (售前流转 operations)', () => {
     vi.mocked(advanceOpportunity).mockReset();
     vi.mocked(advanceOpportunity).mockResolvedValue({} as Opportunity);
     vi.mocked(createOpportunity).mockClear();
-    vi.mocked(updateOpportunity).mockClear();
     vi.mocked(createOpportunityArtifact).mockClear();
-    vi.mocked(exportArtifactDocx).mockClear();
+    mockNavigate.mockClear();
     vi.mocked(listOpportunityArtifacts).mockReset();
     vi.mocked(listOpportunityArtifacts).mockResolvedValue([]);
     vi.mocked(listOpportunities).mockReset();
@@ -252,114 +252,14 @@ describe('PresaleFlow (售前流转 operations)', () => {
     expect(screen.queryByTestId('presale-supp-BID_DOCUMENT')).not.toBeInTheDocument();
   });
 
-  /** TC-PAR-04: 详情「添加产出物」of a link kind submits link, not content. */
-  it('adds a link-kind artifact from 详情 (TC-PAR-04)', async () => {
-    vi.mocked(listOpportunities).mockResolvedValue(page([opp(7, 'POC')]));
-    renderPage();
-    await waitFor(() => expect(screen.getByTestId('presale-detail-7')).toBeInTheDocument());
-    fireEvent.click(screen.getByTestId('presale-detail-7'));
-    await waitFor(() => expect(screen.getByTestId('presale-detail-add-artifact')).toBeInTheDocument());
-    fireEvent.click(screen.getByTestId('presale-detail-add-artifact'));
-    await waitFor(() => expect(screen.getByTestId('presale-add-type')).toBeInTheDocument());
-    // PRESENTATION_MATERIAL is link-kind → link input shown, NO title nor content
-    expect(screen.getByTestId('presale-add-link')).toBeInTheDocument();
-    expect(screen.queryByTestId('presale-add-content')).not.toBeInTheDocument();
-    expect(screen.queryByTestId('presale-add-title')).not.toBeInTheDocument();
-    fireEvent.change(screen.getByTestId('presale-add-link'), { target: { value: 'https://x/ppt' } });
-    fireEvent.click(screen.getByTestId('presale-add-save'));
-    await waitFor(() =>
-      expect(createOpportunityArtifact).toHaveBeenCalledWith(
-        7,
-        expect.objectContaining({ type: 'PRESENTATION_MATERIAL', link: 'https://x/ppt' }),
-      ),
-    );
-    // link-kind carries no title
-    expect(createOpportunityArtifact).not.toHaveBeenCalledWith(
-      7,
-      expect.objectContaining({ title: expect.anything() }),
-    );
-  });
-
-  /** TC-PDE-01: 详情 defaults to READ-ONLY (编辑 button, no inputs) + 产出物 rich-text 预览. */
-  it('详情 is read-only by default with an artifact rich preview (TC-PDE-01)', async () => {
-    vi.mocked(listOpportunities).mockResolvedValue(
-      page([opp(7, 'OPPORTUNITY', { note: '关键客户备注', amount: 200000 })]),
-    );
-    vi.mocked(listOpportunityArtifacts).mockResolvedValue([
-      {
-        id: 55,
-        opportunityId: 7,
-        type: 'RESEARCH_REPORT',
-        typeLabel: '商机调研报告',
-        stageFrom: 'LEAD',
-        title: '调研',
-        content: '# 结论\n\n**通过**',
-        author: 'alice',
-      },
-    ]);
-    renderPage();
-    await waitFor(() => expect(screen.getByTestId('presale-detail-7')).toBeInTheDocument());
-    fireEvent.click(screen.getByTestId('presale-detail-7'));
-    await waitFor(() => expect(screen.getByTestId('presale-detail-body')).toBeInTheDocument());
-    // read-only by default: 编辑 button shown, edit inputs absent, 备注 shown as text
-    expect(screen.getByTestId('presale-detail-edit')).toBeInTheDocument();
-    expect(screen.queryByTestId('presale-detail-title')).not.toBeInTheDocument();
-    expect(screen.getByText('关键客户备注')).toBeInTheDocument();
-    // artifact rich-text 预览
-    await waitFor(() => expect(screen.getByTestId('presale-detail-artifact-55')).toBeInTheDocument());
-    fireEvent.click(screen.getByTestId('presale-detail-preview-55'));
-    await waitFor(() => expect(screen.getByTestId('presale-detail-md-55')).toBeInTheDocument());
-    expect(screen.getByTestId('presale-detail-md-55').querySelector('strong')?.textContent).toBe(
-      '通过',
-    );
-    fireEvent.click(screen.getByTestId('presale-detail-export-55'));
-    await waitFor(() =>
-      expect(exportArtifactDocx).toHaveBeenCalledWith(7, 55, expect.stringContaining('.docx')),
-    );
-  });
-
-  /** TC-PDE-02: 编辑 button reveals the form; editing + 保存修改 calls updateOpportunity. */
-  it('edits an opportunity after clicking 编辑 in 详情 (TC-PDE-02)', async () => {
+  /** TC-PRE-NAV: 行「详情」跳转到统一详情页 /crm/opportunities/:id（不再开抽屉）。 */
+  it('navigates to the unified detail page on 详情 (TC-PRE-NAV)', async () => {
     vi.mocked(listOpportunities).mockResolvedValue(page([opp(7, 'OPPORTUNITY')]));
     renderPage();
     await waitFor(() => expect(screen.getByTestId('presale-detail-7')).toBeInTheDocument());
     fireEvent.click(screen.getByTestId('presale-detail-7'));
-    await waitFor(() => expect(screen.getByTestId('presale-detail-edit')).toBeInTheDocument());
-    // no inputs until 编辑 clicked
-    expect(screen.queryByTestId('presale-detail-title')).not.toBeInTheDocument();
-    fireEvent.click(screen.getByTestId('presale-detail-edit'));
-    await waitFor(() => expect(screen.getByTestId('presale-detail-title')).toBeInTheDocument());
-    expect(screen.getByTestId('presale-detail-title')).toHaveValue('采购系统'); // prefilled
-    fireEvent.change(screen.getByTestId('presale-detail-title'), { target: { value: '采购系统 V2' } });
-    fireEvent.change(screen.getByTestId('presale-detail-note'), { target: { value: '改过的备注' } });
-    fireEvent.click(screen.getByTestId('presale-detail-save'));
-    await waitFor(() =>
-      expect(updateOpportunity).toHaveBeenCalledWith(
-        7,
-        expect.objectContaining({ title: '采购系统 V2', note: '改过的备注' }),
-      ),
-    );
-  });
-
-  /** TC-PDE-03: advancing from 详情 closes it and routes through the gate (商机→纪要 form). */
-  it('advances from the 详情 drawer (TC-PDE-03)', async () => {
-    vi.mocked(listOpportunities).mockResolvedValue(page([opp(7, 'OPPORTUNITY')]));
-    renderPage();
-    await waitFor(() => expect(screen.getByTestId('presale-detail-7')).toBeInTheDocument());
-    fireEvent.click(screen.getByTestId('presale-detail-7'));
-    await waitFor(() => expect(screen.getByTestId('presale-detail-pass')).toBeInTheDocument());
-    fireEvent.click(screen.getByTestId('presale-detail-pass'));
-    // OPPORTUNITY is artifact-gated → detail closes, the 决策评审纪要 form opens
-    await waitFor(() => expect(screen.queryByTestId('presale-detail-body')).not.toBeInTheDocument());
-    await waitFor(() => expect(screen.getByTestId('presale-artifact-title')).toBeInTheDocument());
-    fillArtifact('评审', '通过');
-    fireEvent.click(screen.getByTestId('presale-artifact-save'));
-    await waitFor(() =>
-      expect(advanceOpportunity).toHaveBeenCalledWith(7, 'PASS', undefined, {
-        title: '评审',
-        content: '通过',
-      }),
-    );
+    expect(mockNavigate).toHaveBeenCalledWith('/crm/opportunities/7');
+    expect(screen.queryByTestId('presale-detail-body')).not.toBeInTheDocument();
   });
 
   /** TC-PRE-01: lists only OPEN 售前 opps; gate rows show 通过/否决, non-gate show 推进; WON/LOST/实施 filtered out. */

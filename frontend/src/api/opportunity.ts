@@ -148,6 +148,12 @@ export async function createOpportunity(body: OpportunityCreate): Promise<Opport
   return res.data;
 }
 
+/** v0.0.55 — fetch one opportunity by id (powers the deep-linkable 商机详情页). */
+export async function getOpportunity(id: number): Promise<Opportunity> {
+  const res = await client.get<Opportunity>(`/opportunities/${id}`);
+  return res.data;
+}
+
 export async function updateOpportunity(
   id: number,
   body: OpportunityUpdate,
