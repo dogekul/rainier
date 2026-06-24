@@ -1,0 +1,105 @@
+/* v0.0.51 — 客户管理页 卡片网格视觉. 飞书风格：白卡 + 头像 + 行业标签 + 悬浮抬升. */
+.cust-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(264px, 1fr));
+  gap: 12px;
+}
+
+.cust-card {
+  background: var(--rainier-bg-card);
+  border: 1px solid var(--rainier-border);
+  border-radius: var(--rainier-radius-card);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: box-shadow 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+}
+.cust-card:hover {
+  border-color: var(--rainier-border-strong);
+  box-shadow: var(--rainier-shadow-card);
+  transform: translateY(-1px);
+}
+
+.cust-card-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.cust-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 16px;
+  flex: none;
+}
+.cust-head-text {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.cust-name {
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--rainier-color-text-1);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cust-chip {
+  align-self: flex-start;
+  font-size: 12px;
+  line-height: 18px;
+  padding: 0 8px;
+  border-radius: 10px;
+  background: var(--rainier-bg-selected);
+  color: var(--rainier-color-primary);
+}
+.cust-chip.muted {
+  background: var(--rainier-status-gray-bg);
+  color: var(--rainier-color-text-3);
+}
+
+.cust-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-height: 38px;
+}
+.cust-meta {
+  font-size: 13px;
+  color: var(--rainier-color-text-2);
+}
+.cust-meta .label {
+  color: var(--rainier-color-text-3);
+  margin-right: 4px;
+}
+.cust-notes {
+  font-size: 12px;
+  color: var(--rainier-color-text-3);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.cust-actions {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+  margin-top: auto;
+  padding-top: 8px;
+  border-top: 1px solid var(--rainier-border);
+}
+
+.cust-count {
+  font-size: 13px;
+  color: var(--rainier-color-text-3);
+  font-weight: 400;
+}

@@ -1,11 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Button } from '../../components/ui/Button';
-import { Card } from '../../components/ui/Card';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import { Drawer } from '../../components/ui/Drawer';
 import { Input } from '../../components/ui/Input';
 import { Pagination } from '../../components/ui/Pagination';
-import { Table, type TableColumn } from '../../components/ui/Table';
+import { EmptyState } from '../../components/board';
 import {
   createCustomer,
   deleteCustomer,
@@ -14,9 +13,24 @@ import {
   type Customer,
 } from '../../api/customer';
 import { usePaginated } from '../../hooks/usePaginated';
+import './CustomerPage.css';
+
+/** Avatar tints (theme-safe CSS vars), picked deterministically by name — avoids red (error semantics). */
+const AVATAR_PALETTE: { bg: string; fg: string }[] = [
+  { bg: 'var(--rainier-bg-selected)', fg: 'var(--rainier-color-primary)' },
+  { bg: 'var(--rainier-status-green-bg)', fg: 'var(--rainier-status-green)' },
+  { bg: 'var(--rainier-status-yellow-bg)', fg: 'var(--rainier-status-yellow)' },
+  { bg: 'var(--rainier-status-gray-bg)', fg: 'var(--rainier-color-text-2)' },
+];
+function avatarColor(name: string): { bg: string; fg: string } {
+  let h = 0;
+  for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0;
+  return AVATAR_PALETTE[h % AVATAR_PALETTE.length];
+}
 
 /**
- * v0.0.45 —「客户」管理页 (CRUD). all-users，客户导航组。客户实体被商机经 customerId 关联（创建商机时可选/新建）。
+ * v0.0.45 —「客户」管理页 (CRUD). all-users，客户导航组。客户实体被商机经 customerId 关联。
+ * v0.0.51 — 卡片网格视觉改版（头像 + 行业标签 + 联系人/备注 + 悬浮抬升）。
  */
 export function CustomerPage() {
   const fetcher = useCallback(
@@ -47,38 +61,10 @@ export function CustomerPage() {
     setNotes(editing?.notes ?? '');
   }, [drawerOpen, editing]);
 
-  const columns: TableColumn<Customer>[] = [
-    { key: 'name', title: '客户名称', render: (r) => r.name },
-    { key: 'industry', title: '行业', render: (r) => r.industry ?? '—' },
-    { key: 'contactName', title: '联系人', render: (r) => r.contactName ?? '—' },
-    {
-      key: 'actions',
-      title: '操作',
-      render: (r) => (
-        <>
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={() => {
-              setEditing(r);
-              setDrawerOpen(true);
-            }}
-            data-testid={`customer-edit-${r.id}`}
-          >
-            编辑
-          </Button>{' '}
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={() => setConfirmDelete(r)}
-            data-testid={`customer-delete-${r.id}`}
-          >
-            删除
-          </Button>
-        </>
-      ),
-    },
-  ];
+  const openNew = () => {
+    setEditing(null);
+    setDrawerOpen(true);
+  };
 
   const save = async () => {
     if (!name.trim()) {
@@ -104,38 +90,86 @@ export function CustomerPage() {
     <div className="rainier-page">
       <div className="rainier-page-head">
         <h2 style={{ margin: 0 }}>客户</h2>
+        <span className="cust-count">共 {list.total} 家</span>
         <div style={{ flex: 1 }} />
         <Input
           placeholder="搜索客户/行业/联系人"
           value={list.search}
           onChange={(e) => list.setSearch(e.target.value)}
           data-testid="customers-search"
+          style={{ width: 220, flex: 'none' }}
         />
-        <Button
-          type="button"
-          onClick={() => {
-            setEditing(null);
-            setDrawerOpen(true);
-          }}
-          data-testid="customers-new-btn"
-        >
+        <Button type="button" onClick={openNew} data-testid="customers-new-btn">
           新建客户
         </Button>
       </div>
-      <Card>
-        <Table<Customer>
-          columns={columns}
-          dataSource={list.items}
-          rowKey="id"
-          emptyText="暂无客户，点「新建客户」创建。"
-        />
-        <Pagination
-          page={list.page}
-          size={list.size}
-          total={list.total}
-          onPageChange={list.setPage}
-        />
-      </Card>
+
+      {list.items.length === 0 ? (
+        <EmptyState message="暂无客户，点「新建客户」创建。" testId="customers-empty" />
+      ) : (
+        <div className="cust-grid" data-testid="customers-grid">
+          {list.items.map((c) => {
+            const color = avatarColor(c.name);
+            return (
+              <div key={c.id} className="cust-card" data-testid={`customer-card-${c.id}`}>
+                <div className="cust-card-head">
+                  <span
+                    className="cust-avatar"
+                    aria-hidden="true"
+                    style={{ background: color.bg, color: color.fg }}
+                  >
+                    {c.name.trim().charAt(0).toUpperCase()}
+                  </span>
+                  <div className="cust-head-text">
+                    <span className="cust-name" title={c.name}>
+                      {c.name}
+                    </span>
+                    <span className={`cust-chip${c.industry ? '' : ' muted'}`}>
+                      {c.industry || '未填行业'}
+                    </span>
+                  </div>
+                </div>
+                <div className="cust-body">
+                  <div className="cust-meta">
+                    <span className="label">联系人</span>
+                    {c.contactName || '—'}
+                  </div>
+                  {c.notes ? <div className="cust-notes">{c.notes}</div> : null}
+                </div>
+                <div className="cust-actions">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() => {
+                      setEditing(c);
+                      setDrawerOpen(true);
+                    }}
+                    data-testid={`customer-edit-${c.id}`}
+                  >
+                    编辑
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() => setConfirmDelete(c)}
+                    data-testid={`customer-delete-${c.id}`}
+                  >
+                    删除
+                  </Button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      <Pagination
+        page={list.page}
+        size={list.size}
+        total={list.total}
+        onPageChange={list.setPage}
+      />
+
       <Drawer
         open={drawerOpen}
         title={editing ? '编辑客户' : '新建客户'}
