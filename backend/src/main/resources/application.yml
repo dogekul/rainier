@@ -76,6 +76,10 @@ app:
     # so the flywheel pipeline demo has data. Disabled in test profile.
     event-seed:
       enabled: true
+    # v0.0.85 (C5): seed 10 common capability tags (TECH / PRODUCT / SOFT) when
+    # rainier_capability_tag is empty so the「我的档案」能力栏目 has data. Disabled in test profile.
+    capability-seed:
+      enabled: true
 
 logging:
   level:

@@ -48,6 +48,10 @@ app:
     # v0.0.66: event seed OFF in the default test profile so tests get a clean rainier_event table.
     event-seed:
       enabled: false
+    # v0.0.85 (C5): capability seed OFF in the default test profile so tests get a clean
+    # rainier_capability_tag table; CapabilityTagSeedTest flips it on via @TestPropertySource.
+    capability-seed:
+      enabled: false
 
 rainier:
   product-module:

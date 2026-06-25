@@ -23,6 +23,8 @@ public class ProfileResponse {
   private long ownedStoryCount;
   private long assignedTaskCount;
   private Contribution contribution;
+  // v0.0.85 (C5): capability tags with self-assessed level. Empty when the user has none.
+  private List<CapabilitySummary> capabilities = new ArrayList<>();
 
   public Long getUserId() {
     return userId;
@@ -102,6 +104,56 @@ public class ProfileResponse {
 
   public void setContribution(Contribution contribution) {
     this.contribution = contribution;
+  }
+
+  public List<CapabilitySummary> getCapabilities() {
+    return capabilities;
+  }
+
+  public void setCapabilities(List<CapabilitySummary> capabilities) {
+    this.capabilities = capabilities;
+  }
+
+  /** v0.0.85 (C5) — single capability row embedded in {@link ProfileResponse}. */
+  public static class CapabilitySummary {
+    private final Long capabilityTagId;
+    private final String tagName;
+    private final String tagCategory;
+    private final Integer level;
+    private final String source;
+
+    public CapabilitySummary(
+        Long capabilityTagId,
+        String tagName,
+        String tagCategory,
+        Integer level,
+        String source) {
+      this.capabilityTagId = capabilityTagId;
+      this.tagName = tagName;
+      this.tagCategory = tagCategory;
+      this.level = level;
+      this.source = source;
+    }
+
+    public Long getCapabilityTagId() {
+      return capabilityTagId;
+    }
+
+    public String getTagName() {
+      return tagName;
+    }
+
+    public String getTagCategory() {
+      return tagCategory;
+    }
+
+    public Integer getLevel() {
+      return level;
+    }
+
+    public String getSource() {
+      return source;
+    }
   }
 
   /**

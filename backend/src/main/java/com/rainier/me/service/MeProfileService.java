@@ -1,6 +1,8 @@
 /* (C) 2026 Rainier — internal use only. */
 package com.rainier.me.service;
 
+import com.rainier.capability.dto.UserCapabilityDto;
+import com.rainier.capability.service.CapabilityService;
 import com.rainier.me.dto.ProfileResponse;
 import com.rainier.organization.domain.Organization;
 import com.rainier.organization.repository.OrganizationRepository;
@@ -44,6 +46,7 @@ public class MeProfileService {
   private final StoryRepository storyRepo;
   private final TaskRepository taskRepo;
   private final ContributionMetricsService metricsService;
+  private final CapabilityService capabilityService;
 
   public MeProfileService(
       UserRepository userRepo,
@@ -52,7 +55,8 @@ public class MeProfileService {
       PositionRepository positionRepo,
       StoryRepository storyRepo,
       TaskRepository taskRepo,
-      ContributionMetricsService metricsService) {
+      ContributionMetricsService metricsService,
+      CapabilityService capabilityService) {
     this.userRepo = userRepo;
     this.userOrgRepo = userOrgRepo;
     this.orgRepo = orgRepo;
@@ -60,6 +64,7 @@ public class MeProfileService {
     this.storyRepo = storyRepo;
     this.taskRepo = taskRepo;
     this.metricsService = metricsService;
+    this.capabilityService = capabilityService;
   }
 
   public ProfileResponse profileOf(String username) {
@@ -200,6 +205,19 @@ public class MeProfileService {
     out.setAssignedTaskCount(taskRepo.countByAssigneeUserId(me.getId()));
     // v0.0.84: richer contribution block (by-status / this-week / 4-week trend).
     out.setContribution(metricsService.computeFor(me.getId()));
+    // v0.0.85 (C5): capability tags + level (empty list when none).
+    List<UserCapabilityDto> caps = capabilityService.listUserCapabilities(me.getId());
+    List<ProfileResponse.CapabilitySummary> summaries = new ArrayList<>();
+    for (UserCapabilityDto c : caps) {
+      summaries.add(
+          new ProfileResponse.CapabilitySummary(
+              c.getCapabilityTagId(),
+              c.getTagName(),
+              c.getTagCategory(),
+              c.getLevel(),
+              c.getSource()));
+    }
+    out.setCapabilities(summaries);
     return out;
   }
 

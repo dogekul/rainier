@@ -76,7 +76,8 @@ class LegacyProductCategoryCleanupTest {
     // v0.0.72 added rainier_notification (主动推送通道 stub, A8) → 33 tables.
     // v0.0.76 added rainier_password_reset_token (B3 password recovery) → 34 tables.
     // v0.0.77 added rainier_role_permission (B4 fine-grained permissions) → 35 tables.
-    assertEquals(35, rows.size(), "schema must have exactly 35 rainier_* tables: " + rows);
+    // v0.0.85 added rainier_capability_tag + rainier_user_capability (C5) → 37 tables.
+    assertEquals(37, rows.size(), "schema must have exactly 37 rainier_* tables: " + rows);
     assertTrue(rows.contains("rainier_operation_issue"));
     assertTrue(rows.contains("rainier_organization_pmo"));
     assertTrue(rows.contains("rainier_project_member"));
