@@ -25,6 +25,10 @@ import org.springframework.transaction.annotation.Transactional;
  * The「我的档案」read-model (v0.0.40): the caller's org identity + position + direct manager +
  * contribution counts. Self-scoped, all-users (token-gated). Pure aggregation — zero writes. Degrades
  * to a login-only profile when the token subject has no matching User (mirrors MeService).
+ *
+ * <p>v0.0.83 (C3): the aggregation core is also reused by {@code UserProfileController} for the
+ * subordinate-view endpoint via {@link #profileOfUserId(Long)} and {@link #isDirectManagerOf(Long,
+ * Long)} — same shape, different caller authz.
  */
 @Service
 @Transactional(readOnly = true)
@@ -62,6 +66,83 @@ public class MeProfileService {
     if (me == null) {
       return out; // degraded: loginName only, empty memberships, null manager, 0 counts
     }
+    return aggregate(me);
+  }
+
+  /**
+   * v0.0.83 (C3): aggregate by user id (reused by subordinate-view endpoint). Returns null when the
+   * user id does not exist — callers should map that to 404 themselves.
+   */
+  public ProfileResponse profileOfUserId(Long userId) {
+    if (userId == null) {
+      return null;
+    }
+    User u = userRepo.findById(userId).orElse(null);
+    if (u == null) {
+      return null;
+    }
+    return aggregate(u);
+  }
+
+  /**
+   * v0.0.83 (C3): is {@code callerUserId} a direct manager of {@code targetUserId}? Direct manager =
+   * caller is an active HEAD of the target's primary org (or — falling back — of that org's parent).
+   * Walks AT MOST one level up; intentionally narrower than {@link #resolveManager} (which walks up
+   * to {@code MAX_WALK_DEPTH}) because this is an authz gate, not a "display the manager" lookup.
+   */
+  public boolean isDirectManagerOf(Long callerUserId, Long targetUserId) {
+    if (callerUserId == null || targetUserId == null || callerUserId.equals(targetUserId)) {
+      return false;
+    }
+    List<UserOrganization> active = userOrgRepo.findByUserIdAndLeftAtIsNull(targetUserId);
+    if (active.isEmpty()) {
+      return false;
+    }
+    Long primaryOrgId = null;
+    for (UserOrganization uo : active) {
+      if (Boolean.TRUE.equals(uo.getIsPrimary()) && uo.getOrganizationId() != null) {
+        primaryOrgId = uo.getOrganizationId();
+        break;
+      }
+    }
+    if (primaryOrgId == null) {
+      for (UserOrganization uo : active) {
+        if (uo.getOrganizationId() != null) {
+          primaryOrgId = uo.getOrganizationId();
+          break;
+        }
+      }
+    }
+    if (primaryOrgId == null) {
+      return false;
+    }
+    if (isActiveHeadOfOrg(callerUserId, targetUserId, primaryOrgId)) {
+      return true;
+    }
+    Organization primaryOrg = orgRepo.findById(primaryOrgId).orElse(null);
+    Long parentOrgId = (primaryOrg == null) ? null : primaryOrg.getParentId();
+    if (parentOrgId == null) {
+      return false;
+    }
+    return isActiveHeadOfOrg(callerUserId, targetUserId, parentOrgId);
+  }
+
+  private boolean isActiveHeadOfOrg(Long callerUserId, Long targetUserId, Long orgId) {
+    for (UserOrganization uo : userOrgRepo.findByOrganizationIdAndLeftAtIsNull(orgId)) {
+      if (uo.getRole() == UserOrgRole.HEAD
+          && uo.getUserId() != null
+          && !uo.getUserId().equals(targetUserId)
+          && uo.getUserId().equals(callerUserId)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /** Core aggregation shared by {@link #profileOf} and {@link #profileOfUserId}. */
+  private ProfileResponse aggregate(User me) {
+    ProfileResponse out = new ProfileResponse();
+    out.setLoginName(me.getLoginName());
     out.setUserId(me.getId());
     out.setName(me.getName());
     if (me.getPositionId() != null) {
