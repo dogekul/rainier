@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { DashboardCard, EmptyState, StatTiles, StatusChip } from '../../components/board';
 import { Button } from '../../components/ui/Button';
-import { Drawer } from '../../components/ui/Drawer';
 import {
   AI_STATUS_LABELS,
   decideAiWorkLog,
@@ -29,13 +28,14 @@ const STATUS_TIER: Record<AiWorkLogStatus, StatusTier> = {
  * v0.0.43 — AI 工作日志 (the flywheel base). Lists AI proposals (agent / action / summary / evidence)
  * and lets a human accept or reject each PROPOSED one (POST /api/ai-work-logs/{id}/decision). Rejections
  * carry a reason — the KPI signal for AI quality. Seed-driven until real AI/integration arrives.
+ *
+ * v0.0.97 — 驳回理由改为内联展开（替换 v0.0.60 Drawer）。同时刻只展开一行；reason 必填。
  */
 export function AiWorkLogsPage() {
   const [rows, setRows] = useState<AiWorkLog[]>([]);
   const [statusFilter, setStatusFilter] = useState<'' | AiWorkLogStatus>('');
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<number | null>(null);
-  // v0.0.60 — reject reason drawer (replaces window.prompt). Required-non-empty enforced.
   const [rejectId, setRejectId] = useState<number | null>(null);
   const [rejectReason, setRejectReason] = useState('');
   const [rejectError, setRejectError] = useState<string | null>(null);
@@ -76,17 +76,24 @@ export function AiWorkLogsPage() {
     setRejectError(null);
   };
 
-  const submitReject = async () => {
-    if (rejectId == null) return;
+  const cancelReject = () => {
+    setRejectId(null);
+    setRejectReason('');
+    setRejectError(null);
+  };
+
+  const submitReject = async (id: number) => {
     const reason = rejectReason.trim();
     if (!reason) {
       setRejectError('请填写驳回理由');
       return;
     }
-    setBusyId(rejectId);
+    setBusyId(id);
     try {
-      await decideAiWorkLog(rejectId, 'REJECTED', reason);
+      await decideAiWorkLog(id, 'REJECTED', reason);
       setRejectId(null);
+      setRejectReason('');
+      setRejectError(null);
       await load();
     } finally {
       setBusyId(null);
@@ -165,51 +172,53 @@ export function AiWorkLogsPage() {
                   证据：{r.evidence}
                   {r.status === 'REJECTED' && r.rejectReason ? ` · 驳回：${r.rejectReason}` : ''}
                 </div>
+                {rejectId === r.id && (
+                  <div className="ai-row-reject-form" data-testid={`ai-reject-form-${r.id}`}>
+                    <textarea
+                      className="rainier-input"
+                      rows={3}
+                      placeholder="驳回理由（必填）"
+                      value={rejectReason}
+                      onChange={(e) => {
+                        setRejectReason(e.target.value);
+                        if (rejectError) setRejectError(null);
+                      }}
+                      data-testid={`ai-reject-reason-${r.id}`}
+                    />
+                    {rejectError && (
+                      <div
+                        className="rainier-error-banner"
+                        data-testid={`ai-reject-error-${r.id}`}
+                      >
+                        {rejectError}
+                      </div>
+                    )}
+                    <div className="ai-row-reject-actions">
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={cancelReject}
+                        data-testid={`ai-reject-cancel-${r.id}`}
+                      >
+                        取消
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="primary"
+                        disabled={busyId === r.id}
+                        onClick={() => void submitReject(r.id)}
+                        data-testid={`ai-reject-submit-${r.id}`}
+                      >
+                        确认驳回
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
           </div>
         )}
       </DashboardCard>
-
-      <Drawer
-        open={rejectId !== null}
-        title="驳回 AI 提议"
-        onClose={() => setRejectId(null)}
-        footer={
-          <>
-            <Button type="button" variant="secondary" onClick={() => setRejectId(null)}>
-              取消
-            </Button>
-            <Button
-              type="button"
-              variant="primary"
-              disabled={busyId === rejectId}
-              onClick={() => void submitReject()}
-              data-testid="ai-reject-submit"
-            >
-              确认驳回
-            </Button>
-          </>
-        }
-      >
-        <div className="rainier-form-group">
-          <label className="rainier-form-label" htmlFor="ai-reject-reason">
-            驳回理由（必填）
-          </label>
-          <textarea
-            id="ai-reject-reason"
-            className="rainier-input"
-            rows={5}
-            value={rejectReason}
-            onChange={(e) => {
-              setRejectReason(e.target.value);
-              if (rejectError) setRejectError(null);
-            }}
-            data-testid="ai-reject-reason"
-          />
-        </div>
-        {rejectError && <div className="rainier-error-banner">{rejectError}</div>}
-      </Drawer>
     </div>
   );
 }
