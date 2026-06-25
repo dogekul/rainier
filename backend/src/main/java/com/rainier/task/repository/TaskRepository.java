@@ -25,4 +25,10 @@ public interface TaskRepository extends JpaRepository<Task, Long>, JpaSpecificat
 
   /** v0.0.70 risk-radar — active tasks for a set of sprints. */
   List<Task> findBySprintIdIn(Collection<Long> sprintIds);
+
+  /**
+   * v0.0.82 task-review — tasks awaiting review by a given user. Mirrors
+   * StoryRepository.findByReviewerUserIdAndReviewStatus.
+   */
+  List<Task> findByReviewerUserIdAndReviewStatus(Long reviewerUserId, String reviewStatus);
 }

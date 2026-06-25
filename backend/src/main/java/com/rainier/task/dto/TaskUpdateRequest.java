@@ -37,6 +37,23 @@ public class TaskUpdateRequest {
   @Size(max = 500)
   private String closeReason;
 
+  /**
+   * v0.0.82: optional reviewer (validated to exist when non-null).
+   *
+   * <p>Patch-like semantics — service.update only touches reviewer fields when the setter was
+   * invoked by Jackson (= the JSON contained the key). Absent → keep original; explicit null →
+   * clear; value → replace.
+   */
+  private Long reviewerUserId;
+
+  private boolean reviewerUserIdSet;
+
+  /** v0.0.82: optional review state (validated against ReviewStatus.ALL when non-null). */
+  @Size(max = 16)
+  private String reviewStatus;
+
+  private boolean reviewStatusSet;
+
   public String getCode() {
     return code;
   }
@@ -99,5 +116,31 @@ public class TaskUpdateRequest {
 
   public void setCloseReason(String closeReason) {
     this.closeReason = closeReason;
+  }
+
+  public Long getReviewerUserId() {
+    return reviewerUserId;
+  }
+
+  public void setReviewerUserId(Long reviewerUserId) {
+    this.reviewerUserId = reviewerUserId;
+    this.reviewerUserIdSet = true;
+  }
+
+  public boolean isReviewerUserIdSet() {
+    return reviewerUserIdSet;
+  }
+
+  public String getReviewStatus() {
+    return reviewStatus;
+  }
+
+  public void setReviewStatus(String reviewStatus) {
+    this.reviewStatus = reviewStatus;
+    this.reviewStatusSet = true;
+  }
+
+  public boolean isReviewStatusSet() {
+    return reviewStatusSet;
   }
 }

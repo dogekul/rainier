@@ -68,6 +68,17 @@ public class Task extends BaseEntity {
   @Column(name = "close_reason", length = 500)
   private String closeReason;
 
+  /** v0.0.82: optional reviewer (soft FK→user). null = no review requested. */
+  @Column(name = "reviewer_user_id")
+  private Long reviewerUserId;
+
+  /**
+   * v0.0.82: review state — reuses {@link com.rainier.story.domain.ReviewStatus}. null = no
+   * review.
+   */
+  @Column(name = "review_status", length = 16)
+  private String reviewStatus;
+
   public String getCode() {
     return code;
   }
@@ -154,5 +165,21 @@ public class Task extends BaseEntity {
 
   public void setCloseReason(String closeReason) {
     this.closeReason = closeReason;
+  }
+
+  public Long getReviewerUserId() {
+    return reviewerUserId;
+  }
+
+  public void setReviewerUserId(Long reviewerUserId) {
+    this.reviewerUserId = reviewerUserId;
+  }
+
+  public String getReviewStatus() {
+    return reviewStatus;
+  }
+
+  public void setReviewStatus(String reviewStatus) {
+    this.reviewStatus = reviewStatus;
   }
 }

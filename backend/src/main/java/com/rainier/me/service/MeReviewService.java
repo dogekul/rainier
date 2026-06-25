@@ -10,6 +10,8 @@ import com.rainier.sprint.repository.SprintRepository;
 import com.rainier.story.domain.ReviewStatus;
 import com.rainier.story.domain.Story;
 import com.rainier.story.repository.StoryRepository;
+import com.rainier.task.domain.Task;
+import com.rainier.task.repository.TaskRepository;
 import com.rainier.user.domain.User;
 import com.rainier.user.repository.UserRepository;
 import java.util.ArrayList;
@@ -41,21 +43,28 @@ public class MeReviewService {
 
   private final UserRepository userRepo;
   private final StoryRepository storyRepo;
+  private final TaskRepository taskRepo;
   private final ProjectRepository projectRepo;
   private final SprintRepository sprintRepo;
 
   public MeReviewService(
       UserRepository userRepo,
       StoryRepository storyRepo,
+      TaskRepository taskRepo,
       ProjectRepository projectRepo,
       SprintRepository sprintRepo) {
     this.userRepo = userRepo;
     this.storyRepo = storyRepo;
+    this.taskRepo = taskRepo;
     this.projectRepo = projectRepo;
     this.sprintRepo = sprintRepo;
   }
 
-  /** Stories awaiting review by {@code username}; empty when the user is unknown. */
+  /**
+   * Stories + Tasks (v0.0.82) awaiting review by {@code username}; empty when user unknown.
+   * Merged into one sorted list (priority-high-first then oldest-waiting). Each row tags {@code
+   * kind} ("STORY" / "TASK") and populates the corresponding id field.
+   */
   public List<PendingReview> pendingReviews(String username) {
     User me = userRepo.findByLoginName(username).orElse(null);
     if (me == null) {
@@ -63,25 +72,40 @@ public class MeReviewService {
     }
     List<Story> stories =
         storyRepo.findByReviewerUserIdAndReviewStatus(me.getId(), ReviewStatus.PENDING);
-    if (stories.isEmpty()) {
+    List<Task> tasks =
+        taskRepo.findByReviewerUserIdAndReviewStatus(me.getId(), ReviewStatus.PENDING);
+    if (stories.isEmpty() && tasks.isEmpty()) {
       return new ArrayList<>();
     }
-    Set<Long> userIds =
-        stories.stream()
-            .map(Story::getOwnerUserId)
-            .filter(Objects::nonNull)
-            .collect(Collectors.toCollection(HashSet::new));
-    Set<Long> projectIds =
-        stories.stream()
-            .map(Story::getProjectId)
-            .filter(Objects::nonNull)
-            .collect(Collectors.toCollection(HashSet::new));
-    Set<Long> sprintIds =
-        stories.stream()
-            .map(Story::getSprintId)
-            .filter(Objects::nonNull)
-            .collect(Collectors.toCollection(HashSet::new));
-    Map<Long, User> userMap = batchById(userRepo.findAllById(userIds), User::getId);
+    Set<Long> userIds = new HashSet<>();
+    Set<Long> projectIds = new HashSet<>();
+    Set<Long> sprintIds = new HashSet<>();
+    for (Story s : stories) {
+      if (s.getOwnerUserId() != null) {
+        userIds.add(s.getOwnerUserId());
+      }
+      if (s.getProjectId() != null) {
+        projectIds.add(s.getProjectId());
+      }
+      if (s.getSprintId() != null) {
+        sprintIds.add(s.getSprintId());
+      }
+    }
+    for (Task t : tasks) {
+      if (t.getAssigneeUserId() != null) {
+        userIds.add(t.getAssigneeUserId());
+      }
+      if (t.getProjectId() != null) {
+        projectIds.add(t.getProjectId());
+      }
+      if (t.getSprintId() != null) {
+        sprintIds.add(t.getSprintId());
+      }
+    }
+    Map<Long, User> userMap =
+        userIds.isEmpty()
+            ? new HashMap<>()
+            : batchById(userRepo.findAllById(userIds), User::getId);
     Map<Long, Project> projectMap =
         projectIds.isEmpty()
             ? new HashMap<>()
@@ -91,10 +115,13 @@ public class MeReviewService {
             ? new HashMap<>()
             : batchById(sprintRepo.findAllById(sprintIds), Sprint::getId);
 
-    List<PendingReview> rows =
-        stories.stream()
-            .map(s -> enrich(s, userMap, projectMap, sprintMap))
-            .collect(Collectors.toCollection(ArrayList::new));
+    List<PendingReview> rows = new ArrayList<>(stories.size() + tasks.size());
+    for (Story s : stories) {
+      rows.add(enrich(s, userMap, projectMap, sprintMap));
+    }
+    for (Task t : tasks) {
+      rows.add(enrichTask(t, userMap, projectMap, sprintMap));
+    }
     rows.sort(
         Comparator.comparingInt((PendingReview r) -> priorityRank(r.getPriority()))
             .thenComparing(
@@ -132,6 +159,31 @@ public class MeReviewService {
     Sprint sprint = sprintMap.get(s.getSprintId());
     if (sprint != null) {
       r.setSprintName(sprint.getName());
+    }
+    return r;
+  }
+
+  private PendingReview enrichTask(
+      Task t, Map<Long, User> userMap, Map<Long, Project> projectMap, Map<Long, Sprint> sprintMap) {
+    PendingReview r = PendingReview.from(t);
+    if (t.getAssigneeUserId() != null) {
+      User owner = userMap.get(t.getAssigneeUserId());
+      if (owner != null) {
+        r.setOwnerName(owner.getName());
+        r.setOwnerLoginName(owner.getLoginName());
+      }
+    }
+    if (t.getProjectId() != null) {
+      Project p = projectMap.get(t.getProjectId());
+      if (p != null) {
+        r.setProjectName(p.getName());
+      }
+    }
+    if (t.getSprintId() != null) {
+      Sprint sprint = sprintMap.get(t.getSprintId());
+      if (sprint != null) {
+        r.setSprintName(sprint.getName());
+      }
     }
     return r;
   }

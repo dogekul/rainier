@@ -42,6 +42,12 @@ public class TaskDetail {
   private LocalDate dueDate;
   private String closeReason;
 
+  /** v0.0.82 — reviewer fields + enrichment. */
+  private Long reviewerUserId;
+
+  private String reviewerName;
+  private String reviewStatus;
+
   private Instant createTime;
   private Instant updateTime;
   private String createBy;
@@ -61,6 +67,8 @@ public class TaskDetail {
     dto.assigneeUserId = t.getAssigneeUserId();
     dto.dueDate = t.getDueDate();
     dto.closeReason = t.getCloseReason();
+    dto.reviewerUserId = t.getReviewerUserId();
+    dto.reviewStatus = t.getReviewStatus();
     dto.createTime = t.getCreateTime();
     dto.updateTime = t.getUpdateTime();
     dto.createBy = t.getCreateBy();
@@ -260,5 +268,29 @@ public class TaskDetail {
 
   public void setUpdateBy(String updateBy) {
     this.updateBy = updateBy;
+  }
+
+  public Long getReviewerUserId() {
+    return reviewerUserId;
+  }
+
+  public void setReviewerUserId(Long reviewerUserId) {
+    this.reviewerUserId = reviewerUserId;
+  }
+
+  public String getReviewerName() {
+    return reviewerName;
+  }
+
+  public void setReviewerName(String reviewerName) {
+    this.reviewerName = reviewerName;
+  }
+
+  public String getReviewStatus() {
+    return reviewStatus;
+  }
+
+  public void setReviewStatus(String reviewStatus) {
+    this.reviewStatus = reviewStatus;
   }
 }

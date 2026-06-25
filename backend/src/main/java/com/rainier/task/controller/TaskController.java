@@ -5,6 +5,7 @@ import com.rainier.common.web.PageParams;
 import com.rainier.common.web.PageResponse;
 import com.rainier.task.dto.TaskCreateRequest;
 import com.rainier.task.dto.TaskDetail;
+import com.rainier.task.dto.TaskReviewRequest;
 import com.rainier.task.dto.TaskUpdateRequest;
 import com.rainier.task.service.TaskService;
 import java.net.URI;
@@ -56,6 +57,12 @@ public class TaskController {
   @PutMapping("/{id}")
   public TaskDetail update(@PathVariable Long id, @Valid @RequestBody TaskUpdateRequest req) {
     return service.update(id, req);
+  }
+
+  /** v0.0.82: record a review decision (APPROVED / REJECTED) on a Task. */
+  @PostMapping("/{id}/review")
+  public TaskDetail review(@PathVariable Long id, @Valid @RequestBody TaskReviewRequest req) {
+    return service.review(id, req.getDecision(), req.getReason());
   }
 
   @DeleteMapping("/{id}")

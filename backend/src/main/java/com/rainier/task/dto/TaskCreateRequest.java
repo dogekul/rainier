@@ -40,6 +40,13 @@ public class TaskCreateRequest {
   @Size(max = 500)
   private String closeReason;
 
+  /** v0.0.82: optional reviewer (validated to exist when non-null). */
+  private Long reviewerUserId;
+
+  /** v0.0.82: optional review state (validated against ReviewStatus.ALL when non-null). */
+  @Size(max = 16)
+  private String reviewStatus;
+
   public String getCode() {
     return code;
   }
@@ -126,5 +133,21 @@ public class TaskCreateRequest {
 
   public void setCloseReason(String closeReason) {
     this.closeReason = closeReason;
+  }
+
+  public Long getReviewerUserId() {
+    return reviewerUserId;
+  }
+
+  public void setReviewerUserId(Long reviewerUserId) {
+    this.reviewerUserId = reviewerUserId;
+  }
+
+  public String getReviewStatus() {
+    return reviewStatus;
+  }
+
+  public void setReviewStatus(String reviewStatus) {
+    this.reviewStatus = reviewStatus;
   }
 }

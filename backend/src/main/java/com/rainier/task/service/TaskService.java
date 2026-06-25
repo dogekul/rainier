@@ -13,6 +13,7 @@ import com.rainier.requirement.domain.Requirement;
 import com.rainier.requirement.repository.RequirementRepository;
 import com.rainier.sprint.domain.Sprint;
 import com.rainier.sprint.repository.SprintRepository;
+import com.rainier.story.domain.ReviewStatus;
 import com.rainier.story.domain.Story;
 import com.rainier.story.repository.StoryRepository;
 import com.rainier.task.domain.Task;
@@ -143,6 +144,7 @@ public class TaskService {
     if (!Priority.ALL.contains(priority)) {
       throw new BadRequestException("invalid priority: " + priority);
     }
+    validateReviewFields(req.getReviewerUserId(), req.getReviewStatus());
     Task t = new Task();
     t.setCode(req.getCode());
     t.setTitle(req.getTitle());
@@ -155,6 +157,39 @@ public class TaskService {
     t.setAssigneeUserId(req.getAssigneeUserId());
     t.setDueDate(req.getDueDate());
     t.setCloseReason(req.getCloseReason());
+    t.setReviewerUserId(req.getReviewerUserId());
+    t.setReviewStatus(req.getReviewStatus());
+    return enrich(repo.saveAndFlush(t));
+  }
+
+  /** v0.0.82: validate optional review fields — reviewer must exist; status must be in ALL. */
+  private void validateReviewFields(Long reviewerUserId, String reviewStatus) {
+    if (reviewerUserId != null && !userRepo.existsById(reviewerUserId)) {
+      throw new BadRequestException("reviewer user not found: id=" + reviewerUserId);
+    }
+    if (reviewStatus != null && !ReviewStatus.ALL.contains(reviewStatus)) {
+      throw new BadRequestException("invalid reviewStatus: " + reviewStatus);
+    }
+  }
+
+  /**
+   * v0.0.82: record a review decision on a Task. {@code decision} must be APPROVED / REJECTED;
+   * when REJECTED, {@code reason} is required (≤500) and is persisted to {@code closeReason}.
+   * Reviewer assignment is left untouched.
+   */
+  @Transactional
+  public TaskDetail review(Long id, String decision, String reason) {
+    if (decision == null || !ReviewStatus.DECISIONS.contains(decision)) {
+      throw new BadRequestException("invalid decision: " + decision);
+    }
+    if (ReviewStatus.REJECTED.equals(decision) && (reason == null || reason.trim().isEmpty())) {
+      throw new BadRequestException("reason required for REJECTED");
+    }
+    Task t = getOrThrow(id);
+    t.setReviewStatus(decision);
+    if (ReviewStatus.REJECTED.equals(decision)) {
+      t.setCloseReason(reason);
+    }
     return enrich(repo.saveAndFlush(t));
   }
 
@@ -218,6 +253,8 @@ public class TaskService {
             .map(Task::getAssigneeUserId)
             .filter(Objects::nonNull)
             .collect(Collectors.toCollection(HashSet::new));
+    // v0.0.82: reviewers join the same user batch so reviewerName enriches without extra queries.
+    tasks.stream().map(Task::getReviewerUserId).filter(Objects::nonNull).forEach(userIds::add);
     Set<Long> sprintIds =
         tasks.stream()
             .map(Task::getSprintId)
@@ -289,6 +326,20 @@ public class TaskService {
     t.setPriority(req.getPriority());
     t.setDueDate(req.getDueDate());
     t.setCloseReason(req.getCloseReason());
+    // v0.0.82: reviewer fields are patch-like — only touch when client explicitly sent the key
+    // (mirrors Story v0.0.81 fix). Absent → keep original; explicit null → clear; value → replace.
+    if (req.isReviewerUserIdSet()) {
+      if (req.getReviewerUserId() != null && !userRepo.existsById(req.getReviewerUserId())) {
+        throw new BadRequestException("reviewer user not found: id=" + req.getReviewerUserId());
+      }
+      t.setReviewerUserId(req.getReviewerUserId());
+    }
+    if (req.isReviewStatusSet()) {
+      if (req.getReviewStatus() != null && !ReviewStatus.ALL.contains(req.getReviewStatus())) {
+        throw new BadRequestException("invalid reviewStatus: " + req.getReviewStatus());
+      }
+      t.setReviewStatus(req.getReviewStatus());
+    }
     // projectId / sprintId / storyId intentionally NOT touched — immutable after creation.
     return enrich(repo.saveAndFlush(t));
   }
@@ -316,6 +367,11 @@ public class TaskService {
                 dto.setAssigneeName(u.getName());
                 dto.setAssigneeLoginName(u.getLoginName());
               });
+    }
+    if (t.getReviewerUserId() != null) {
+      userRepo
+          .findById(t.getReviewerUserId())
+          .ifPresent(u -> dto.setReviewerName(u.getName()));
     }
     if (t.getSprintId() != null) {
       sprintRepo
@@ -365,6 +421,12 @@ public class TaskService {
       if (u != null) {
         dto.setAssigneeName(u.getName());
         dto.setAssigneeLoginName(u.getLoginName());
+      }
+    }
+    if (t.getReviewerUserId() != null) {
+      User rv = userMap.get(t.getReviewerUserId());
+      if (rv != null) {
+        dto.setReviewerName(rv.getName());
       }
     }
     if (t.getSprintId() != null) {
