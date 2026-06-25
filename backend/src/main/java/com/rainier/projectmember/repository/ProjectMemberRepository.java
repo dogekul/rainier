@@ -19,4 +19,10 @@ public interface ProjectMemberRepository
   boolean existsByProjectIdAndUserId(Long projectId, Long userId);
 
   List<ProjectMember> findByUserId(Long userId);
+
+  /** v0.0.78 (B5) — 项目的全部"项目管理员"行。 */
+  List<ProjectMember> findByProjectIdAndIsProjectAdminTrue(Long projectId);
+
+  /** v0.0.78 (B5) — 该用户作为"项目管理员"参与的全部项目。 */
+  List<ProjectMember> findByUserIdAndIsProjectAdminTrue(Long userId);
 }

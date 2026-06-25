@@ -41,6 +41,15 @@ public class ProjectMember extends BaseEntity {
   @Column(name = "joined_by", length = 32)
   private String joinedBy;
 
+  /**
+   * v0.0.78 (B5) — 项目级 admin 单标志位。
+   *
+   * <p>nullable=true：DDL update 友好（老行 NULL → false 等价）。Getter 通过 Boolean.TRUE.equals 把
+   * null 折叠成 false，避免 Boolean→boolean unboxing NPE。
+   */
+  @Column(name = "is_project_admin", nullable = true)
+  private Boolean isProjectAdmin;
+
   public Long getProjectId() {
     return projectId;
   }
@@ -79,5 +88,14 @@ public class ProjectMember extends BaseEntity {
 
   public void setJoinedBy(String joinedBy) {
     this.joinedBy = joinedBy;
+  }
+
+  /** v0.0.78 — null→false。 */
+  public Boolean getIsProjectAdmin() {
+    return Boolean.TRUE.equals(isProjectAdmin);
+  }
+
+  public void setIsProjectAdmin(Boolean isProjectAdmin) {
+    this.isProjectAdmin = isProjectAdmin;
   }
 }

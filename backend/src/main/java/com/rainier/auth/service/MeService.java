@@ -6,6 +6,7 @@ import com.rainier.auth.dto.MeResponse.MeProject;
 import com.rainier.auth.dto.MeResponse.MeRole;
 import com.rainier.project.domain.Project;
 import com.rainier.project.repository.ProjectRepository;
+import com.rainier.projectadmin.service.ProjectAdminService;
 import com.rainier.projectmember.domain.ProjectMember;
 import com.rainier.projectmember.repository.ProjectMemberRepository;
 import com.rainier.role.domain.Role;
@@ -40,18 +41,21 @@ public class MeService {
   private final RoleRepository roleRepo;
   private final ProjectRepository projectRepo;
   private final ProjectMemberRepository projectMemberRepo;
+  private final ProjectAdminService projectAdminService;
 
   public MeService(
       UserRepository userRepo,
       UserRoleRepository userRoleRepo,
       RoleRepository roleRepo,
       ProjectRepository projectRepo,
-      ProjectMemberRepository projectMemberRepo) {
+      ProjectMemberRepository projectMemberRepo,
+      ProjectAdminService projectAdminService) {
     this.userRepo = userRepo;
     this.userRoleRepo = userRoleRepo;
     this.roleRepo = roleRepo;
     this.projectRepo = projectRepo;
     this.projectMemberRepo = projectMemberRepo;
+    this.projectAdminService = projectAdminService;
   }
 
   public MeResponse forUsername(String username) {
@@ -59,7 +63,13 @@ public class MeService {
     if (user == null) {
       // Valid token but no matching User (e.g. the mock "system" auditor) — degrade, don't 500.
       return new MeResponse(
-          null, username, null, Collections.emptyList(), Collections.emptyList());
+          null,
+          username,
+          null,
+          Collections.<MeRole>emptyList(),
+          Collections.<MeProject>emptyList(),
+          "BASIC",
+          Collections.<Long>emptyList());
     }
     List<UserRole> assignments = userRoleRepo.findByUserId(user.getId());
 
@@ -124,12 +134,15 @@ public class MeService {
       }
     }
 
+    List<Long> adminProjectIds = projectAdminService.listAdminProjects(user.getId());
+
     return new MeResponse(
         user.getId(),
         username,
         user.getName(),
         roles,
         new ArrayList<>(projects.values()),
-        user.getAiAuthLevel());
+        user.getAiAuthLevel(),
+        adminProjectIds);
   }
 }

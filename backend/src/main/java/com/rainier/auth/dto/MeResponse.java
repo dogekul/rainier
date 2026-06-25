@@ -20,9 +20,12 @@ public class MeResponse {
   /** v0.0.69 (A5): 当前用户的 AI 授权级别 — BASIC / INTERMEDIATE / DEPTH，未设置默认 "BASIC"。 */
   private final String aiAuthLevel;
 
+  /** v0.0.78 (B5): 该用户作为项目管理员的全部 projectId（可能为空 list，永不 null）。 */
+  private final List<Long> adminProjectIds;
+
   public MeResponse(
       Long id, String username, String name, List<MeRole> roles, List<MeProject> projects) {
-    this(id, username, name, roles, projects, "BASIC");
+    this(id, username, name, roles, projects, "BASIC", java.util.Collections.<Long>emptyList());
   }
 
   public MeResponse(
@@ -32,12 +35,25 @@ public class MeResponse {
       List<MeRole> roles,
       List<MeProject> projects,
       String aiAuthLevel) {
+    this(id, username, name, roles, projects, aiAuthLevel, java.util.Collections.<Long>emptyList());
+  }
+
+  public MeResponse(
+      Long id,
+      String username,
+      String name,
+      List<MeRole> roles,
+      List<MeProject> projects,
+      String aiAuthLevel,
+      List<Long> adminProjectIds) {
     this.id = id;
     this.username = username;
     this.name = name;
     this.roles = roles;
     this.projects = projects;
     this.aiAuthLevel = aiAuthLevel == null ? "BASIC" : aiAuthLevel;
+    this.adminProjectIds =
+        adminProjectIds == null ? java.util.Collections.<Long>emptyList() : adminProjectIds;
   }
 
   public Long getId() {
@@ -62,6 +78,10 @@ public class MeResponse {
 
   public String getAiAuthLevel() {
     return aiAuthLevel;
+  }
+
+  public List<Long> getAdminProjectIds() {
+    return adminProjectIds;
   }
 
   /** One role assignment of the current user (role + the project it applies to, if any). */
