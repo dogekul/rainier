@@ -16,6 +16,7 @@ import {
   type LinkType,
 } from '../../api/demandRequirement';
 import { usePaginated } from '../../hooks/usePaginated';
+import { DR_LINK_TYPE_LABELS } from '../../constants/labels';
 
 const LINK_TYPES: LinkType[] = ['DERIVED', 'RELATED'];
 
@@ -49,7 +50,7 @@ export function LinksPage() {
   const columns: TableColumn<DemandRequirementLink>[] = [
     { key: 'demandId', title: '诉求 ID', render: (r) => r.demandId },
     { key: 'requirementId', title: '需求 ID', render: (r) => r.requirementId },
-    { key: 'linkType', title: '类型', render: (r) => <StatusChip status={r.linkType} /> },
+    { key: 'linkType', title: '类型', render: (r) => <StatusChip status={r.linkType} label={DR_LINK_TYPE_LABELS[r.linkType]} tier={r.linkType === 'DERIVED' ? 'yellow' : 'gray'} /> },
     {
       key: 'actions',
       title: '操作',
@@ -127,7 +128,7 @@ export function LinksPage() {
           >
             {LINK_TYPES.map((t) => (
               <option key={t} value={t}>
-                {t}
+                {DR_LINK_TYPE_LABELS[t] ?? t}
               </option>
             ))}
           </select>

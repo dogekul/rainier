@@ -2,8 +2,10 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { DashboardCard, EmptyState, StatTiles, StatusChip } from '../../components/board';
 import { getInbox, type Inbox } from '../../api/inbox';
-import { PRIORITY_LABELS, type Priority } from '../../api/demand';
+import { PRIORITY_LABELS, type DemandStatus, type Priority } from '../../api/demand';
 import { REQUIREMENT_STATUS_LABELS, type RequirementStatus } from '../../api/requirement';
+import { DEMAND_STATUS_LABELS } from '../../constants/labels';
+import { formatDate } from '../../utils/formatDate';
 
 /**
  * v0.0.42 — PO 需求收件箱 (my inbox). Consumes GET /api/me/inbox: unconverted demands awaiting triage
@@ -63,8 +65,8 @@ export function InboxPage() {
                   <td style={{ padding: '6px 8px' }}>
                     <Link to="/pm/demands">{d.title}</Link>
                   </td>
-                  <td style={{ padding: '6px 8px', width: 120, color: 'var(--rainier-color-text-2)' }}>
-                    {d.status}
+                  <td style={{ padding: '6px 8px', width: 120 }}>
+                    <StatusChip status={d.status} label={DEMAND_STATUS_LABELS[d.status as DemandStatus] ?? d.status} />
                   </td>
                 </tr>
               ))}
@@ -101,7 +103,7 @@ export function InboxPage() {
                     {PRIORITY_LABELS[r.priority as Priority] ?? r.priority}
                   </td>
                   <td style={{ padding: '6px 8px', width: 120, color: 'var(--rainier-color-text-2)' }}>
-                    {r.expectedDate ?? ''}
+                    {formatDate(r.expectedDate)}
                   </td>
                 </tr>
               ))}

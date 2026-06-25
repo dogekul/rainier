@@ -8,6 +8,7 @@ import { Pagination } from '../../components/ui/Pagination';
 import { Table, type TableColumn } from '../../components/ui/Table';
 import { StatusChip } from '../../components/board';
 import { PROJECT_STATUS_LABELS } from '../../constants/labels';
+import { formatDate } from '../../utils/formatDate';
 import {
   createProject,
   deleteProject,
@@ -135,8 +136,8 @@ export function ProjectsPage() {
       title: '负责人',
       render: (r) => `${r.ownerName ?? ''}（${r.ownerLoginName ?? ''}）`,
     },
-    { key: 'startDate', title: '开始', render: (r) => r.startDate ?? '—' },
-    { key: 'endDate', title: '结束', render: (r) => r.endDate ?? '—' },
+    { key: 'startDate', title: '开始', render: (r) => formatDate(r.startDate) },
+    { key: 'endDate', title: '结束', render: (r) => formatDate(r.endDate) },
     { key: 'enabled', title: '启用', render: (r) => (r.enabled ? '是' : '否') },
     {
       key: 'actions',

@@ -9,6 +9,7 @@ import {
   type Milestone,
   type MilestoneStatus,
 } from '../../api/milestone';
+import { formatDate } from '../../utils/formatDate';
 
 const STATUS_OPTIONS: MilestoneStatus[] = ['PLANNED', 'REACHED', 'MISSED'];
 const STATUS_LABELS: Record<MilestoneStatus, string> = {
@@ -159,7 +160,7 @@ export function MilestonesPanel({ projectId }: MilestonesPanelProps) {
           >
             <span style={{ minWidth: 160 }}>{m.name}</span>
             <span>{STATUS_LABELS[m.status]}</span>
-            <span style={{ color: 'var(--rainier-color-text-2)' }}>{m.targetDate}</span>
+            <span style={{ color: 'var(--rainier-color-text-2)' }}>{formatDate(m.targetDate)}</span>
             <Button type="button" variant="secondary" onClick={() => startEdit(m)}>
               编辑
             </Button>

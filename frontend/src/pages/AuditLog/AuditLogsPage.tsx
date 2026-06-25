@@ -6,6 +6,7 @@ import { Pagination } from '../../components/ui/Pagination';
 import { Table, type TableColumn } from '../../components/ui/Table';
 import { listAuditLogs, type AuditLog } from '../../api/auditLog';
 import { usePaginated } from '../../hooks/usePaginated';
+import { formatDateTime } from '../../utils/formatDate';
 
 const ACTION_OPTIONS = ['', 'CREATE', 'UPDATE', 'DELETE'] as const;
 
@@ -36,7 +37,7 @@ export function AuditLogsPage() {
     { key: 'entityId', title: '实体ID', render: (a) => (a.entityId ?? '—').toString() },
     { key: 'action', title: '动作', render: (a) => a.action },
     { key: 'summary', title: '摘要', render: (a) => a.summary ?? '—' },
-    { key: 'createTime', title: '时间', render: (a) => a.createTime ?? '—' },
+    { key: 'createTime', title: '时间', render: (a) => formatDateTime(a.createTime) },
   ];
 
   return (

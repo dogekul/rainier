@@ -1,0 +1,48 @@
+/* v0.0.60 — ProductModuleTreeView: extracted inline styles. */
+
+.module-tree {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.module-tree ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.module-tree-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 8px;
+  border-bottom: 1px solid var(--rainier-border);
+  transition: background 0.12s;
+}
+.module-tree-row:hover {
+  background: var(--rainier-bg-hover);
+}
+.module-tree-row[data-depth='0'] .module-tree-name {
+  font-weight: 600;
+}
+.module-tree-code {
+  font-family: SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  color: var(--rainier-color-text-3);
+  white-space: nowrap;
+}
+.module-tree-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.module-tree-meta {
+  font-size: 12px;
+  color: var(--rainier-color-text-3);
+  white-space: nowrap;
+}
+.module-tree-actions {
+  margin-left: auto;
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}

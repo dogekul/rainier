@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Button } from './ui/Button';
 import { Input } from './ui/Input';
 import { StatusChip } from './board';
+import './LinkPanel.css';
 import {
   createLink,
   deleteLink,
@@ -71,28 +72,27 @@ export function LinkPanel({ targetType, targetId }: LinkPanelProps) {
   };
 
   return (
-    <div data-testid="link-panel" style={{ marginTop: 12 }}>
-      <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 6 }}>
-        关联产物（{links.length}）
-      </div>
+    <div className="link-panel" data-testid="link-panel">
+      <div className="link-panel-title">关联产物（{links.length}）</div>
       {links.length > 0 && (
-        <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
+        <ul className="link-panel-list">
           {links.map((l) => (
-            <li
-              key={l.id}
-              data-testid={`link-item-${l.id}`}
-              style={{ display: 'flex', alignItems: 'center', gap: 8 }}
-            >
+            <li key={l.id} className="link-panel-item" data-testid={`link-item-${l.id}`}>
               <StatusChip status="" tier="gray" label={LINK_TYPE_LABELS[l.linkType]} />
-              <a href={l.url} target="_blank" rel="noreferrer" style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <a
+                href={l.url}
+                target="_blank"
+                rel="noreferrer"
+                className="link-panel-url"
+              >
                 {l.label || l.url}
               </a>
               <button
                 type="button"
+                className="link-panel-delete"
                 data-testid={`link-delete-${l.id}`}
                 onClick={() => void remove(l.id)}
                 aria-label="删除关联"
-                style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--rainier-color-text-3)' }}
               >
                 ✕
               </button>
@@ -100,7 +100,7 @@ export function LinkPanel({ targetType, targetId }: LinkPanelProps) {
           ))}
         </ul>
       )}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 8 }}>
+      <div className="link-panel-add">
         <select
           className="rainier-select"
           data-testid="link-add-type"

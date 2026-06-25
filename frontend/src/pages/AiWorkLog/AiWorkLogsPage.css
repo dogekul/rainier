@@ -1,0 +1,50 @@
+/* v0.0.60 — AI work log list: keep agent/summary/actions on a single row, evidence below muted. */
+
+.ai-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.ai-row {
+  padding: 10px 8px;
+  border-bottom: 1px solid #f2f3f5;
+  transition: background 0.12s;
+}
+.ai-row:last-child {
+  border-bottom: none;
+}
+.ai-row:hover {
+  background: var(--rainier-bg-hover);
+}
+.ai-row-main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: nowrap;
+  min-width: 0;
+}
+.ai-row-agent {
+  font-size: 12px;
+  color: var(--rainier-color-text-3);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.ai-row-summary {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--rainier-color-text-1);
+}
+.ai-row-decider {
+  color: var(--rainier-color-text-2);
+  font-size: 12px;
+  flex-shrink: 0;
+}
+.ai-row-evidence {
+  font-size: 12px;
+  color: var(--rainier-color-text-2);
+  margin-top: 4px;
+  padding-left: 8px;
+}

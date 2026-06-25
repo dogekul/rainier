@@ -8,6 +8,7 @@
  * Keep alphabetical inside each map; one map per enum type.
  */
 
+import type { DemandStatus } from '../api/demand';
 import type { OrganizationType } from '../api/organization';
 import type { PositionCategory } from '../api/position';
 import type { ProductStatus } from '../api/product';
@@ -55,4 +56,18 @@ export const POSITION_CATEGORY_LABELS: Record<PositionCategory, string> = {
 export const USER_ORG_ROLE_LABELS: Record<UserOrgRole, string> = {
   MEMBER: '成员',
   HEAD: '负责人',
+};
+
+export const DEMAND_STATUS_LABELS: Record<DemandStatus, string> = {
+  PENDING: '待评审',
+  IN_REVIEW: '评审中',
+  CONVERTED: '已转化',
+  DONE: '已完成',
+  CLOSED: '已关闭',
+};
+
+/** v0.0.60 — demand-requirement link types (NOT api/link.ts which is entity-link with different semantics). */
+export const DR_LINK_TYPE_LABELS: Record<'DERIVED' | 'RELATED', string> = {
+  DERIVED: '派生',
+  RELATED: '关联',
 };

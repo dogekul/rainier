@@ -22,6 +22,7 @@ import {
 } from '../../api/demand';
 import { listUsers, type User } from '../../api/user';
 import { usePaginated } from '../../hooks/usePaginated';
+import { DEMAND_STATUS_LABELS } from '../../constants/labels';
 
 const STATUSES: DemandStatus[] = ['PENDING', 'IN_REVIEW', 'CONVERTED', 'DONE', 'CLOSED'];
 const PRIORITIES: Priority[] = ['URGENT', 'HIGH', 'MEDIUM', 'LOW', 'LOWEST'];
@@ -97,7 +98,7 @@ export function DemandsPage() {
   const columns: TableColumn<Demand>[] = [
     { key: 'title', title: '主题', render: (r) => r.title },
     { key: 'submitterUserId', title: '提交人', render: (r) => r.submitterUserId },
-    { key: 'status', title: '状态', render: (r) => <StatusChip status={r.status} /> },
+    { key: 'status', title: '状态', render: (r) => <StatusChip status={r.status} label={DEMAND_STATUS_LABELS[r.status]} /> },
     { key: 'priority', title: '优先级', render: (r) => PRIORITY_LABELS[r.priority] ?? r.priority },
     { key: 'source', title: '来源', render: (r) => r.source },
     {
@@ -187,7 +188,7 @@ export function DemandsPage() {
           >
             {STATUSES.map((s) => (
               <option key={s} value={s}>
-                {s}
+                {DEMAND_STATUS_LABELS[s] ?? s}
               </option>
             ))}
           </select>

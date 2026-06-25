@@ -1,0 +1,48 @@
+/* v0.0.60 — LinkPanel: extracted inline styles into a themable file. */
+
+.link-panel {
+  margin-top: 12px;
+}
+.link-panel-title {
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+.link-panel-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.link-panel-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.link-panel-url {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.link-panel-delete {
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: var(--rainier-color-text-3);
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: background 0.12s, color 0.12s;
+}
+.link-panel-delete:hover {
+  background: var(--rainier-bg-hover);
+  color: var(--rainier-status-red);
+}
+.link-panel-add {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+}

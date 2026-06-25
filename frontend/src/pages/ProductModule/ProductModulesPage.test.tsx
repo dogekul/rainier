@@ -89,9 +89,9 @@ describe('ProductModulesPage', () => {
     expect(node4.parentElement).toBe(tree);
 
     // Depth indent increases (paddingLeft 8 + depth*24).
-    const row1 = node1.querySelector('.rainier-module-tree-row') as HTMLElement;
-    const row2 = node2.querySelector('.rainier-module-tree-row') as HTMLElement;
-    const row3 = node3.querySelector('.rainier-module-tree-row') as HTMLElement;
+    const row1 = node1.querySelector('.module-tree-row') as HTMLElement;
+    const row2 = node2.querySelector('.module-tree-row') as HTMLElement;
+    const row3 = node3.querySelector('.module-tree-row') as HTMLElement;
     expect(row1.style.paddingLeft).toBe('8px');
     expect(row2.style.paddingLeft).toBe('32px');
     expect(row3.style.paddingLeft).toBe('56px');

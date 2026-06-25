@@ -1,4 +1,5 @@
 import { Fragment, type ReactNode } from 'react';
+import './MarkdownView.css';
 
 /**
  * Minimal, dependency-free, XSS-safe Markdown → React renderer (v0.0.45). Supports headings (# ## ###),
@@ -18,14 +19,7 @@ function renderInline(text: string): ReactNode[] {
     if (tok.startsWith('**')) {
       out.push(<strong key={k++}>{tok.slice(2, -2)}</strong>);
     } else if (tok.startsWith('`')) {
-      out.push(
-        <code
-          key={k++}
-          style={{ background: 'var(--rainier-bg-hover)', padding: '0 4px', borderRadius: 3 }}
-        >
-          {tok.slice(1, -1)}
-        </code>,
-      );
+      out.push(<code key={k++}>{tok.slice(1, -1)}</code>);
     } else {
       out.push(<em key={k++}>{tok.slice(1, -1)}</em>);
     }
@@ -60,11 +54,7 @@ export function MarkdownView({ content, testId }: MarkdownViewProps) {
     if (h) {
       const level = h[1].length;
       const Tag = (['h3', 'h4', 'h5'] as const)[level - 1];
-      blocks.push(
-        <Tag key={key++} style={{ margin: '8px 0 4px', fontSize: 16 - level }}>
-          {renderInline(h[2])}
-        </Tag>,
-      );
+      blocks.push(<Tag key={key++}>{renderInline(h[2])}</Tag>);
       i++;
       continue;
     }
@@ -74,11 +64,7 @@ export function MarkdownView({ content, testId }: MarkdownViewProps) {
         items.push(<li key={items.length}>{renderInline(lines[i].replace(ULI, ''))}</li>);
         i++;
       }
-      blocks.push(
-        <ul key={key++} style={{ margin: '4px 0', paddingLeft: 18 }}>
-          {items}
-        </ul>,
-      );
+      blocks.push(<ul key={key++}>{items}</ul>);
       continue;
     }
     if (OLI.test(line)) {
@@ -87,11 +73,7 @@ export function MarkdownView({ content, testId }: MarkdownViewProps) {
         items.push(<li key={items.length}>{renderInline(lines[i].replace(OLI, ''))}</li>);
         i++;
       }
-      blocks.push(
-        <ol key={key++} style={{ margin: '4px 0', paddingLeft: 18 }}>
-          {items}
-        </ol>,
-      );
+      blocks.push(<ol key={key++}>{items}</ol>);
       continue;
     }
     const para: string[] = [];
@@ -106,7 +88,7 @@ export function MarkdownView({ content, testId }: MarkdownViewProps) {
       i++;
     }
     blocks.push(
-      <p key={key++} style={{ margin: '4px 0' }}>
+      <p key={key++}>
         {para.map((l, idx) => (
           <Fragment key={idx}>
             {idx > 0 ? <br /> : null}
@@ -117,7 +99,7 @@ export function MarkdownView({ content, testId }: MarkdownViewProps) {
     );
   }
   return (
-    <div data-testid={testId} className="rainier-markdown" style={{ fontSize: 13, lineHeight: 1.6 }}>
+    <div data-testid={testId} className="rainier-markdown">
       {blocks}
     </div>
   );

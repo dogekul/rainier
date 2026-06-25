@@ -13,6 +13,7 @@ import {
 } from '../../api/product';
 import { usePaginated } from '../../hooks/usePaginated';
 import { StatusChip } from '../../components/board';
+import { PRODUCT_STATUS_LABELS } from '../../constants/labels';
 import { ProductEditDrawer } from './ProductEditDrawer';
 
 export function ProductsPage() {
@@ -30,7 +31,7 @@ export function ProductsPage() {
   const columns: TableColumn<Product>[] = [
     { key: 'code', title: '编码', render: (p) => p.code },
     { key: 'name', title: '名称', render: (p) => p.name },
-    { key: 'status', title: '状态', render: (p) => <StatusChip status={p.status} /> },
+    { key: 'status', title: '状态', render: (p) => <StatusChip status={p.status} label={PRODUCT_STATUS_LABELS[p.status]} /> },
     {
       key: 'owner',
       title: '负责人',

@@ -10,6 +10,7 @@ import {
   type AiWorkLogStatus,
 } from '../../api/aiWorkLog';
 import type { StatusTier } from '../../utils/board';
+import './AiWorkLogsPage.css';
 
 const STATUS_FILTERS: { value: '' | AiWorkLogStatus; label: string }[] = [
   { value: '', label: '全部' },
@@ -123,62 +124,50 @@ export function AiWorkLogsPage() {
         {!loading && rows.length === 0 ? (
           <EmptyState message="暂无 AI 工作日志。" testId="ai-empty" />
         ) : (
-          <table className="rainier-list-table">
-            <tbody>
-              {rows.map((r) => (
-                <tr key={r.id} data-testid={`ai-row-${r.id}`}>
-                  <td style={{ padding: '6px 8px', width: 96 }}>
-                    <StatusChip
-                      status={r.status}
-                      tier={STATUS_TIER[r.status]}
-                      label={AI_STATUS_LABELS[r.status]}
-                    />
-                  </td>
-                  <td style={{ padding: '6px 8px' }}>
-                    <div>
-                      <span style={{ color: 'var(--rainier-color-text-2)', fontSize: 12 }}>
-                        {r.agentType} · {r.action}
-                      </span>
-                    </div>
-                    <div>{r.summary}</div>
-                    <div style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }}>
-                      证据：{r.evidence}
-                      {r.status === 'REJECTED' && r.rejectReason ? ` · 驳回：${r.rejectReason}` : ''}
-                    </div>
-                  </td>
-                  <td style={{ padding: '6px 8px', width: 150, textAlign: 'right' }}>
-                    {r.status === 'PROPOSED' ? (
-                      <>
-                        <Button
-                          type="button"
-                          variant="primary"
-                          disabled={busyId === r.id}
-                          onClick={() => void accept(r.id)}
-                          data-testid={`ai-accept-${r.id}`}
-                        >
-                          采纳
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="secondary"
-                          style={{ marginLeft: 6 }}
-                          disabled={busyId === r.id}
-                          onClick={() => openReject(r.id)}
-                          data-testid={`ai-reject-${r.id}`}
-                        >
-                          驳回
-                        </Button>
-                      </>
-                    ) : (
-                      <span style={{ color: 'var(--rainier-color-text-2)', fontSize: 12 }}>
-                        {r.decidedBy ?? ''}
-                      </span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <div className="ai-list">
+            {rows.map((r) => (
+              <div key={r.id} className="ai-row" data-testid={`ai-row-${r.id}`}>
+                <div className="ai-row-main">
+                  <StatusChip
+                    status={r.status}
+                    tier={STATUS_TIER[r.status]}
+                    label={AI_STATUS_LABELS[r.status]}
+                  />
+                  <span className="ai-row-agent">{r.agentType} · {r.action}</span>
+                  <span className="ai-row-summary">{r.summary}</span>
+                  <span className="rainier-spacer" />
+                  {r.status === 'PROPOSED' ? (
+                    <>
+                      <Button
+                        type="button"
+                        variant="primary"
+                        disabled={busyId === r.id}
+                        onClick={() => void accept(r.id)}
+                        data-testid={`ai-accept-${r.id}`}
+                      >
+                        采纳
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        disabled={busyId === r.id}
+                        onClick={() => openReject(r.id)}
+                        data-testid={`ai-reject-${r.id}`}
+                      >
+                        驳回
+                      </Button>
+                    </>
+                  ) : (
+                    <span className="ai-row-decider">{r.decidedBy ?? ''}</span>
+                  )}
+                </div>
+                <div className="ai-row-evidence">
+                  证据：{r.evidence}
+                  {r.status === 'REJECTED' && r.rejectReason ? ` · 驳回：${r.rejectReason}` : ''}
+                </div>
+              </div>
+            ))}
+          </div>
         )}
       </DashboardCard>
 

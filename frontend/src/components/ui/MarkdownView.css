@@ -1,0 +1,33 @@
+/* v0.0.60 — MarkdownView: extracted from inline styles into a single themable file. */
+
+.rainier-markdown {
+  font-size: 13px;
+  line-height: 1.6;
+}
+.rainier-markdown > h3 {
+  margin: 8px 0 4px;
+  font-size: 15px;
+}
+.rainier-markdown > h4 {
+  margin: 8px 0 4px;
+  font-size: 14px;
+}
+.rainier-markdown > h5 {
+  margin: 8px 0 4px;
+  font-size: 13px;
+}
+.rainier-markdown > p {
+  margin: 4px 0;
+}
+.rainier-markdown > ul,
+.rainier-markdown > ol {
+  margin: 4px 0;
+  padding-left: 18px;
+}
+.rainier-markdown code {
+  background: var(--rainier-bg-hover);
+  padding: 0 4px;
+  border-radius: 3px;
+  font-family: SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+}

@@ -6,6 +6,7 @@ import {
   type AuditSummary,
   type ResidualPermission,
 } from '../../api/compliance';
+import { formatDateTime } from '../../utils/formatDate';
 
 /**
  * v0.0.41 — 合规仪表盘 (admin compliance dashboard). Consumes GET /api/compliance/audit-summary +
@@ -111,7 +112,7 @@ export function CompliancePage() {
                   {a.entityId != null ? `#${a.entityId}` : ''}
                 </td>
                 <td style={{ padding: '6px 8px', color: 'var(--rainier-color-text-2)', width: 200 }}>
-                  {a.createTime ?? ''}
+                  {formatDateTime(a.createTime)}
                 </td>
               </tr>
             ))}

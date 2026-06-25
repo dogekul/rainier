@@ -1,6 +1,8 @@
 import type { ProductModule } from '../../api/productModule';
 import { Button } from '../../components/ui/Button';
 import { StatusChip } from '../../components/board';
+import { PRODUCT_MODULE_STATUS_LABELS } from '../../constants/labels';
+import './ProductModuleTreeView.css';
 
 export interface ModuleTreeNode extends ProductModule {
   children: ModuleTreeNode[];
@@ -35,26 +37,18 @@ function TreeNodeRow({ node, depth, onEdit, onDelete }: TreeNodeRowProps) {
   return (
     <li data-testid={`module-tree-node-${node.id}`}>
       <div
-        className="rainier-module-tree-row"
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 12,
-          padding: '6px 8px',
-          paddingLeft: 8 + depth * 24,
-          borderBottom: '1px solid var(--rainier-color-border, #eee)',
-        }}
+        className="module-tree-row"
+        data-depth={depth}
+        style={{ paddingLeft: 8 + depth * 24 }}
       >
-        <span style={{ fontFamily: 'monospace', fontSize: 12 }}>{node.code}</span>
-        <span style={{ fontWeight: depth === 0 ? 600 : 400 }}>{node.name}</span>
-        <StatusChip status={node.status} />
-        <span style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }}>
-          {node.productName ? `${node.productName}` : ''}
-        </span>
-        <span style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }}>
+        <span className="module-tree-code">{node.code}</span>
+        <span className="module-tree-name">{node.name}</span>
+        <StatusChip status={node.status} label={PRODUCT_MODULE_STATUS_LABELS[node.status]} />
+        <span className="module-tree-meta">{node.productName ?? ''}</span>
+        <span className="module-tree-meta">
           {node.ownerName ? `${node.ownerName}（${node.ownerLoginName ?? ''}）` : '—'}
         </span>
-        <span style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
+        <span className="module-tree-actions">
           <Button type="button" variant="secondary" onClick={() => onEdit(node)}>
             编辑
           </Button>
@@ -64,7 +58,7 @@ function TreeNodeRow({ node, depth, onEdit, onDelete }: TreeNodeRowProps) {
         </span>
       </div>
       {node.children.length > 0 && (
-        <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+        <ul>
           {node.children.map((child) => (
             <TreeNodeRow
               key={child.id}
@@ -90,10 +84,7 @@ export interface ProductModuleTreeViewProps {
 export function ProductModuleTreeView({ modules, onEdit, onDelete }: ProductModuleTreeViewProps) {
   const roots = buildModuleTree(modules);
   return (
-    <ul
-      data-testid="product-module-tree"
-      style={{ listStyle: 'none', margin: 0, padding: 0 }}
-    >
+    <ul data-testid="product-module-tree" className="module-tree">
       {roots.map((root) => (
         <TreeNodeRow key={root.id} node={root} depth={0} onEdit={onEdit} onDelete={onDelete} />
       ))}

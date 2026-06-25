@@ -33,5 +33,5 @@
 
 .rainier-login-error {
   font-size: 13px;
-  color: #F54A45;
+  color: var(--rainier-status-red);
 }
