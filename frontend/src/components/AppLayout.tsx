@@ -44,6 +44,7 @@ export const navGroups: NavGroup[] = [
     items: [
       { to: '/portfolio', label: '项目地图', icon: 'map' },
       { to: '/reviews', label: '评审看板', icon: 'check' },
+      { to: '/metrics', label: '度量看板', icon: 'gauge' },
     ],
   },
   {

@@ -10,6 +10,7 @@ import TeamLeadPage from './pages/TeamLead';
 import PortfolioPage from './pages/Portfolio';
 import ProfilePage from './pages/Profile';
 import ReviewsPage from './pages/Reviews';
+import MetricsPage from './pages/Metrics';
 import Workbench from './pages/Workbench';
 import Login from './pages/Login';
 import AuditLogsPage from './pages/AuditLog';
@@ -55,6 +56,7 @@ export function AppRoutes() {
           <Route path="/team" element={<TeamLeadPage />} />
           <Route path="/portfolio" element={<PortfolioPage />} />
           <Route path="/reviews" element={<ReviewsPage />} />
+          <Route path="/metrics" element={<MetricsPage />} />
           <Route path="/ai/work-logs" element={<AiWorkLogsPage />} />
           <Route path="/ai/errors" element={<AiErrorsPage />} />
           <Route path="/crm/customers" element={<CustomerPage />} />
