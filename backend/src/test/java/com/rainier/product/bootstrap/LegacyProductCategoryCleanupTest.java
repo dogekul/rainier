@@ -69,10 +69,12 @@ class LegacyProductCategoryCleanupTest {
     // v0.0.45 added rainier_opportunity_artifact → 24, + rainier_customer → 25 tables.
     // v0.0.58 added rainier_operation_issue → 26 tables.
     // v0.0.64 added rainier_organization_pmo + rainier_project_member → 28 tables.
-    assertEquals(28, rows.size(), "schema must have exactly 28 rainier_* tables: " + rows);
+    // v0.0.65 added rainier_event (flywheel event-pipeline base) → 29 tables.
+    assertEquals(29, rows.size(), "schema must have exactly 29 rainier_* tables: " + rows);
     assertTrue(rows.contains("rainier_operation_issue"));
     assertTrue(rows.contains("rainier_organization_pmo"));
     assertTrue(rows.contains("rainier_project_member"));
+    assertTrue(rows.contains("rainier_event"));
     assertFalse(rows.contains("rainier_product_category"));
     assertTrue(rows.contains("rainier_product"));
     assertTrue(rows.contains("rainier_product_module"));
