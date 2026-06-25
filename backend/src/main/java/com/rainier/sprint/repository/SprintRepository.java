@@ -20,4 +20,7 @@ public interface SprintRepository
 
   /** v0.0.14: all sprints under a requirement (for the requirement→features 2-hop rollup). */
   List<Sprint> findByRequirementId(Long requirementId);
+
+  /** v0.0.70 risk-radar — sprints fanned out by parent requirement ids. */
+  List<Sprint> findByRequirementIdIn(java.util.Collection<Long> requirementIds);
 }

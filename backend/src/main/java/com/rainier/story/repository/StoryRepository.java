@@ -2,6 +2,7 @@
 package com.rainier.story.repository;
 
 import com.rainier.story.domain.Story;
+import java.util.Collection;
 import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
@@ -27,4 +28,7 @@ public interface StoryRepository
    * = 0)} auto-applies, so soft-deleted stories are excluded.
    */
   List<Story> findByReviewerUserIdAndReviewStatus(Long reviewerUserId, String reviewStatus);
+
+  /** v0.0.70 risk-radar — stories scoped to a portfolio of projects (del_flag=0 via @Where). */
+  List<Story> findByProjectIdIn(Collection<Long> projectIds);
 }

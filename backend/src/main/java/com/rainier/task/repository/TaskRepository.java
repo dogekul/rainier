@@ -22,4 +22,7 @@ public interface TaskRepository extends JpaRepository<Task, Long>, JpaSpecificat
 
   /** v0.0.40 me-profile — count tasks assigned to a user (del_flag=0 via @Where). */
   long countByAssigneeUserId(Long assigneeUserId);
+
+  /** v0.0.70 risk-radar — active tasks for a set of sprints. */
+  List<Task> findBySprintIdIn(Collection<Long> sprintIds);
 }
