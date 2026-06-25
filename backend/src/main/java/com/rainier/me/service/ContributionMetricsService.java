@@ -143,7 +143,7 @@ public class ContributionMetricsService {
    * Monday 00:00:00 UTC. Pure — package-private so tests can freeze time.
    */
   static Instant weekStartUtc(Instant now, int weeksBack) {
-    LocalDate today = LocalDate.ofInstant(now, ZoneOffset.UTC);
+    LocalDate today = LocalDateTime.ofInstant(now, ZoneOffset.UTC).toLocalDate();
     int delta = today.getDayOfWeek().getValue() - DayOfWeek.MONDAY.getValue(); // 0..6
     LocalDate monday = today.minusDays(delta + 7L * weeksBack);
     return monday.atStartOfDay(ZoneOffset.UTC).toInstant();
