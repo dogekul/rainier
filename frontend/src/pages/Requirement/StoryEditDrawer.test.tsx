@@ -94,6 +94,89 @@ describe('StoryEditDrawer', () => {
     expect(body.ownerUserId).toBe(2);
   });
 
+  /** TC-SRU-004 v0.0.81: 编辑模式 reviewer 未改 → updateStory body 不含 reviewerUserId key. */
+  it('omits reviewerUserId key when user did not touch reviewer (TC-SRU-004)', async () => {
+    const onUpdate = vi.fn();
+    render(
+      <StoryEditDrawer
+        open={true}
+        sprintId={10}
+        sprintCode="SPR-A"
+        sprintName="Phase 1"
+        requirementCode="REQ-42"
+        requirementTitle="登录流程"
+        editing={{
+          id: 99,
+          code: 'STR-99',
+          title: 'X',
+          status: 'DRAFT',
+          priority: 'MEDIUM',
+          sprintId: 10,
+          requirementId: 42,
+          ownerUserId: 1,
+          reviewerUserId: 2,
+          reviewStatus: 'PENDING',
+        }}
+        onClose={vi.fn()}
+        onCreate={vi.fn()}
+        onUpdate={onUpdate}
+      />,
+    );
+    await waitFor(() => {
+      const sel = screen.getByTestId('story-reviewer-select') as HTMLSelectElement;
+      expect(sel.value).toBe('2');
+    });
+    expect(screen.getByTestId('story-review-status-chip')).toHaveTextContent('PENDING');
+    fireEvent.click(screen.getByRole('button', { name: '保存' }));
+    await waitFor(() => {
+      expect(onUpdate).toHaveBeenCalledTimes(1);
+    });
+    const [id, body] = onUpdate.mock.calls[0];
+    expect(id).toBe(99);
+    // reviewer was NOT touched → key absent in body (so backend keeps existing reviewer).
+    expect('reviewerUserId' in body).toBe(false);
+  });
+
+  /** TC-SRU-004 v0.0.81: 用户改 reviewer 为（无）→ updateStory body.reviewerUserId === null. */
+  it('sends explicit null when user clears reviewer (TC-SRU-004)', async () => {
+    const onUpdate = vi.fn();
+    render(
+      <StoryEditDrawer
+        open={true}
+        sprintId={10}
+        sprintCode="SPR-A"
+        sprintName="Phase 1"
+        requirementCode="REQ-42"
+        requirementTitle="登录流程"
+        editing={{
+          id: 99,
+          code: 'STR-99',
+          title: 'X',
+          status: 'DRAFT',
+          priority: 'MEDIUM',
+          sprintId: 10,
+          requirementId: 42,
+          ownerUserId: 1,
+          reviewerUserId: 2,
+          reviewStatus: 'PENDING',
+        }}
+        onClose={vi.fn()}
+        onCreate={vi.fn()}
+        onUpdate={onUpdate}
+      />,
+    );
+    await waitFor(() => {
+      expect(screen.getByTestId('story-reviewer-select')).toBeInTheDocument();
+    });
+    fireEvent.change(screen.getByTestId('story-reviewer-select'), { target: { value: '' } });
+    fireEvent.click(screen.getByRole('button', { name: '保存' }));
+    await waitFor(() => {
+      expect(onUpdate).toHaveBeenCalledTimes(1);
+    });
+    const [, body] = onUpdate.mock.calls[0];
+    expect(body.reviewerUserId).toBeNull();
+  });
+
   /** v0.0.9 form-error parity (Code-M7 family): missing owner shows error instead of silent no-op. */
   it('shows a form error when owner is missing', async () => {
     // Reset auth store so default owner selection picks nothing.

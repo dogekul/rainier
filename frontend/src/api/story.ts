@@ -37,6 +37,10 @@ export interface Story {
   /** v0.0.9 enrichment — backend joins User. */
   ownerName?: string | null;
   ownerLoginName?: string | null;
+  /** v0.0.39 review fields — exposed to the编辑 UI as of v0.0.81. */
+  reviewerUserId?: number | null;
+  reviewStatus?: 'PENDING' | 'APPROVED' | 'REJECTED' | null;
+  reviewerName?: string | null;
   closeReason?: string | null;
   createBy?: string;
   createTime?: string;
@@ -68,6 +72,13 @@ export interface StoryUpdate {
   complexity?: Complexity;
   /** v0.0.9: owner IS mutable (sibling of v0.0.8 Decision 6b). */
   ownerUserId: number;
+  /**
+   * v0.0.81: optional reviewer reassignment. Patch-like — key absent → backend keeps
+   * existing reviewer; explicit null → clears; number → replaces. The编辑 UI sends this
+   * key only when the user actively changed reviewer; default save omits it so the
+   * existing review-queue assignment 不会被覆盖。
+   */
+  reviewerUserId?: number | null;
   closeReason?: string;
 }
 

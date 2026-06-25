@@ -299,7 +299,15 @@ public class StoryService {
     if (req.getComplexity() != null && !Complexity.ALL.contains(req.getComplexity())) {
       throw new BadRequestException("invalid complexity: " + req.getComplexity());
     }
-    validateReviewFields(req.getReviewerUserId(), req.getReviewStatus());
+    // v0.0.81: patch-like — only validate fields the client actually sent.
+    if (req.isReviewerUserIdSet() && req.getReviewerUserId() != null
+        && !userRepo.existsById(req.getReviewerUserId())) {
+      throw new BadRequestException("reviewer user not found: id=" + req.getReviewerUserId());
+    }
+    if (req.isReviewStatusSet() && req.getReviewStatus() != null
+        && !ReviewStatus.ALL.contains(req.getReviewStatus())) {
+      throw new BadRequestException("invalid reviewStatus: " + req.getReviewStatus());
+    }
     if (!req.getOwnerUserId().equals(s.getOwnerUserId())) {
       if (!userRepo.existsById(req.getOwnerUserId())) {
         throw new BadRequestException("owner user not found: id=" + req.getOwnerUserId());
@@ -318,9 +326,15 @@ public class StoryService {
     s.setStatus(req.getStatus());
     s.setPriority(req.getPriority());
     s.setComplexity(req.getComplexity());
-    // v0.0.39: reviewer fields are full-replace (part of the Story representation).
-    s.setReviewerUserId(req.getReviewerUserId());
-    s.setReviewStatus(req.getReviewStatus());
+    // v0.0.81: reviewer fields are patch-like — only update when client explicitly sent
+    // them (key present in JSON). Absent → keep original (fixes PUT全量替换误清 reviewer bug
+    // where Story 编辑 UI 不携带 reviewer 字段会清空已绑定的评审人).
+    if (req.isReviewerUserIdSet()) {
+      s.setReviewerUserId(req.getReviewerUserId());
+    }
+    if (req.isReviewStatusSet()) {
+      s.setReviewStatus(req.getReviewStatus());
+    }
     s.setCloseReason(req.getCloseReason());
     // requirementId / projectId intentionally NOT touched — immutable after creation.
     return enrich(repo.saveAndFlush(s));

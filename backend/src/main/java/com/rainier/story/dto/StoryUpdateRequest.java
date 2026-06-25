@@ -39,12 +39,29 @@ public class StoryUpdateRequest {
 
   @NotNull private Long ownerUserId;
 
-  /** v0.0.39: optional reviewer (full-replace; validated to exist when non-null). */
+  /**
+   * v0.0.39: optional reviewer (validated to exist when non-null).
+   *
+   * <p>v0.0.81: patch-like semantics — service.update only touches reviewer fields when the
+   * setter was invoked by Jackson (= the JSON contained the key). {@link #reviewerUserIdSet}
+   * tracks that. Field absent → keep original; field explicitly null → clear; field with value
+   * → replace.
+   */
   private Long reviewerUserId;
 
-  /** v0.0.39: optional review state (full-replace; validated against ReviewStatus.ALL when non-null). */
+  /** v0.0.81: true once {@link #setReviewerUserId(Long)} was called by Jackson. */
+  private boolean reviewerUserIdSet;
+
+  /**
+   * v0.0.39: optional review state (validated against ReviewStatus.ALL when non-null).
+   *
+   * <p>v0.0.81: patch-like semantics — see {@link #reviewerUserId}.
+   */
   @Size(max = 16)
   private String reviewStatus;
+
+  /** v0.0.81: true once {@link #setReviewStatus(String)} was called by Jackson. */
+  private boolean reviewStatusSet;
 
   @Size(max = 500)
   private String closeReason;
@@ -119,6 +136,12 @@ public class StoryUpdateRequest {
 
   public void setReviewerUserId(Long reviewerUserId) {
     this.reviewerUserId = reviewerUserId;
+    this.reviewerUserIdSet = true;
+  }
+
+  /** v0.0.81: true iff JSON contained the {@code reviewerUserId} key (value may be null). */
+  public boolean isReviewerUserIdSet() {
+    return reviewerUserIdSet;
   }
 
   public String getReviewStatus() {
@@ -127,6 +150,12 @@ public class StoryUpdateRequest {
 
   public void setReviewStatus(String reviewStatus) {
     this.reviewStatus = reviewStatus;
+    this.reviewStatusSet = true;
+  }
+
+  /** v0.0.81: true iff JSON contained the {@code reviewStatus} key (value may be null). */
+  public boolean isReviewStatusSet() {
+    return reviewStatusSet;
   }
 
   public String getCloseReason() {

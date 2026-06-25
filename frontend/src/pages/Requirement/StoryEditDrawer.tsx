@@ -64,6 +64,14 @@ export function StoryEditDrawer({
   const [priority, setPriority] = useState<Priority>('MEDIUM');
   const [complexity, setComplexity] = useState<Complexity | ''>('');
   const [ownerUserId, setOwnerUserId] = useState<number | ''>('');
+  /**
+   * v0.0.81: reviewer is patch-like. ''  means "use whatever sentinel below"; we track
+   * a separate `reviewerDirty` flag so unchanged loads do NOT send the key (backend
+   * keeps existing reviewer). User picks "（无）" → '' + dirty=true sends explicit null.
+   */
+  const [reviewerUserId, setReviewerUserId] = useState<number | ''>('');
+  const [reviewerDirty, setReviewerDirty] = useState(false);
+  const [reviewStatus, setReviewStatus] = useState<Story['reviewStatus']>(null);
   const [closeReason, setCloseReason] = useState('');
   // v0.0.9: surface validation errors (sibling of v0.0.8.1 Code-M7 pattern).
   const [formError, setFormError] = useState<string | null>(null);
@@ -94,6 +102,9 @@ export function StoryEditDrawer({
       setStatus(editing.status);
       setPriority(editing.priority);
       setComplexity(editing.complexity ?? '');
+      setReviewerUserId(editing.reviewerUserId ?? '');
+      setReviewerDirty(false);
+      setReviewStatus(editing.reviewStatus ?? null);
       setCloseReason(editing.closeReason ?? '');
     } else {
       setCode('');
@@ -103,6 +114,9 @@ export function StoryEditDrawer({
       setStatus('DRAFT');
       setPriority('MEDIUM');
       setComplexity('');
+      setReviewerUserId('');
+      setReviewerDirty(false);
+      setReviewStatus(null);
       setCloseReason('');
     }
   }, [open, editing, currentLoginName]);
@@ -222,6 +236,41 @@ export function StoryEditDrawer({
           ))}
         </select>
       </div>
+      {editing && (
+        <div className="rainier-form-group">
+          <label className="rainier-form-label">
+            评审人（可选，patch-like — 留空发送不修改原值）
+          </label>
+          <select
+            className="rainier-form-select"
+            value={reviewerUserId}
+            onChange={(e) => {
+              setReviewerUserId(e.target.value === '' ? '' : Number(e.target.value));
+              setReviewerDirty(true);
+            }}
+            data-testid="story-reviewer-select"
+          >
+            <option value="">（无）</option>
+            {users.map((u) => (
+              <option key={u.id} value={u.id}>
+                {u.name}（{u.loginName}）
+              </option>
+            ))}
+          </select>
+          {reviewStatus && (
+            <div
+              style={{
+                marginTop: 4,
+                fontSize: 11,
+                color: 'var(--rainier-color-text-2)',
+              }}
+              data-testid="story-review-status-chip"
+            >
+              评审状态：{reviewStatus}（请使用评审队列 /review 端点变更）
+            </div>
+          )}
+        </div>
+      )}
       {status === 'CANCELLED' && (
         <Input
           label="取消原因"
@@ -259,7 +308,10 @@ export function StoryEditDrawer({
             }
             setFormError(null);
             if (editing) {
-              await onUpdate(editing.id, {
+              // v0.0.81: reviewerUserId only sent when user actively changed it
+              // (reviewerDirty). Backend treats omission as "keep existing reviewer"
+              // — this is the fix for the PUT-wipes-reviewer bug.
+              const updateBody: StoryUpdate = {
                 code,
                 title,
                 description: description || undefined,
@@ -269,7 +321,11 @@ export function StoryEditDrawer({
                 complexity: (complexity || undefined) as Complexity | undefined,
                 ownerUserId,
                 closeReason: closeReason || undefined,
-              });
+              };
+              if (reviewerDirty) {
+                updateBody.reviewerUserId = reviewerUserId === '' ? null : reviewerUserId;
+              }
+              await onUpdate(editing.id, updateBody);
             } else {
               await onCreate({
                 code,
