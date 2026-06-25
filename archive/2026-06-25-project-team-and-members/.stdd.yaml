@@ -1,0 +1,73 @@
+change:
+  id: 2026-06-25-project-team-and-members
+  title: v0.0.64-project-team-and-members — 项目负责团队 + PMO + 成员（含项目内角色）
+  baseline: {tag: v0.0.63-seed-demo, commit: 70624e1}
+  type: feature
+  source: "用户：项目里需要添加上负责团队，默认为负责人所在团队，可修改；项目成员信息，可以由项目负责人 或 PMO 随时添加；PMO 与组织关联；项目PMO默认设置为项目所属团队的PMO，可修改。"
+
+phase:
+  current: deliver
+  understand:
+    status: completed
+    confirmed_at: '2026-06-25'
+    gate_1: passed
+  spec:
+    status: completed
+    confirmed_at: '2026-06-25'
+    gate_2: auto_proceeded
+    metrics: {decisions: 10, scenarios: 31, tcs: 37, p0: 35, p1: 2}
+  slice:
+    status: completed
+    metrics: {slices: 12, batches: 5}
+  build:
+    status: completed
+    metrics:
+      backend: "566 tests green (309 baseline + 25 new: org_pmo 5 + project_member 12 + project-default 5 + cleanup-test 3)"
+      frontend: "265 tests green; tsc clean; eslint clean"
+      e2e: "SHOW TABLES=28; effective-pmos inheritance correct; project members UNION correct; auth 403/201; default-injection 注入主组织+PMO"
+    pending_adjustments: 1
+  verify:
+    status: completed
+    metrics:
+      backend: "566/566 (100%); zero regression"
+      frontend: "265/265 (100%); zero regression; tsc clean; eslint clean"
+      e2e: "all 4 key paths pass (SHOW TABLES=28; effective-pmos inheritance; project members UNION; 403/201 auth; default-injection)"
+      step0_review: {C: 0, H: 0, M: 4, L: 7, threshold: passed}
+      design_adjustments: 1
+      eleven_modes_check: {b: triggered_but_accepted}
+    confirmed_at: '2026-06-25'
+    gate_3: passed
+    design_adjustments: 2  # DA-1 AuditorAware + DA-2 ProjectDetailPage inline-edit (Gate 3 期间)
+  deliver: {status: archived, archived_at: '2026-06-25'}
+
+long_range:
+  enabled: true
+  mode: full_auto
+  pre_auth: {git_ops: allow_up_to_commit_and_tag, gate_2: auto_proceed, gate_3: require_user_confirmation}
+  pre_auth_timestamp: '2026-06-25'
+
+boundary_decisions:
+  add_owner_as_member: 400_already_owner
+  on_owner_change_legacy_owner: not_auto_added
+
+scope:
+  type: feature
+  capabilities_modified: [entity-project, frontend-scaffold, me-inbox]
+  capabilities_new: [entity-project-member, entity-organization-pmo]
+  new_tables: 2
+  new_columns: [rainier_project.pmo_user_id]
+  new_deps: []
+  new_apis:
+    - "GET/POST/DELETE /api/organizations/{id}/pmos"
+    - "GET /api/organizations/{id}/effective-pmos"
+    - "GET/POST/PUT/DELETE /api/projects/{id}/members[/{userId}]"
+  behavior_change: "项目创建注入团队/PMO 默认值；项目成员含 role(PD/DEV/QA/DESIGN/BIZ/OPS/OTHER)；PMO 沿 org parent 链继承"
+
+design_decisions:
+  pmo_per_org: many-to-many  # 1:N，新表 organization_pmo，不复用 user_role
+  owner_in_member_table: false  # owner 不冗余写入；查询时 UNION
+  default_value_injection: backend  # 后端注入，前端只显示
+  pmo_inheritance: read_time  # 读时计算（沿 parent 链 UNION），不写入下级
+  pmo_admin_ui_location: organization_edit_drawer  # 不开独立 OrganizationDetailPage
+  project_member_role_enum: [PD, DEV, QA, DESIGN, BIZ, OPS, OTHER]  # 不含 PM（项目经理本质 = owner）
+  member_permission_check: dual  # 前端 hide button + 后端 403

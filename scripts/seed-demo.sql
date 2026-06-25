@@ -34,6 +34,9 @@ DELETE FROM rainier_demand;
 DELETE FROM rainier_opportunity_artifact;
 DELETE FROM rainier_opportunity;
 DELETE FROM rainier_feature;
+/* v0.0.64 — wipe member + org_pmo before project (org_pmo references organization, project references organization). */
+DELETE FROM rainier_project_member;
+DELETE FROM rainier_organization_pmo;
 DELETE FROM rainier_project;
 DELETE FROM rainier_entity_link;
 DELETE FROM rainier_audit_log;
@@ -54,6 +57,8 @@ ALTER TABLE rainier_story                AUTO_INCREMENT = 1;
 ALTER TABLE rainier_task                 AUTO_INCREMENT = 1;
 ALTER TABLE rainier_feature              AUTO_INCREMENT = 1;
 ALTER TABLE rainier_milestone            AUTO_INCREMENT = 1;
+ALTER TABLE rainier_project_member       AUTO_INCREMENT = 1;
+ALTER TABLE rainier_organization_pmo     AUTO_INCREMENT = 1;
 ALTER TABLE rainier_demand               AUTO_INCREMENT = 1;
 ALTER TABLE rainier_demand_requirement   AUTO_INCREMENT = 1;
 ALTER TABLE rainier_sprint_feature       AUTO_INCREMENT = 1;
@@ -200,6 +205,54 @@ UPDATE rainier_opportunity SET project_id = 1 WHERE id = 6;
 UPDATE rainier_opportunity SET project_id = 2 WHERE id = 7;
 UPDATE rainier_opportunity SET project_id = 3 WHERE id = 9;
 
+/* ─────────────────────────── v0.0.64 — org PMOs + project pmo/team + members ─────────────────── */
+
+/* organization_pmo: root 招联金融 (id=1) → alice(1); 研发中心 (id=2) → 黎立(2). 子组织无 own
+ * → 演示「继承」效果（采购研发团队 effective-pmos = 黎立(own from 研发中心) + alice(继承 from 招联金融)). */
+INSERT INTO rainier_organization_pmo (organization_id, user_id, create_by, create_time, update_by, update_time, del_flag) VALUES
+  (1, 1, @actor, @now, @actor, @now, 0),
+  (2, 2, @actor, @now, @actor, @now, 0);
+
+/* projects: set pmo_user_id (default = effective-pmos 首条, 但这里手动指明以确保 demo 数据明确) */
+UPDATE rainier_project SET pmo_user_id = 2 WHERE id IN (1, 2, 3, 4);  /* ED-1/2/3, CF-4 → 黎立 */
+UPDATE rainier_project SET pmo_user_id = 1 WHERE id IN (5, 6);          /* CT-5, CAS-6 → alice */
+
+/* project_member: 每 EXTERNAL_DELIVERY project 加 3-4 成员（不同 role），内部项目加 1-2 个. */
+INSERT INTO rainier_project_member
+  (project_id, user_id, role, joined_at, joined_by, create_by, create_time, update_by, update_time, del_flag)
+VALUES
+  /* ED-1 HIS 升级 (owner=4 lina, pmo=2 黎立) */
+  (1, 3, 'PD',  DATE_SUB(@now, INTERVAL 18 DAY), 'lina', @actor, DATE_SUB(@now, INTERVAL 18 DAY), @actor, DATE_SUB(@now, INTERVAL 18 DAY), 0),
+  (1, 5, 'DEV', DATE_SUB(@now, INTERVAL 17 DAY), 'lina', @actor, DATE_SUB(@now, INTERVAL 17 DAY), @actor, DATE_SUB(@now, INTERVAL 17 DAY), 0),
+  (1, 6, 'DEV', DATE_SUB(@now, INTERVAL 15 DAY), 'lina', @actor, DATE_SUB(@now, INTERVAL 15 DAY), @actor, DATE_SUB(@now, INTERVAL 15 DAY), 0),
+  (1, 7, 'QA',  DATE_SUB(@now, INTERVAL 10 DAY), 'lina', @actor, DATE_SUB(@now, INTERVAL 10 DAY), @actor, DATE_SUB(@now, INTERVAL 10 DAY), 0),
+
+  /* ED-2 反欺诈风控 (owner=4 lina, pmo=2 黎立) */
+  (2, 3, 'PD',     DATE_SUB(@now, INTERVAL 13 DAY), 'lina', @actor, DATE_SUB(@now, INTERVAL 13 DAY), @actor, DATE_SUB(@now, INTERVAL 13 DAY), 0),
+  (2, 5, 'DEV',    DATE_SUB(@now, INTERVAL 12 DAY), 'lina', @actor, DATE_SUB(@now, INTERVAL 12 DAY), @actor, DATE_SUB(@now, INTERVAL 12 DAY), 0),
+  (2, 7, 'DESIGN', DATE_SUB(@now, INTERVAL 10 DAY), 'lina', @actor, DATE_SUB(@now, INTERVAL 10 DAY), @actor, DATE_SUB(@now, INTERVAL 10 DAY), 0),
+
+  /* ED-3 知识图谱 (owner=4 lina, pmo=2 黎立) */
+  (3, 3, 'PD',  DATE_SUB(@now, INTERVAL 4 DAY), 'lina', @actor, DATE_SUB(@now, INTERVAL 4 DAY), @actor, DATE_SUB(@now, INTERVAL 4 DAY), 0),
+  (3, 6, 'DEV', DATE_SUB(@now, INTERVAL 3 DAY), 'lina', @actor, DATE_SUB(@now, INTERVAL 3 DAY), @actor, DATE_SUB(@now, INTERVAL 3 DAY), 0),
+  (3, 7, 'QA',  DATE_SUB(@now, INTERVAL 2 DAY), 'lina', @actor, DATE_SUB(@now, INTERVAL 2 DAY), @actor, DATE_SUB(@now, INTERVAL 2 DAY), 0),
+  (3, 4, 'OTHER', DATE_SUB(@now, INTERVAL 1 DAY), 'liling', @actor, DATE_SUB(@now, INTERVAL 1 DAY), @actor, DATE_SUB(@now, INTERVAL 1 DAY), 0),  /* 故意试 owner=lina (id=4) 加成员 — service 会拒绝；先注释掉 */
+  (3, 5, 'BIZ', DATE_SUB(@now, INTERVAL 5 DAY), 'liling', @actor, DATE_SUB(@now, INTERVAL 5 DAY), @actor, DATE_SUB(@now, INTERVAL 5 DAY), 0),
+
+  /* CF-4 支付平台 2026H2 (owner=3 wangwei, pmo=2 黎立) */
+  (4, 5, 'DEV', DATE_SUB(@now, INTERVAL 25 DAY), 'wangwei', @actor, DATE_SUB(@now, INTERVAL 25 DAY), @actor, DATE_SUB(@now, INTERVAL 25 DAY), 0),
+  (4, 7, 'QA',  DATE_SUB(@now, INTERVAL 22 DAY), 'wangwei', @actor, DATE_SUB(@now, INTERVAL 22 DAY), @actor, DATE_SUB(@now, INTERVAL 22 DAY), 0),
+
+  /* CT-5 基础设施 (owner=3 wangwei, pmo=1 alice) */
+  (5, 6, 'OPS', DATE_SUB(@now, INTERVAL 1 DAY), 'wangwei', @actor, DATE_SUB(@now, INTERVAL 1 DAY), @actor, DATE_SUB(@now, INTERVAL 1 DAY), 0),
+
+  /* CAS-6 演示沙盒 (owner=2 黎立, pmo=1 alice) */
+  (6, 4, 'PD',  DATE_SUB(@now, INTERVAL 2 DAY), 'liling', @actor, DATE_SUB(@now, INTERVAL 2 DAY), @actor, DATE_SUB(@now, INTERVAL 2 DAY), 0);
+
+/* DELETE the bogus row above (ED-3 加 owner=lina 自己, 演示 only): 实际后端不允许；这里 SQL bypass 了校验，
+ * 但为了不让 UI 列表 UNION 出现重复，我们移除它。 */
+DELETE FROM rainier_project_member WHERE project_id = 3 AND user_id = 4;
+
 /* ─────────────────────────────────── milestones (4) ──────────────────────────────────────────── */
 
 INSERT INTO rainier_milestone
@@ -336,6 +389,8 @@ SELECT 'opportunity_artifact',   COUNT(*)      FROM rainier_opportunity_artifact
 SELECT 'operation',              COUNT(*)      FROM rainier_operation            WHERE del_flag=0 UNION ALL
 SELECT 'operation_issue',        COUNT(*)      FROM rainier_operation_issue      WHERE del_flag=0 UNION ALL
 SELECT 'project',                COUNT(*)      FROM rainier_project              WHERE del_flag=0 UNION ALL
+SELECT 'project_member',         COUNT(*)      FROM rainier_project_member       WHERE del_flag=0 UNION ALL
+SELECT 'organization_pmo',       COUNT(*)      FROM rainier_organization_pmo     WHERE del_flag=0 UNION ALL
 SELECT 'milestone',              COUNT(*)      FROM rainier_milestone            WHERE del_flag=0 UNION ALL
 SELECT 'requirement',            COUNT(*)      FROM rainier_requirement          WHERE del_flag=0 UNION ALL
 SELECT 'sprint',                 COUNT(*)      FROM rainier_sprint               WHERE del_flag=0 UNION ALL
