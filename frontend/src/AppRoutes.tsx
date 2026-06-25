@@ -28,6 +28,7 @@ import PositionsPage from './pages/Position';
 import ProductModulesPage from './pages/ProductModule';
 import ProductsPage from './pages/Product';
 import ProjectsPage from './pages/Project';
+import { ProjectDetailPage } from './pages/Project/ProjectDetailPage';
 import RequirementsPage from './pages/Requirement';
 import { RequirementDetailPage } from './pages/Requirement/RequirementDetailPage';
 import { StoryDetailPage } from './pages/Requirement/StoryDetailPage';
@@ -72,6 +73,7 @@ export function AppRoutes() {
           <Route path="/pm/product-modules" element={<ProductModulesPage />} />
           <Route path="/pm/features" element={<FeaturesPage />} />
           <Route path="/pm/projects" element={<ProjectsPage />} />
+          <Route path="/pm/projects/:id" element={<ProjectDetailPage />} />
           <Route path="/pm/sprints" element={<SprintsPage />} />
           <Route path="/pm/sprints/:id" element={<SprintDetailPage />} />
           <Route path="/pm/tasks" element={<TasksPage />} />

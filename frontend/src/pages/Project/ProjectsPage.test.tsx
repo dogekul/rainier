@@ -1,6 +1,8 @@
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { ProjectsPage } from './ProjectsPage';
+import { ProjectDetailPage } from './ProjectDetailPage';
 import { useAuthStore } from '../../store/auth';
 
 vi.mock('../../api/project', async () => {
@@ -8,6 +10,7 @@ vi.mock('../../api/project', async () => {
   return {
     ...actual,
     listProjects: vi.fn().mockResolvedValue({ content: [], total: 0, page: 0, size: 20 }),
+    getProject: vi.fn().mockResolvedValue({ id: 7, code: 'PROJ-001', name: 'X', status: 'PLANNING', projectType: 'CASUAL', ownerUserId: 1, enabled: true }),
     createProject: vi.fn().mockResolvedValue({ id: 99 }),
     updateProject: vi.fn().mockResolvedValue({ id: 7 }),
   };
@@ -45,7 +48,11 @@ describe('ProjectsPage', () => {
 
   /** TC-FES-P03: 新建抽屉默认 owner = 当前登录用户. */
   it('defaults owner select to the current logged-in user (TC-FES-P03)', async () => {
-    render(<ProjectsPage />);
+    render(
+      <MemoryRouter>
+        <ProjectsPage />
+      </MemoryRouter>,
+    );
     fireEvent.click(screen.getByTestId('projects-new-btn'));
     await waitFor(() => {
       expect(screen.getByTestId('projects-owner-select')).toBeInTheDocument();
@@ -65,7 +72,11 @@ describe('ProjectsPage', () => {
     const { createProject } = await import('../../api/project');
     (createProject as ReturnType<typeof vi.fn>).mockClear();
 
-    render(<ProjectsPage />);
+    render(
+      <MemoryRouter>
+        <ProjectsPage />
+      </MemoryRouter>,
+    );
     fireEvent.click(screen.getByTestId('projects-new-btn'));
     await waitFor(() => {
       expect(screen.getByTestId('projects-owner-select')).toBeInTheDocument();
@@ -82,35 +93,35 @@ describe('ProjectsPage', () => {
     expect(createProject).not.toHaveBeenCalled();
   });
 
-  /** TC-FES-P04: 编辑抽屉 owner 不 disabled 且可改，updateProject 收到新 ownerUserId. */
-  it('edit drawer allows changing owner (TC-FES-P04)', async () => {
-    const { listProjects, updateProject } = await import('../../api/project');
-    (listProjects as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
-      content: [
-        {
-          id: 7,
-          code: 'PROJ-001',
-          name: 'X',
-          description: null,
-          status: 'PLANNING',
-          projectType: 'CASUAL',
-          ownerUserId: 1,
-          ownerName: 'Alice',
-          ownerLoginName: 'alice',
-          startDate: null,
-          endDate: null,
-          enabled: true,
-        },
-      ],
-      total: 1,
-      page: 0,
-      size: 20,
+  /** TC-FES-P04 (v0.0.62): 编辑通过 ProjectDetailPage（行点击替代旧 row edit 按钮）。
+   *  owner 不 disabled 且可改，updateProject 收到新 ownerUserId. */
+  it('detail page edit drawer allows changing owner (TC-FES-P04)', async () => {
+    const { getProject, updateProject } = await import('../../api/project');
+    (getProject as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      id: 7,
+      code: 'PROJ-001',
+      name: 'X',
+      description: null,
+      status: 'PLANNING',
+      projectType: 'CASUAL',
+      ownerUserId: 1,
+      ownerName: 'Alice',
+      ownerLoginName: 'alice',
+      startDate: null,
+      endDate: null,
+      enabled: true,
     });
-    render(<ProjectsPage />);
+    render(
+      <MemoryRouter initialEntries={['/pm/projects/7']}>
+        <Routes>
+          <Route path="/pm/projects/:id" element={<ProjectDetailPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
     await waitFor(() => {
-      expect(screen.getByText('PROJ-001')).toBeInTheDocument();
+      expect(screen.getByTestId('project-detail-edit')).toBeInTheDocument();
     });
-    fireEvent.click(screen.getByRole('button', { name: '编辑' }));
+    fireEvent.click(screen.getByTestId('project-detail-edit'));
     await waitFor(() => {
       const sel = screen.getByTestId('projects-owner-select') as HTMLSelectElement;
       expect(sel).not.toBeDisabled();
@@ -130,7 +141,11 @@ describe('ProjectsPage', () => {
 
   /** TC-FES-PROJTYPE-001: 新建抽屉含项目类型下拉且默认轻量(CASUAL). */
   it('new drawer has a project-type select defaulting to 轻量 (TC-FES-PROJTYPE-001)', async () => {
-    render(<ProjectsPage />);
+    render(
+      <MemoryRouter>
+        <ProjectsPage />
+      </MemoryRouter>,
+    );
     fireEvent.click(screen.getByTestId('projects-new-btn'));
     await waitFor(() => {
       expect(screen.getByTestId('projects-type-select')).toBeInTheDocument();
@@ -168,7 +183,11 @@ describe('ProjectsPage', () => {
       page: 0,
       size: 20,
     });
-    render(<ProjectsPage />);
+    render(
+      <MemoryRouter>
+        <ProjectsPage />
+      </MemoryRouter>,
+    );
     await waitFor(() => {
       expect(screen.getByText('PROJ-CORE')).toBeInTheDocument();
     });
@@ -182,7 +201,11 @@ describe('ProjectsPage', () => {
   /** TC-FES-PROJTYPE-003: 类型过滤触发带 projectType 的查询. */
   it('type filter triggers a query carrying projectType (TC-FES-PROJTYPE-003)', async () => {
     const { listProjects } = await import('../../api/project');
-    render(<ProjectsPage />);
+    render(
+      <MemoryRouter>
+        <ProjectsPage />
+      </MemoryRouter>,
+    );
     // Let the initial mount fetch settle, then attribute the next call to the filter change.
     await waitFor(() => {
       expect(listProjects).toHaveBeenCalled();
@@ -202,7 +225,11 @@ describe('ProjectsPage', () => {
   it('submits createProject carrying the chosen projectType (TC-FES-PROJTYPE-004)', async () => {
     const { createProject } = await import('../../api/project');
     (createProject as ReturnType<typeof vi.fn>).mockClear();
-    render(<ProjectsPage />);
+    render(
+      <MemoryRouter>
+        <ProjectsPage />
+      </MemoryRouter>,
+    );
     fireEvent.click(screen.getByTestId('projects-new-btn'));
     await waitFor(() => {
       expect(screen.getByTestId('projects-type-select')).toBeInTheDocument();
@@ -222,36 +249,36 @@ describe('ProjectsPage', () => {
     expect(createProject).not.toHaveBeenCalledWith(expect.objectContaining({ code: expect.anything() }));
   });
 
-  /** TC-FES-MILE-001: 里程碑按钮展开内联面板 + listMilestones(projectId). */
-  it('expands the milestones panel on 里程碑 click (TC-FES-MILE-001)', async () => {
-    const { listProjects } = await import('../../api/project');
+  /** TC-FES-MILE-001 (v0.0.62): 里程碑 Tab 在 ProjectDetailPage 内（替代旧行展开 MilestonesPanel）。
+   *  点 里程碑 Tab → listMilestones(projectId=7) 被调用 + 面板渲染。 */
+  it('detail page 里程碑 tab renders MilestonesPanel (TC-FES-MILE-001)', async () => {
+    const { getProject } = await import('../../api/project');
     const { listMilestones } = await import('../../api/milestone');
-    (listProjects as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
-      content: [
-        {
-          id: 7,
-          code: 'PROJ-001',
-          name: 'X',
-          description: null,
-          status: 'PLANNING',
-          projectType: 'CASUAL',
-          ownerUserId: 1,
-          ownerName: 'Alice',
-          ownerLoginName: 'alice',
-          startDate: null,
-          endDate: null,
-          enabled: true,
-        },
-      ],
-      total: 1,
-      page: 0,
-      size: 20,
+    (getProject as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      id: 7,
+      code: 'PROJ-001',
+      name: 'X',
+      description: null,
+      status: 'PLANNING',
+      projectType: 'CASUAL',
+      ownerUserId: 1,
+      ownerName: 'Alice',
+      ownerLoginName: 'alice',
+      startDate: null,
+      endDate: null,
+      enabled: true,
     });
-    render(<ProjectsPage />);
+    render(
+      <MemoryRouter initialEntries={['/pm/projects/7']}>
+        <Routes>
+          <Route path="/pm/projects/:id" element={<ProjectDetailPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
     await waitFor(() => {
-      expect(screen.getByText('PROJ-001')).toBeInTheDocument();
+      expect(screen.getByTestId('project-tab-milestones')).toBeInTheDocument();
     });
-    fireEvent.click(screen.getByTestId('projects-milestones-btn-7'));
+    fireEvent.click(screen.getByTestId('project-tab-milestones'));
     await waitFor(() => {
       expect(screen.getByTestId('milestones-panel-7')).toBeInTheDocument();
     });
