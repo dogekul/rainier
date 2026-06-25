@@ -3,6 +3,7 @@ package com.rainier.projectmember.dto;
 
 import com.rainier.projectmember.domain.ProjectMember;
 import java.time.Instant;
+import java.util.List;
 
 /**
  * v0.0.64 — Project member 读 DTO（含 enriched user 名 + displayLabel 区分合成 owner/pmo vs 真实成员）。
@@ -26,6 +27,12 @@ public class ProjectMemberDetail {
   private String displayLabel;
   private Instant joinedAt;
   private String joinedBy;
+
+  /**
+   * v0.0.88 (C8) — 项目内多角色（distinct, sorted）。包含 ProjectMember.role 本身（如果 ProjectMember
+   * 有 role）。OWNER/PMO 合成行此处为单元素 [role]。
+   */
+  private List<String> roles;
 
   public static ProjectMemberDetail from(ProjectMember m) {
     ProjectMemberDetail d = new ProjectMemberDetail();
@@ -108,5 +115,13 @@ public class ProjectMemberDetail {
 
   public void setJoinedBy(String joinedBy) {
     this.joinedBy = joinedBy;
+  }
+
+  public List<String> getRoles() {
+    return roles;
+  }
+
+  public void setRoles(List<String> roles) {
+    this.roles = roles;
   }
 }

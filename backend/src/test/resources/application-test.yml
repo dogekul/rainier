@@ -52,6 +52,11 @@ app:
     # rainier_capability_tag table; CapabilityTagSeedTest flips it on via @TestPropertySource.
     capability-seed:
       enabled: false
+  # v0.0.88 (C8): ProjectMember.role → assignment backfill OFF in the default test profile so
+  # tests can manage assignment-table state directly. ProjectMemberRoleBackfillTest flips it on.
+  migration:
+    project-member-role:
+      enabled: false
 
 rainier:
   product-module:
