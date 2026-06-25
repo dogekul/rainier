@@ -40,6 +40,7 @@ import {
 } from '../../api/requirement';
 import { useAuthStore } from '../../store/auth';
 import { StageActivityPanel } from './StageActivityPanel';
+import { FullLinkPanel } from './FullLinkPanel';
 import './OpportunityDetailPage.css';
 
 type GenTarget = 'demand' | 'requirement';
@@ -751,6 +752,9 @@ export default function OpportunityDetailPage() {
               stageLabel={OPP_STAGE_LABELS[opp.stage]}
             />
           ) : null}
+
+          {/* v0.0.94 D6 — 商机↔项目↔运营 全链时间线 */}
+          {opp ? <FullLinkPanel opportunityId={opp.id} /> : null}
 
           {/* 产品诉求 / 需求 — order 2（紧跟概览，在产出物之前） */}
           <div

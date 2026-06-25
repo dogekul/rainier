@@ -11,6 +11,8 @@ import com.rainier.opportunity.dto.OpportunityCreateRequest;
 import com.rainier.opportunity.dto.OpportunityDetail;
 import com.rainier.opportunity.dto.OpportunityInitiateRequest;
 import com.rainier.opportunity.dto.OpportunityUpdateRequest;
+import com.rainier.opportunity.fulllink.FullLinkResponse;
+import com.rainier.opportunity.fulllink.FullLinkService;
 import com.rainier.opportunity.service.OpportunityArtifactService;
 import com.rainier.opportunity.service.OpportunityService;
 import java.net.URI;
@@ -40,11 +42,21 @@ public class OpportunityController {
 
   private final OpportunityService service;
   private final OpportunityArtifactService artifactService;
+  private final FullLinkService fullLinkService;
 
   public OpportunityController(
-      OpportunityService service, OpportunityArtifactService artifactService) {
+      OpportunityService service,
+      OpportunityArtifactService artifactService,
+      FullLinkService fullLinkService) {
     this.service = service;
     this.artifactService = artifactService;
+    this.fullLinkService = fullLinkService;
+  }
+
+  /** v0.0.94 D6 — 商机↔项目↔运营 全链视图。 */
+  @GetMapping("/{id}/full-link")
+  public FullLinkResponse fullLink(@PathVariable Long id) {
+    return fullLinkService.buildFor(id);
   }
 
   @PostMapping

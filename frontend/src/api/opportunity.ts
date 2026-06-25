@@ -158,6 +158,44 @@ export async function getOpportunity(id: number): Promise<Opportunity> {
   return res.data;
 }
 
+/** v0.0.94 D6 — 全链 (商机↔项目↔运营) 聚合视图. */
+export interface FullLinkStageSummary {
+  code: OpportunityStage;
+  label: string;
+  current: boolean;
+  activityCount: number;
+  doneCount: number;
+  artifactCount: number;
+}
+export interface FullLinkResponse {
+  opportunity: Opportunity;
+  customer?: { id: number; name: string; industry?: string | null } | null;
+  project?: {
+    id: number;
+    code: string;
+    name: string;
+    status: string;
+    projectType?: string | null;
+    ownerUserId?: number | null;
+    ownerName?: string | null;
+  } | null;
+  operation?: {
+    id: number;
+    customerName: string;
+    title: string;
+    stage: string;
+    status: string;
+    opsOwnerUserId?: number | null;
+    opsOwnerName?: string | null;
+  } | null;
+  presaleStages: FullLinkStageSummary[];
+  deliveryStages: FullLinkStageSummary[];
+}
+export async function getOpportunityFullLink(id: number): Promise<FullLinkResponse> {
+  const res = await client.get<FullLinkResponse>(`/opportunities/${id}/full-link`);
+  return res.data;
+}
+
 export async function updateOpportunity(
   id: number,
   body: OpportunityUpdate,
