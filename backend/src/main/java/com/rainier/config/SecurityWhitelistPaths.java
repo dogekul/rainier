@@ -23,6 +23,10 @@ public final class SecurityWhitelistPaths {
 
   public static final String LOGIN_PATH = "/api/auth/login";
   public static final String HEALTH_PATH = "/api/health";
+  /** v0.0.76 B3 — anonymous password recovery: issue token by (loginName, email). */
+  public static final String FORGOT_PASSWORD_PATH = "/api/auth/forgot-password";
+  /** v0.0.76 B3 — anonymous password recovery: redeem token + set new password. */
+  public static final String RESET_PASSWORD_PATH = "/api/auth/reset-password";
 
   private SecurityWhitelistPaths() {}
 
@@ -39,6 +43,12 @@ public final class SecurityWhitelistPaths {
       return false;
     }
     if (HttpMethod.POST.matches(method) && LOGIN_PATH.equals(path)) {
+      return true;
+    }
+    if (HttpMethod.POST.matches(method) && FORGOT_PASSWORD_PATH.equals(path)) {
+      return true;
+    }
+    if (HttpMethod.POST.matches(method) && RESET_PASSWORD_PATH.equals(path)) {
       return true;
     }
     if (HttpMethod.GET.matches(method) && HEALTH_PATH.equals(path)) {

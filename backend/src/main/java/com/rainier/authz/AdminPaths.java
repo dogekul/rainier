@@ -32,7 +32,10 @@ public final class AdminPaths {
               "/api/user-roles",
               "/api/audit-logs",
               "/api/compliance",
-              "/api/products"));
+              "/api/products",
+              // v0.0.76 B3: admin-only password reset (/api/admin/users/{id}/reset-password) +
+              // future /api/admin/** endpoints — Tier A means even GETs require elevation.
+              "/api/admin"));
 
   static final List<String> TIER_B =
       Collections.unmodifiableList(

@@ -74,7 +74,8 @@ class LegacyProductCategoryCleanupTest {
     // v0.0.69 added rainier_field_lock (AI 分级授权字段锁, A5) → 31 tables.
     // v0.0.71 added rainier_weekly_draft (AI 周报草稿模板版, A7) → 32 tables.
     // v0.0.72 added rainier_notification (主动推送通道 stub, A8) → 33 tables.
-    assertEquals(33, rows.size(), "schema must have exactly 33 rainier_* tables: " + rows);
+    // v0.0.76 added rainier_password_reset_token (B3 password recovery) → 34 tables.
+    assertEquals(34, rows.size(), "schema must have exactly 34 rainier_* tables: " + rows);
     assertTrue(rows.contains("rainier_operation_issue"));
     assertTrue(rows.contains("rainier_organization_pmo"));
     assertTrue(rows.contains("rainier_project_member"));
@@ -82,6 +83,7 @@ class LegacyProductCategoryCleanupTest {
     assertTrue(rows.contains("rainier_ai_error"));
     assertTrue(rows.contains("rainier_field_lock"));
     assertTrue(rows.contains("rainier_notification"));
+    assertTrue(rows.contains("rainier_password_reset_token"));
     assertFalse(rows.contains("rainier_product_category"));
     assertTrue(rows.contains("rainier_product"));
     assertTrue(rows.contains("rainier_product_module"));
