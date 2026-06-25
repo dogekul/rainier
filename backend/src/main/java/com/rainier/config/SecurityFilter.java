@@ -10,7 +10,6 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpMethod;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -34,8 +33,6 @@ import org.springframework.web.util.UrlPathHelper;
 public class SecurityFilter extends OncePerRequestFilter {
 
   private static final String API_PREFIX = "/api/";
-  private static final String LOGIN_PATH = "/api/auth/login";
-  private static final String HEALTH_PATH = "/api/health";
   private static final String BEARER_PREFIX = "Bearer ";
   private static final UrlPathHelper PATH_HELPER = new UrlPathHelper();
 
@@ -90,13 +87,7 @@ public class SecurityFilter extends OncePerRequestFilter {
     if (path == null || !path.startsWith(API_PREFIX)) {
       return false; // non-API (static assets etc.) untouched
     }
-    if (HttpMethod.OPTIONS.matches(method)) {
-      return false; // CORS preflight carries no token
-    }
-    boolean whitelisted =
-        (HttpMethod.POST.matches(method) && LOGIN_PATH.equals(path))
-            || (HttpMethod.GET.matches(method) && HEALTH_PATH.equals(path));
-    return !whitelisted;
+    return !SecurityWhitelistPaths.isWhitelisted(method, path);
   }
 
   private static void writeUnauthorized(HttpServletResponse response) throws IOException {
