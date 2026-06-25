@@ -43,6 +43,7 @@ public class MeProfileService {
   private final PositionRepository positionRepo;
   private final StoryRepository storyRepo;
   private final TaskRepository taskRepo;
+  private final ContributionMetricsService metricsService;
 
   public MeProfileService(
       UserRepository userRepo,
@@ -50,13 +51,15 @@ public class MeProfileService {
       OrganizationRepository orgRepo,
       PositionRepository positionRepo,
       StoryRepository storyRepo,
-      TaskRepository taskRepo) {
+      TaskRepository taskRepo,
+      ContributionMetricsService metricsService) {
     this.userRepo = userRepo;
     this.userOrgRepo = userOrgRepo;
     this.orgRepo = orgRepo;
     this.positionRepo = positionRepo;
     this.storyRepo = storyRepo;
     this.taskRepo = taskRepo;
+    this.metricsService = metricsService;
   }
 
   public ProfileResponse profileOf(String username) {
@@ -195,6 +198,8 @@ public class MeProfileService {
 
     out.setOwnedStoryCount(storyRepo.countByOwnerUserId(me.getId()));
     out.setAssignedTaskCount(taskRepo.countByAssigneeUserId(me.getId()));
+    // v0.0.84: richer contribution block (by-status / this-week / 4-week trend).
+    out.setContribution(metricsService.computeFor(me.getId()));
     return out;
   }
 

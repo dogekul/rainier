@@ -215,6 +215,25 @@ class MeProfileControllerTest {
     mockMvc.perform(get("/api/me/profile")).andExpect(status().isUnauthorized());
   }
 
+  /** v0.0.84 (C4): contribution payload — by-status, this-week, 4-week trend. */
+  @Test
+  void profile_contributionPayload() throws Exception {
+    Long alice = seedUser("alice", "Alice", null);
+    seedStory("S-1", alice);
+    seedTask("T-1", alice);
+    seedTask("T-2", alice);
+    String token = authService.issueToken("alice");
+
+    mockMvc
+        .perform(get("/api/me/profile").header("Authorization", "Bearer " + token))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.contribution").exists())
+        .andExpect(jsonPath("$.contribution.tasksByStatus.TODO").value(2))
+        .andExpect(jsonPath("$.contribution.tasksByStatus.DONE").value(0))
+        .andExpect(jsonPath("$.contribution.storiesByStatus.READY").value(1))
+        .andExpect(jsonPath("$.contribution.weeklyTrend", hasSize(4)));
+  }
+
   /** TC-PROF-007: token subject with no matching User → degraded 200. */
   @Test
   void profile_unknownSubject_degrades() throws Exception {

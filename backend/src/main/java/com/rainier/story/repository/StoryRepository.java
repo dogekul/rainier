@@ -2,6 +2,7 @@
 package com.rainier.story.repository;
 
 import com.rainier.story.domain.Story;
+import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -31,4 +32,11 @@ public interface StoryRepository
 
   /** v0.0.70 risk-radar — stories scoped to a portfolio of projects (del_flag=0 via @Where). */
   List<Story> findByProjectIdIn(Collection<Long> projectIds);
+
+  /** v0.0.84 richer-contribution-metrics — stories by status for one owner. */
+  long countByOwnerUserIdAndStatus(Long ownerUserId, String status);
+
+  /** v0.0.84 richer-contribution-metrics — per-week DONE bucket for the trend. */
+  long countByOwnerUserIdAndStatusAndUpdateTimeBetween(
+      Long ownerUserId, String status, Instant from, Instant to);
 }

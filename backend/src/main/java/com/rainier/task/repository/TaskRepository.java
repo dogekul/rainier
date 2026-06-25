@@ -2,6 +2,7 @@
 package com.rainier.task.repository;
 
 import com.rainier.task.domain.Task;
+import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -31,4 +32,18 @@ public interface TaskRepository extends JpaRepository<Task, Long>, JpaSpecificat
    * StoryRepository.findByReviewerUserIdAndReviewStatus.
    */
   List<Task> findByReviewerUserIdAndReviewStatus(Long reviewerUserId, String reviewStatus);
+
+  /** v0.0.84 richer-contribution-metrics — tasks by status for one assignee. */
+  long countByAssigneeUserIdAndStatus(Long assigneeUserId, String status);
+
+  /** v0.0.84 richer-contribution-metrics — tasks created at or after a cut-off (this-week filter). */
+  long countByAssigneeUserIdAndCreateTimeGreaterThanEqual(Long assigneeUserId, Instant since);
+
+  /** v0.0.84 richer-contribution-metrics — DONE-this-week proxy: status + updateTime >= weekStart. */
+  long countByAssigneeUserIdAndStatusAndUpdateTimeGreaterThanEqual(
+      Long assigneeUserId, String status, Instant since);
+
+  /** v0.0.84 richer-contribution-metrics — per-week DONE bucket for the trend. */
+  long countByAssigneeUserIdAndStatusAndUpdateTimeBetween(
+      Long assigneeUserId, String status, Instant from, Instant to);
 }
