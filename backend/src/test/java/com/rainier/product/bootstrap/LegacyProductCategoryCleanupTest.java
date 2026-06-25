@@ -81,7 +81,9 @@ class LegacyProductCategoryCleanupTest {
     // v0.0.88 added rainier_project_member_role (C8 ProjectMember 多角色关联) → 39 tables.
     // v0.0.89 added rainier_project_implementation (D1 项目施工内容表单) → 40 tables.
     // v0.0.90 added rainier_stage_activity (D2 商机 stage 活动清单) → 41 tables.
-    assertEquals(41, rows.size(), "schema must have exactly 41 rainier_* tables: " + rows);
+    // v0.0.92 added rainier_sent_email (D4 邮件发送基建 stub) → 42 tables.
+    assertEquals(42, rows.size(), "schema must have exactly 42 rainier_* tables: " + rows);
+    assertTrue(rows.contains("rainier_sent_email"));
     assertTrue(rows.contains("rainier_project_implementation"));
     assertTrue(rows.contains("rainier_stage_activity"));
     assertTrue(rows.contains("rainier_operation_issue"));

@@ -37,7 +37,11 @@ public final class AdminPaths {
               "/api/products",
               // v0.0.76 B3: admin-only password reset (/api/admin/users/{id}/reset-password) +
               // future /api/admin/** endpoints — Tier A means even GETs require elevation.
-              "/api/admin"));
+              "/api/admin",
+              // v0.0.92 D4: admin-only sent email log read (GET /api/emails) — Tier A so even GET
+              // requires elevation; the forward endpoint /api/me/notifications/{id}/email is NOT
+              // gated here (it's under /api/me/* and uses owner check).
+              "/api/emails"));
 
   static final List<String> TIER_B =
       Collections.unmodifiableList(
