@@ -9,6 +9,7 @@ import { listProjects, PROJECT_TYPE_LABELS, type Project } from '../../api/proje
 import { listUsers, type User } from '../../api/user';
 import { listRequirements } from '../../api/requirement';
 import { useAuthStore } from '../../store/auth';
+import { ArtifactSupplementDrawer } from '../../components/flow/ArtifactSupplementDrawer';
 import {
   advanceOpportunity,
   initiateOpportunity,
@@ -18,9 +19,6 @@ import {
   type Opportunity,
 } from '../../api/opportunity';
 import {
-  ARTIFACT_TYPE_LABELS,
-  createOpportunityArtifact,
-  isLinkArtifact,
   listOpportunityArtifacts,
   STAGE_REQUIRED_ARTIFACTS,
   type ArtifactType,
@@ -93,13 +91,9 @@ export function DeliveryFlow() {
   const accepted = items.filter((r) => r.stage === ACCEPTANCE).length;
 
   // v0.0.53 现场调研推进补充表单 state（多产出物门禁，镜像 PresaleFlow）。
+  // v0.0.96 (D8)：表单本身抽到 <ArtifactSupplementDrawer>；这里只保留触发态。
   const [suppOpp, setSuppOpp] = useState<Opportunity | null>(null);
   const [suppTypes, setSuppTypes] = useState<ArtifactType[]>([]);
-  const [suppData, setSuppData] = useState<
-    Record<string, { title: string; content: string; links: string[] }>
-  >({});
-  const [suppError, setSuppError] = useState<string | null>(null);
-  const [suppSaving, setSuppSaving] = useState(false);
   const [advError, setAdvError] = useState<string | null>(null);
 
   const advance = async (id: number, decision?: 'PASS' | 'REJECT') => {
@@ -157,77 +151,12 @@ export function DeliveryFlow() {
         void advance(r.id);
         return;
       }
-      const data: Record<string, { title: string; content: string; links: string[] }> = {};
-      missing.forEach((t) => {
-        data[t] = { title: '', content: '', links: isLinkArtifact(t) ? [''] : [] };
-      });
-      setSuppData(data);
       setSuppTypes(missing);
-      setSuppError(null);
       setBusyId(null); // 表单接管；按钮改由 suppOpp 禁用
       setSuppOpp(r);
       return;
     }
     void advance(r.id);
-  };
-
-  const setSuppField = (type: string, field: 'title' | 'content', value: string) =>
-    setSuppData((d) => ({ ...d, [type]: { ...d[type], [field]: value } }));
-  const setSuppLink = (type: string, idx: number, value: string) =>
-    setSuppData((d) => {
-      const links = [...d[type].links];
-      links[idx] = value;
-      return { ...d, [type]: { ...d[type], links } };
-    });
-  const addSuppLink = (type: string) =>
-    setSuppData((d) => ({ ...d, [type]: { ...d[type], links: [...d[type].links, ''] } }));
-  const removeSuppLink = (type: string, idx: number) =>
-    setSuppData((d) => {
-      const links = d[type].links.filter((_, i) => i !== idx);
-      return { ...d, [type]: { ...d[type], links: links.length ? links : [''] } };
-    });
-
-  // 推进时补充：为缺失的必需产出物逐个建档（链接类可多份、无标题），然后推进。
-  const submitSupplement = async () => {
-    if (suppOpp == null) return;
-    for (const t of suppTypes) {
-      const d = suppData[t];
-      if (isLinkArtifact(t)) {
-        if (!d.links.some((l) => l.trim())) {
-          setSuppError(`请为《${ARTIFACT_TYPE_LABELS[t]}》填写至少一条链接`);
-          return;
-        }
-      } else if (!d.content.trim()) {
-        setSuppError(`请填写《${ARTIFACT_TYPE_LABELS[t]}》的正文`);
-        return;
-      }
-    }
-    setSuppError(null);
-    setSuppSaving(true);
-    try {
-      for (const t of suppTypes) {
-        const d = suppData[t];
-        if (isLinkArtifact(t)) {
-          for (const l of d.links.map((x) => x.trim()).filter(Boolean)) {
-            await createOpportunityArtifact(suppOpp.id, { type: t, link: l });
-          }
-        } else {
-          await createOpportunityArtifact(suppOpp.id, {
-            type: t,
-            title: d.title.trim() || undefined,
-            content: d.content,
-          });
-        }
-      }
-      const id = suppOpp.id;
-      setSuppOpp(null);
-      await advance(id);
-    } catch (e) {
-      const err = e as { response?: { data?: { message?: string } }; message?: string };
-      setSuppError(err?.response?.data?.message ?? err?.message ?? '提交失败');
-    } finally {
-      setSuppSaving(false);
-    }
   };
 
   const doHandoff = async () => {
@@ -494,106 +423,18 @@ export function DeliveryFlow() {
         </div>
       </Drawer>
 
-      {/* v0.0.53 现场调研推进时补充必需产出物（报告 + 附件） */}
-      <Drawer
-        open={suppOpp != null}
-        title="补充产出物并推进"
+      {/* v0.0.96 (D8) 现场调研推进时补充必需产出物（报告 + 附件） — 抽到共用组件。 */}
+      <ArtifactSupplementDrawer
+        opportunityId={suppOpp?.id ?? null}
+        missingTypes={suppTypes}
+        message="推进前需补齐以下现场调研产出物："
+        testIdPrefix="delivery-supp"
         onClose={() => setSuppOpp(null)}
-      >
-        <div style={{ fontSize: 12, color: 'var(--rainier-color-text-2)', marginBottom: 8 }}>
-          推进前需补齐以下现场调研产出物：
-        </div>
-        {suppTypes.map((t) => (
-          <div
-            key={t}
-            data-testid={`delivery-supp-${t}`}
-            style={{
-              border: '1px solid var(--rainier-border)',
-              borderRadius: 6,
-              padding: '8px 10px',
-              marginBottom: 8,
-            }}
-          >
-            <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 6 }}>
-              {ARTIFACT_TYPE_LABELS[t]}
-              {isLinkArtifact(t) ? '（链接，可添加多份）' : '（报告）'}
-            </div>
-            {isLinkArtifact(t) ? (
-              <>
-                {(suppData[t]?.links ?? ['']).map((l, idx) => (
-                  <div key={idx} style={{ display: 'flex', gap: 6, marginBottom: 6 }}>
-                    <input
-                      className="rainier-input"
-                      style={{ flex: 1 }}
-                      placeholder="链接 URL"
-                      value={l}
-                      onChange={(e) => setSuppLink(t, idx, e.target.value)}
-                      data-testid={`delivery-supp-link-${t}-${idx}`}
-                    />
-                    {(suppData[t]?.links?.length ?? 0) > 1 && (
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        onClick={() => removeSuppLink(t, idx)}
-                        data-testid={`delivery-supp-rmlink-${t}-${idx}`}
-                      >
-                        删除
-                      </Button>
-                    )}
-                  </div>
-                ))}
-                <Button
-                  type="button"
-                  variant="secondary"
-                  onClick={() => addSuppLink(t)}
-                  data-testid={`delivery-supp-addlink-${t}`}
-                >
-                  + 添加链接
-                </Button>
-              </>
-            ) : (
-              <>
-                <Input
-                  label="标题（可空）"
-                  value={suppData[t]?.title ?? ''}
-                  onChange={(e) => setSuppField(t, 'title', e.target.value)}
-                  data-testid={`delivery-supp-title-${t}`}
-                />
-                <div style={{ marginBottom: 8 }}>
-                  <label className="rainier-form-label">
-                    正文（支持 Markdown）
-                  </label>
-                  <textarea
-                    className="rainier-input"
-                    style={{ width: '100%', minHeight: 70, padding: 8, boxSizing: 'border-box' }}
-                    value={suppData[t]?.content ?? ''}
-                    onChange={(e) => setSuppField(t, 'content', e.target.value)}
-                    data-testid={`delivery-supp-content-${t}`}
-                  />
-                </div>
-              </>
-            )}
-          </div>
-        ))}
-        {suppError && (
-          <div className="rainier-error-banner" data-testid="delivery-supp-error">
-            {suppError}
-          </div>
-        )}
-        <div className="rainier-form-footer">
-          <Button type="button" variant="secondary" onClick={() => setSuppOpp(null)}>
-            取消
-          </Button>
-          <Button
-            type="button"
-            disabled={suppSaving}
-            onClick={() => void submitSupplement()}
-            data-testid="delivery-supp-save"
-          >
-            提交并推进
-          </Button>
-        </div>
-      </Drawer>
+        onAdvance={async (id) => {
+          setSuppOpp(null);
+          await advance(id);
+        }}
+      />
     </div>
   );
 }

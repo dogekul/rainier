@@ -6,14 +6,12 @@ import { Button } from '../../components/ui/Button';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import { Drawer } from '../../components/ui/Drawer';
 import { Input } from '../../components/ui/Input';
+import { ArtifactSupplementDrawer } from '../../components/flow/ArtifactSupplementDrawer';
 import { listUsers, type User } from '../../api/user';
 import { listProducts, type Product } from '../../api/product';
 import { listCustomers, type Customer } from '../../api/customer';
 import {
-  ARTIFACT_TYPE_LABELS,
   STAGE_REQUIRED_ARTIFACTS,
-  createOpportunityArtifact,
-  isLinkArtifact,
   listOpportunityArtifacts,
   type ArtifactType,
 } from '../../api/opportunityArtifact';
@@ -41,16 +39,10 @@ export function PresaleFlow() {
   const [rows, setRows] = useState<Opportunity[]>([]);
   const [busyId, setBusyId] = useState<number | null>(null);
   const [advError, setAdvError] = useState<string | null>(null);
-  // 推进时补充产出物 (multi-doc stages, e.g. POC)
+  // v0.0.96 (D8) — 推进时补充产出物 (multi-doc stages, e.g. POC) 已抽到 <ArtifactSupplementDrawer>。
   const [suppOpp, setSuppOpp] = useState<Opportunity | null>(null);
   const [suppDecision, setSuppDecision] = useState<'PASS' | 'REJECT' | undefined>(undefined);
   const [suppTypes, setSuppTypes] = useState<ArtifactType[]>([]);
-  // per-type: report kinds use title+content; link kinds use a list of links (可添加多份, 无需标题)
-  const [suppData, setSuppData] = useState<
-    Record<string, { title: string; content: string; links: string[] }>
-  >({});
-  const [suppError, setSuppError] = useState<string | null>(null);
-  const [suppSaving, setSuppSaving] = useState(false);
   // 否决 → 丢单 confirm (for gates WITHOUT an artifact requirement; artifact-gated 否决 confirms via its form)
   const [rejectId, setRejectId] = useState<number | null>(null);
   // 产出物 form (报告/纪要) — set when a transition requires an artifact
@@ -193,14 +185,8 @@ export function PresaleFlow() {
         void advance(r.id, decision);
         return;
       }
-      const data: Record<string, { title: string; content: string; links: string[] }> = {};
-      missing.forEach((t) => {
-        data[t] = { title: '', content: '', links: isLinkArtifact(t) ? [''] : [] };
-      });
-      setSuppData(data);
       setSuppTypes(missing);
       setSuppDecision(decision);
-      setSuppError(null);
       setSuppOpp(r);
       return;
     }
@@ -209,66 +195,6 @@ export function PresaleFlow() {
       return;
     }
     void advance(r.id, decision);
-  };
-
-  const setSuppField = (type: string, field: 'title' | 'content', value: string) =>
-    setSuppData((d) => ({ ...d, [type]: { ...d[type], [field]: value } }));
-  const setSuppLink = (type: string, idx: number, value: string) =>
-    setSuppData((d) => {
-      const links = [...d[type].links];
-      links[idx] = value;
-      return { ...d, [type]: { ...d[type], links } };
-    });
-  const addSuppLink = (type: string) =>
-    setSuppData((d) => ({ ...d, [type]: { ...d[type], links: [...d[type].links, ''] } }));
-  const removeSuppLink = (type: string, idx: number) =>
-    setSuppData((d) => {
-      const links = d[type].links.filter((_, i) => i !== idx);
-      return { ...d, [type]: { ...d[type], links: links.length ? links : [''] } };
-    });
-
-  // 推进时补充：为缺失的必需产出物逐个创建（链接类可多份、无标题），然后推进。
-  const submitSupplement = async () => {
-    if (suppOpp == null) return;
-    for (const t of suppTypes) {
-      const d = suppData[t];
-      if (isLinkArtifact(t)) {
-        if (!d.links.some((l) => l.trim())) {
-          setSuppError(`请为《${ARTIFACT_TYPE_LABELS[t]}》填写至少一条链接`);
-          return;
-        }
-      } else if (!d.content.trim()) {
-        setSuppError(`请填写《${ARTIFACT_TYPE_LABELS[t]}》的正文`);
-        return;
-      }
-    }
-    setSuppError(null);
-    setSuppSaving(true);
-    try {
-      for (const t of suppTypes) {
-        const d = suppData[t];
-        if (isLinkArtifact(t)) {
-          for (const l of d.links.map((x) => x.trim()).filter(Boolean)) {
-            await createOpportunityArtifact(suppOpp.id, { type: t, link: l });
-          }
-        } else {
-          await createOpportunityArtifact(suppOpp.id, {
-            type: t,
-            title: d.title.trim() || undefined,
-            content: d.content,
-          });
-        }
-      }
-      const id = suppOpp.id;
-      const dec = suppDecision;
-      setSuppOpp(null);
-      await advance(id, dec);
-    } catch (e) {
-      const err = e as { response?: { data?: { message?: string } }; message?: string };
-      setSuppError(err?.response?.data?.message ?? err?.message ?? '提交失败');
-    } finally {
-      setSuppSaving(false);
-    }
   };
 
   const submitArtifact = async () => {
@@ -551,106 +477,18 @@ export function PresaleFlow() {
         </div>
       </Drawer>
 
-      {/* 推进时补充必需产出物（多产出物阶段，如 POC） */}
-      <Drawer
-        open={suppOpp != null}
-        title="补充产出物并推进"
+      {/* v0.0.96 (D8) 推进时补充必需产出物（多产出物阶段，如 POC） — 抽到共用组件。 */}
+      <ArtifactSupplementDrawer
+        opportunityId={suppOpp?.id ?? null}
+        missingTypes={suppTypes}
+        testIdPrefix="presale-supp"
         onClose={() => setSuppOpp(null)}
-      >
-        <div style={{ fontSize: 12, color: 'var(--rainier-color-text-2)', marginBottom: 8 }}>
-          推进前需补齐以下必需产出物：
-        </div>
-        {suppTypes.map((t) => (
-          <div
-            key={t}
-            data-testid={`presale-supp-${t}`}
-            style={{
-              border: '1px solid var(--rainier-border)',
-              borderRadius: 6,
-              padding: '8px 10px',
-              marginBottom: 8,
-            }}
-          >
-            <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 6 }}>
-              {ARTIFACT_TYPE_LABELS[t]}
-              {isLinkArtifact(t) ? '（链接，可添加多份）' : '（报告）'}
-            </div>
-            {isLinkArtifact(t) ? (
-              <>
-                {(suppData[t]?.links ?? ['']).map((l, idx) => (
-                  <div key={idx} style={{ display: 'flex', gap: 6, marginBottom: 6 }}>
-                    <input
-                      className="rainier-input"
-                      style={{ flex: 1 }}
-                      placeholder="链接 URL"
-                      value={l}
-                      onChange={(e) => setSuppLink(t, idx, e.target.value)}
-                      data-testid={`presale-supp-link-${t}-${idx}`}
-                    />
-                    {(suppData[t]?.links?.length ?? 0) > 1 && (
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        onClick={() => removeSuppLink(t, idx)}
-                        data-testid={`presale-supp-rmlink-${t}-${idx}`}
-                      >
-                        删除
-                      </Button>
-                    )}
-                  </div>
-                ))}
-                <Button
-                  type="button"
-                  variant="secondary"
-                  onClick={() => addSuppLink(t)}
-                  data-testid={`presale-supp-addlink-${t}`}
-                >
-                  + 添加链接
-                </Button>
-              </>
-            ) : (
-              <>
-                <Input
-                  label="标题（可空）"
-                  value={suppData[t]?.title ?? ''}
-                  onChange={(e) => setSuppField(t, 'title', e.target.value)}
-                  data-testid={`presale-supp-title-${t}`}
-                />
-                <div style={{ marginBottom: 8 }}>
-                  <label className="rainier-form-label">
-                    正文（支持 Markdown）
-                  </label>
-                  <textarea
-                    className="rainier-input"
-                    style={{ width: '100%', minHeight: 70, padding: 8, boxSizing: 'border-box' }}
-                    value={suppData[t]?.content ?? ''}
-                    onChange={(e) => setSuppField(t, 'content', e.target.value)}
-                    data-testid={`presale-supp-content-${t}`}
-                  />
-                </div>
-              </>
-            )}
-          </div>
-        ))}
-        {suppError && (
-          <div className="rainier-error-banner" data-testid="presale-supp-error">
-            {suppError}
-          </div>
-        )}
-        <div className="rainier-form-footer">
-          <Button type="button" variant="secondary" onClick={() => setSuppOpp(null)}>
-            取消
-          </Button>
-          <Button
-            type="button"
-            disabled={suppSaving}
-            onClick={() => void submitSupplement()}
-            data-testid="presale-supp-save"
-          >
-            提交并推进
-          </Button>
-        </div>
-      </Drawer>
+        onAdvance={async (id) => {
+          const dec = suppDecision;
+          setSuppOpp(null);
+          await advance(id, dec);
+        }}
+      />
 
       <ConfirmDialog
         open={rejectId != null}
