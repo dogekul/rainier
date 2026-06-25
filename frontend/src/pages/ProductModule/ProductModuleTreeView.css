@@ -46,3 +46,35 @@
   gap: 6px;
   flex-shrink: 0;
 }
+
+/* v0.0.98 — drag-drop reparent visual affordances. */
+.module-tree-drag-handle {
+  cursor: grab;
+  color: var(--rainier-color-text-3);
+  font-size: 12px;
+  user-select: none;
+}
+.module-tree-row[draggable='true'] {
+  cursor: grab;
+}
+.module-tree-row--drop-target {
+  background: var(--rainier-bg-hover);
+  outline: 2px dashed var(--rainier-color-primary, #4c6ef5);
+  outline-offset: -2px;
+}
+.module-tree-root-dropzone {
+  border: 1px dashed var(--rainier-border);
+  border-radius: 6px;
+  padding: 10px;
+  margin-bottom: 8px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--rainier-color-text-3);
+  background: transparent;
+  transition: background 0.12s, border-color 0.12s;
+}
+.module-tree-root-dropzone--hover {
+  background: var(--rainier-bg-hover);
+  border-color: var(--rainier-color-primary, #4c6ef5);
+  color: var(--rainier-color-text-1);
+}

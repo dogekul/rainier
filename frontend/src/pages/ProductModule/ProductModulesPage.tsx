@@ -52,6 +52,21 @@ export function ProductModulesPage() {
             setDrawerOpen(true);
           }}
           onDelete={(m) => setConfirmDelete(m)}
+          onReparent={async (id, newParentId) => {
+            // v0.0.98 — full-replace PUT semantics; carry over current fields the
+            // backend update DTO requires so only parentId is meaningfully changed.
+            const m = list.items.find((x) => x.id === id);
+            if (!m) return;
+            await updateProductModule(id, {
+              code: m.code,
+              name: m.name,
+              description: m.description ?? undefined,
+              status: m.status,
+              parentId: newParentId,
+              ownerUserId: m.ownerUserId,
+            });
+            void list.refetch();
+          }}
         />
         <Pagination
           page={list.page}
