@@ -39,6 +39,7 @@ import {
   type Requirement,
 } from '../../api/requirement';
 import { useAuthStore } from '../../store/auth';
+import { StageActivityPanel } from './StageActivityPanel';
 import './OpportunityDetailPage.css';
 
 type GenTarget = 'demand' | 'requirement';
@@ -741,6 +742,15 @@ export default function OpportunityDetailPage() {
               ))
             )}
           </div>
+
+          {/* v0.0.90 D2 — 当前 stage 的活动清单 + 关联产出物 */}
+          {opp ? (
+            <StageActivityPanel
+              opportunityId={opp.id}
+              stageCode={opp.stage}
+              stageLabel={OPP_STAGE_LABELS[opp.stage]}
+            />
+          ) : null}
 
           {/* 产品诉求 / 需求 — order 2（紧跟概览，在产出物之前） */}
           <div
