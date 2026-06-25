@@ -4,12 +4,16 @@
   margin-right: 4px;
 }
 
-/* 全宽单列堆叠：概览 / 产出物 / 诉求需求 各自占满宽度，信息不再挤在窄列里 */
+/* 全宽单列堆叠：概览 / 产出物 / 诉求需求 各自占满宽度，信息不再挤在窄列里。
+ * v0.0.60: 用 CSS class 显式控制 order, 避免 inline style 散落。 */
 .opp-detail-grid {
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
+.opp-detail-grid .opp-card[data-order='1'] { order: 1; }
+.opp-detail-grid .opp-card[data-order='2'] { order: 2; }
+.opp-detail-grid .opp-card[data-order='3'] { order: 3; }
 
 .opp-card {
   background: var(--rainier-bg-card);

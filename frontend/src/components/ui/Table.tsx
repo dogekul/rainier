@@ -23,6 +23,10 @@ export interface TableProps<T> {
   /** v0.0.60 — row-click handler. When set, rows get cursor:pointer and an aria role.
    *  Use to open a side detail drawer (Feishu pattern). */
   onRowClick?: (row: T) => void;
+  /** v0.0.60 — override the default data-testid="rainier-table". */
+  testId?: string;
+  /** v0.0.60 — per-row data-testid generator (e.g. `(r) => \`opp-list-row-${r.id}\``). */
+  rowTestId?: (row: T) => string;
 }
 
 /** Minimal Feishu-style table. Controlled, no internal state. */
@@ -34,11 +38,13 @@ export function Table<T>({
   isExpanded,
   renderExpanded,
   onRowClick,
+  testId,
+  rowTestId,
 }: TableProps<T>) {
   const getKey = (row: T): string =>
     typeof rowKey === 'function' ? rowKey(row) : String(row[rowKey] ?? '');
   return (
-    <table className="rainier-table" data-testid="rainier-table">
+    <table className="rainier-table" data-testid={testId ?? 'rainier-table'}>
       <thead>
         <tr>
           {columns.map((c) => (
@@ -62,6 +68,7 @@ export function Table<T>({
             const rows = [
               <tr
                 key={key}
+                data-testid={rowTestId ? rowTestId(row) : undefined}
                 onClick={clickable ? () => onRowClick(row) : undefined}
                 className={clickable ? 'rainier-table-row-clickable' : undefined}
                 role={clickable ? 'button' : undefined}

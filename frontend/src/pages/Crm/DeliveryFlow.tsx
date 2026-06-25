@@ -324,7 +324,11 @@ export function DeliveryFlow() {
                     <div className="oppflow-cell">
                       <span className="oppflow-cell-label">项目</span>
                       <span className={`oppflow-cell-value${r.projectId == null ? ' muted' : ''}`}>
-                        {r.projectId != null ? `#${r.projectId}` : '未立项'}
+                        {r.projectName
+                          ? `${r.projectCode ?? ''} ${r.projectName}`.trim()
+                          : r.projectId != null
+                            ? `#${r.projectId}`
+                            : '未立项'}
                       </span>
                     </div>
                   </div>

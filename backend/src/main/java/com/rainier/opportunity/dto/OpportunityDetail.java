@@ -23,6 +23,10 @@ public class OpportunityDetail {
   private Long opsOwnerUserId;
   private String opsOwnerName;
   private Long projectId;
+  /** v0.0.60 enriched by service via Project join. */
+  private String projectName;
+  /** v0.0.60 enriched by service via Project join. */
+  private String projectCode;
   private Long productId;
   private String productName;
   private Long customerId;
@@ -132,6 +136,22 @@ public class OpportunityDetail {
 
   public Long getProjectId() {
     return projectId;
+  }
+
+  public String getProjectName() {
+    return projectName;
+  }
+
+  public void setProjectName(String projectName) {
+    this.projectName = projectName;
+  }
+
+  public String getProjectCode() {
+    return projectCode;
+  }
+
+  public void setProjectCode(String projectCode) {
+    this.projectCode = projectCode;
   }
 
   public Long getProductId() {

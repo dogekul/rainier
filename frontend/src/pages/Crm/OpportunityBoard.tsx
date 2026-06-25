@@ -1,8 +1,11 @@
 import { type CSSProperties, useCallback, useEffect, useMemo, useState } from 'react';
 import { StatTiles, StatusChip } from '../../components/board';
 import { Button } from '../../components/ui/Button';
+import { Card } from '../../components/ui/Card';
 import { Drawer } from '../../components/ui/Drawer';
 import { MarkdownView } from '../../components/ui/MarkdownView';
+import { Table } from '../../components/ui/Table';
+import './OpportunityBoard.css';
 import {
   listOpportunities,
   OPP_GATE_STAGES,
@@ -302,77 +305,66 @@ export function OpportunityBoard() {
         </div>
       ) : (
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-            <span style={{ fontSize: 12, color: 'var(--rainier-color-text-2)' }}>排序</span>
+          <div className="opp-list-sort">
+            <span className="opp-list-sort-label">排序</span>
             <select
-              className="rainier-input"
+              className="rainier-select"
               data-testid="opp-list-sort"
               value={sortKey}
               onChange={(e) => setSortKey(e.target.value as SortKey)}
-              style={{ maxWidth: 160 }}
             >
               <option value="stage">按阶段</option>
               <option value="amount">按金额</option>
               <option value="dwell">按停留天数</option>
             </select>
           </div>
-          <div className="rainier-card" style={{ padding: '4px 14px', overflowX: 'auto' }}>
-          <table data-testid="opp-list" className="rainier-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-            <thead>
-              <tr style={{ textAlign: 'left', color: 'var(--rainier-color-text-2)' }}>
-                <th style={thStyle}>客户</th>
-                <th style={thStyle}>标题</th>
-                <th style={thStyle}>阶段</th>
-                <th style={thStyle}>金额</th>
-                <th style={thStyle}>负责人</th>
-                <th style={thStyle}>停留(天)</th>
-                <th style={thStyle}>状态</th>
-              </tr>
-            </thead>
-            <tbody>
-              {listRows.map((r) => {
-                const tier = dwellTier(r.stageEnteredAt, now);
-                const days = dwellDays(r.stageEnteredAt, now);
-                return (
-                  <tr
-                    key={r.id}
-                    data-testid={`opp-list-row-${r.id}`}
-                    tabIndex={0}
-                    onClick={() => setArtifactsForId(r.id)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        setArtifactsForId(r.id);
-                      }
-                    }}
-                    style={{ cursor: 'pointer', borderTop: '1px solid var(--rainier-border)' }}
-                  >
-                    <td style={tdStyle}>{r.customerName}</td>
-                    <td style={tdStyle}>{r.title}</td>
-                    <td style={tdStyle}>{OPP_STAGE_LABELS[r.stage]}</td>
-                    <td style={tdStyle}>{formatCNY(r.amount)}</td>
-                    <td style={tdStyle}>{ownerOf(r) || '—'}</td>
-                    <td style={tdStyle}>
-                      <span data-testid={`opp-dwell-${r.id}`} data-tier={tier} title={DWELL_LABEL[tier]}>
-                        <span style={{ ...dotStyle, background: `var(--rainier-status-${tier})` }} />
+          <Card>
+            <Table<Opportunity>
+              testId="opp-list"
+              rowKey="id"
+              dataSource={listRows}
+              rowTestId={(r) => `opp-list-row-${r.id}`}
+              onRowClick={(r) => setArtifactsForId(r.id)}
+              columns={[
+                { key: 'customer', title: '客户', render: (r) => r.customerName },
+                { key: 'title', title: '标题', render: (r) => r.title },
+                { key: 'stage', title: '阶段', render: (r) => OPP_STAGE_LABELS[r.stage] },
+                { key: 'amount', title: '金额', render: (r) => formatCNY(r.amount) },
+                { key: 'owner', title: '负责人', render: (r) => ownerOf(r) || '—' },
+                {
+                  key: 'dwell',
+                  title: '停留(天)',
+                  render: (r) => {
+                    const tier = dwellTier(r.stageEnteredAt, now);
+                    const days = dwellDays(r.stageEnteredAt, now);
+                    return (
+                      <span
+                        data-testid={`opp-dwell-${r.id}`}
+                        data-tier={tier}
+                        title={DWELL_LABEL[tier]}
+                        className="opp-dwell"
+                      >
+                        <span className="opp-dwell-dot" style={{ background: `var(--rainier-status-${tier})` }} />
                         {days == null ? '—' : days}
                       </span>
-                    </td>
-                    <td style={tdStyle}>
-                      {r.status === 'WON' ? (
-                        <StatusChip status="WON" label="赢单" tier="green" testId={`opp-status-${r.id}`} />
-                      ) : r.status === 'LOST' ? (
-                        <StatusChip status="LOST" label="丢单" tier="red" testId={`opp-status-${r.id}`} />
-                      ) : (
-                        '进行中'
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-          </div>
+                    );
+                  },
+                },
+                {
+                  key: 'status',
+                  title: '状态',
+                  render: (r) =>
+                    r.status === 'WON' ? (
+                      <StatusChip status="WON" label="赢单" tier="green" testId={`opp-status-${r.id}`} />
+                    ) : r.status === 'LOST' ? (
+                      <StatusChip status="LOST" label="丢单" tier="red" testId={`opp-status-${r.id}`} />
+                    ) : (
+                      <StatusChip status="OPEN" label="进行中" tier="yellow" testId={`opp-status-${r.id}`} />
+                    ),
+                },
+              ]}
+            />
+          </Card>
         </div>
       )}
 
@@ -452,7 +444,8 @@ function OppCard({ r, now, onOpen }: { r: Opportunity; now: Date; onOpen: () => 
           data-testid={`opp-dwell-${r.id}`}
           data-tier={tier}
           title={`${DWELL_LABEL[tier]}${days == null ? '' : ` · ${days}天`}`}
-          style={{ ...dotStyle, background: `var(--rainier-status-${tier})` }}
+          className="opp-dwell-dot"
+          style={{ background: `var(--rainier-status-${tier})` }}
         />
         <div style={{ fontWeight: 600, fontSize: 13, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {r.customerName}
@@ -479,16 +472,6 @@ function OppCard({ r, now, onOpen }: { r: Opportunity; now: Date; onOpen: () => 
   );
 }
 
-const dotStyle: CSSProperties = {
-  display: 'inline-block',
-  width: 8,
-  height: 8,
-  borderRadius: '50%',
-  marginRight: 4,
-  verticalAlign: 'middle',
-  flex: 'none',
-};
-
 const chipStyle: CSSProperties = {
   fontSize: 12,
   padding: '4px 10px',
@@ -509,5 +492,3 @@ function tabStyle(active: boolean): CSSProperties {
   };
 }
 
-const thStyle: CSSProperties = { padding: '6px 8px', fontWeight: 500 };
-const tdStyle: CSSProperties = { padding: '6px 8px' };

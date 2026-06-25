@@ -1,0 +1,25 @@
+/* v0.0.60 — Opportunity board polish: extract inline styles to a single file. */
+
+.opp-list-sort {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.opp-list-sort-label {
+  font-size: 12px;
+  color: var(--rainier-color-text-2);
+}
+
+.opp-dwell {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-variant-numeric: tabular-nums;
+}
+.opp-dwell-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}

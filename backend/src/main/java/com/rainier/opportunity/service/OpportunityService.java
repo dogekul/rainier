@@ -419,6 +419,15 @@ public class OpportunityService {
     if (o.getProductId() != null) {
       productRepo.findById(o.getProductId()).ifPresent(p -> d.setProductName(p.getName()));
     }
+    // v0.0.60 — surface projectCode/projectName so the frontend stops rendering raw "#${projectId}".
+    if (o.getProjectId() != null) {
+      projectRepo
+          .findById(o.getProjectId())
+          .ifPresent(p -> {
+            d.setProjectName(p.getName());
+            d.setProjectCode(p.getCode());
+          });
+    }
     return d;
   }
 

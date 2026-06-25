@@ -79,11 +79,11 @@ public class DemandService {
     d.setSource(source);
     d.setCloseReason(req.getCloseReason());
     d.setOpportunityId(req.getOpportunityId());
-    return DemandDetail.from(repo.saveAndFlush(d));
+    return enrich(repo.saveAndFlush(d));
   }
 
   public DemandDetail findById(Long id) {
-    return DemandDetail.from(getOrThrow(id));
+    return enrich(getOrThrow(id));
   }
 
   public PageResponse<DemandDetail> list(
@@ -116,7 +116,7 @@ public class DemandService {
         PageRequest.of(page.getPage(), page.getSize(), Sort.by(Sort.Direction.DESC, "createTime"));
     Page<Demand> result = repo.findAll(spec, req);
     return PageResponse.of(
-        result.stream().map(DemandDetail::from).collect(Collectors.toList()),
+        result.stream().map(this::enrich).collect(Collectors.toList()),
         page.getPage(),
         page.getSize(),
         result.getTotalElements());
@@ -148,7 +148,7 @@ public class DemandService {
     if (req.getCloseReason() != null) {
       d.setCloseReason(req.getCloseReason());
     }
-    return DemandDetail.from(repo.saveAndFlush(d));
+    return enrich(repo.saveAndFlush(d));
   }
 
   @Transactional
@@ -163,5 +163,19 @@ public class DemandService {
 
   Demand getOrThrow(Long id) {
     return repo.findById(id).orElseThrow(() -> new NotFoundException("demand not found: id=" + id));
+  }
+
+  /** v0.0.60 — enrich Detail with submitterName/submitterLoginName via User join (mirrors RequirementService.enrich). */
+  private DemandDetail enrich(Demand d) {
+    DemandDetail dto = DemandDetail.from(d);
+    if (d.getSubmitterUserId() != null) {
+      userRepo
+          .findById(d.getSubmitterUserId())
+          .ifPresent(u -> {
+            dto.setSubmitterName(u.getName());
+            dto.setSubmitterLoginName(u.getLoginName());
+          });
+    }
+    return dto;
   }
 }

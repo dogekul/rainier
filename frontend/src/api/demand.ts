@@ -19,6 +19,10 @@ export interface Demand {
   title: string;
   description?: string | null;
   submitterUserId: number;
+  /** v0.0.60 — enriched by backend (User join). */
+  submitterName?: string | null;
+  /** v0.0.60 — enriched by backend (User join). */
+  submitterLoginName?: string | null;
   status: DemandStatus;
   priority: Priority;
   source: Source;

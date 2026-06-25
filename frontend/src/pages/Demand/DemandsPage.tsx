@@ -7,7 +7,7 @@ import { Drawer } from '../../components/ui/Drawer';
 import { Input } from '../../components/ui/Input';
 import { Pagination } from '../../components/ui/Pagination';
 import { Table, type TableColumn } from '../../components/ui/Table';
-import { StatusChip } from '../../components/board';
+import { OwnerChip, StatusChip } from '../../components/board';
 import {
   createDemand,
   deleteDemand,
@@ -97,7 +97,7 @@ export function DemandsPage() {
 
   const columns: TableColumn<Demand>[] = [
     { key: 'title', title: '主题', render: (r) => r.title },
-    { key: 'submitterUserId', title: '提交人', render: (r) => r.submitterUserId },
+    { key: 'submitter', title: '提交人', render: (r) => <OwnerChip name={r.submitterName} loginName={r.submitterLoginName} /> },
     { key: 'status', title: '状态', render: (r) => <StatusChip status={r.status} label={DEMAND_STATUS_LABELS[r.status]} /> },
     { key: 'priority', title: '优先级', render: (r) => PRIORITY_LABELS[r.priority] ?? r.priority },
     { key: 'source', title: '来源', render: (r) => r.source },

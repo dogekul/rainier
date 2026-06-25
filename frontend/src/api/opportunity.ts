@@ -92,6 +92,10 @@ export interface Opportunity {
   opsOwnerUserId?: number | null;
   opsOwnerName?: string | null;
   projectId?: number | null;
+  /** v0.0.60 — enriched by backend (Project join). */
+  projectName?: string | null;
+  /** v0.0.60 — enriched by backend (Project join). */
+  projectCode?: string | null;
   productId?: number | null;
   productName?: string | null;
   customerId?: number | null;

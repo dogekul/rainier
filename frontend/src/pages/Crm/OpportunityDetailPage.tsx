@@ -458,7 +458,7 @@ export default function OpportunityDetailPage() {
       ) : opp ? (
         <div className="opp-detail-grid">
           {/* 概览 — order 1 */}
-          <div className="opp-card" style={{ order: 1 }}>
+          <div className="opp-card" data-order="1">
             <div className="opp-hero">
               <div
                 className="opp-hero-avatar"
@@ -601,7 +601,7 @@ export default function OpportunityDetailPage() {
           </div>
 
           {/* 流转产出物 — order 3（诉求/需求 之后） */}
-          <div className="opp-card" style={{ order: 3 }}>
+          <div className="opp-card" data-order="3">
             <div className="opp-card-title">
               流转产出物
               {!addArtOpen && (
@@ -746,8 +746,8 @@ export default function OpportunityDetailPage() {
           <div
             className="opp-card"
             data-testid="opp-gen-card"
+            data-order="2"
             ref={genCardRef}
-            style={{ order: 2 }}
           >
           {convertHint && (
             <div

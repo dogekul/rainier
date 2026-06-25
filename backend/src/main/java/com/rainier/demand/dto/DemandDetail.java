@@ -11,6 +11,10 @@ public class DemandDetail {
   private String title;
   private String description;
   private Long submitterUserId;
+  /** v0.0.60 enriched by service via User join. */
+  private String submitterName;
+  /** v0.0.60 enriched by service via User join. */
+  private String submitterLoginName;
   private String status;
   private String priority;
   private String source;
@@ -57,6 +61,22 @@ public class DemandDetail {
 
   public Long getSubmitterUserId() {
     return submitterUserId;
+  }
+
+  public String getSubmitterName() {
+    return submitterName;
+  }
+
+  public void setSubmitterName(String submitterName) {
+    this.submitterName = submitterName;
+  }
+
+  public String getSubmitterLoginName() {
+    return submitterLoginName;
+  }
+
+  public void setSubmitterLoginName(String submitterLoginName) {
+    this.submitterLoginName = submitterLoginName;
   }
 
   public String getStatus() {
