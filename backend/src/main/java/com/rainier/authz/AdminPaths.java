@@ -36,7 +36,11 @@ public final class AdminPaths {
 
   static final List<String> TIER_B =
       Collections.unmodifiableList(
-          Arrays.asList("/api/users", "/api/features", "/api/product-modules"));
+          Arrays.asList(
+              "/api/users",
+              "/api/features",
+              "/api/product-modules",
+              "/api/ai/errors"));
 
   /** Exact base or a sub-path ({@code base/...}) — never a sibling like products vs product-modules. */
   static boolean matches(String uri, String base) {
