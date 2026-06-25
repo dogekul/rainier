@@ -1,6 +1,8 @@
 /* (C) 2026 Rainier — internal use only. */
 package com.rainier.compliance.controller;
 
+import com.rainier.authz.PermissionPoint;
+import com.rainier.authz.RequiresPermission;
 import com.rainier.compliance.dto.AuditSummary;
 import com.rainier.compliance.dto.ResidualPermission;
 import com.rainier.compliance.service.ComplianceService;
@@ -25,11 +27,13 @@ public class ComplianceController {
   }
 
   @GetMapping(path = "/audit-summary", produces = "application/json")
+  @RequiresPermission({PermissionPoint.COMPLIANCE_VIEW, PermissionPoint.AUDIT_VIEW})
   public AuditSummary auditSummary() {
     return service.auditSummary();
   }
 
   @GetMapping(path = "/residual-permissions", produces = "application/json")
+  @RequiresPermission(PermissionPoint.COMPLIANCE_VIEW)
   public List<ResidualPermission> residualPermissions() {
     return service.residualPermissions();
   }

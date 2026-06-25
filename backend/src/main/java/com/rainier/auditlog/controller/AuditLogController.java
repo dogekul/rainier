@@ -3,6 +3,8 @@ package com.rainier.auditlog.controller;
 
 import com.rainier.auditlog.dto.AuditLogDetail;
 import com.rainier.auditlog.service.AuditLogService;
+import com.rainier.authz.PermissionPoint;
+import com.rainier.authz.RequiresPermission;
 import com.rainier.common.web.PageParams;
 import com.rainier.common.web.PageResponse;
 import javax.validation.Valid;
@@ -27,6 +29,7 @@ public class AuditLogController {
   }
 
   @GetMapping
+  @RequiresPermission(PermissionPoint.AUDIT_VIEW)
   public PageResponse<AuditLogDetail> list(
       @RequestParam(required = false) String actor,
       @RequestParam(required = false) String entityType,
@@ -37,6 +40,7 @@ public class AuditLogController {
   }
 
   @GetMapping("/{id}")
+  @RequiresPermission(PermissionPoint.AUDIT_VIEW)
   public AuditLogDetail get(@PathVariable Long id) {
     return service.findById(id);
   }
