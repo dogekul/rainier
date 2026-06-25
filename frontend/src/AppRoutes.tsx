@@ -26,6 +26,7 @@ import OperationBoardPage from './pages/Crm/OperationBoardPage';
 import OperationDetailPage from './pages/Crm/OperationDetailPage';
 import InboxPage from './pages/Inbox';
 import OrganizationsPage from './pages/Organization';
+import { OrganizationDetailPage } from './pages/Organization/OrganizationDetailPage';
 import PositionsPage from './pages/Position';
 import ProductModulesPage from './pages/ProductModule';
 import ProductsPage from './pages/Product';
@@ -69,6 +70,7 @@ export function AppRoutes() {
           <Route path="/demand-submit" element={<DemandSubmitPage />} />
           <Route path="/org" element={<Navigate to="/org/organizations" replace />} />
           <Route path="/org/organizations" element={<OrganizationsPage />} />
+          <Route path="/org/orgs/:id" element={<OrganizationDetailPage />} />
           <Route path="/org/users" element={<UsersPage />} />
           <Route path="/org/user-organizations" element={<UserOrganizationsPage />} />
           <Route path="/pm" element={<Navigate to="/pm/projects" replace />} />

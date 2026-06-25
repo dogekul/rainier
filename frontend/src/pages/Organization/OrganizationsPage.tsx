@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { StatusChip } from '../../components/board';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
@@ -37,7 +38,7 @@ export function OrganizationsPage() {
 
   const columns: TableColumn<Organization>[] = [
     { key: 'code', title: '编码', render: (r) => r.code },
-    { key: 'name', title: '名称', render: (r) => r.name },
+    { key: 'name', title: '名称', render: (r) => <Link to={`/org/orgs/${r.id}`}>{r.name}</Link> },
     { key: 'type', title: '类型', render: (r) => <StatusChip status={r.type} /> },
     { key: 'wholeName', title: '全路径', render: (r) => r.wholeName ?? '' },
     {

@@ -1,4 +1,5 @@
 import { render, screen, waitFor, within } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 import { OrganizationsPage } from './OrganizationsPage';
 
@@ -31,7 +32,11 @@ vi.mock('../../api/organization', async () => {
 
 describe('OrganizationsPage', () => {
   it('does NOT render a "PMO" column header (TC-RMP-FE-002)', async () => {
-    render(<OrganizationsPage />);
+    render(
+      <MemoryRouter>
+        <OrganizationsPage />
+      </MemoryRouter>,
+    );
 
     // Wait for the list fetch to populate the table (row count = header + 1 body row).
     await waitFor(() => {

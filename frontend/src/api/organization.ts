@@ -79,3 +79,24 @@ export async function moveOrganization(id: number, parentId: number | null): Pro
 export async function deleteOrganization(id: number): Promise<void> {
   await client.delete(`/organizations/${id}`);
 }
+
+/**
+ * v0.0.99 (E3) — 组织维度的审计日志。Backend filter: entityType=ORGANIZATION + entityId=id.
+ * Action optional; returns the standard PageResponse<AuditLog> shape so it can flow into a Table.
+ */
+export interface OrganizationAuditLogParams {
+  action?: string;
+  page?: number;
+  size?: number;
+}
+
+export async function listOrganizationAuditLog(
+  id: number,
+  params: OrganizationAuditLogParams = {},
+): Promise<PaginatedResult<import('./auditLog').AuditLog>> {
+  const res = await client.get<PaginatedResult<import('./auditLog').AuditLog>>(
+    `/organizations/${id}/audit-log`,
+    { params },
+  );
+  return res.data;
+}

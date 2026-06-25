@@ -1,6 +1,10 @@
 /* (C) 2026 Rainier — internal use only. */
 package com.rainier.organization.controller;
 
+import com.rainier.auditlog.dto.AuditLogDetail;
+import com.rainier.auditlog.service.AuditLogService;
+import com.rainier.authz.PermissionPoint;
+import com.rainier.authz.RequiresPermission;
 import com.rainier.common.web.PageParams;
 import com.rainier.common.web.PageResponse;
 import com.rainier.organization.domain.OrganizationType;
@@ -28,10 +32,15 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/organizations")
 public class OrganizationController {
 
-  private final OrganizationService service;
+  /** AuditLog entityType used by AuditAspect for OrganizationService writes. */
+  private static final String ORG_AUDIT_TYPE = "ORGANIZATION";
 
-  public OrganizationController(OrganizationService service) {
+  private final OrganizationService service;
+  private final AuditLogService auditLogService;
+
+  public OrganizationController(OrganizationService service, AuditLogService auditLogService) {
     this.service = service;
+    this.auditLogService = auditLogService;
   }
 
   @PostMapping
@@ -76,5 +85,23 @@ public class OrganizationController {
   public ResponseEntity<Void> delete(@PathVariable Long id) {
     service.delete(id);
     return ResponseEntity.noContent().build();
+  }
+
+  /**
+   * v0.0.99 (E3) — 该组织节点维度的审计历史。
+   *
+   * <p>委托给 {@link AuditLogService#query} 过滤 entityType=ORGANIZATION + entityId=id。先调用
+   * {@link OrganizationService#findById} 触发 NotFound（组织不存在时 → 404，与其它接口一致）。
+   *
+   * <p>本版只覆盖 ORGANIZATION 本身的写入；ORGANIZATION_PMO 行不在聚合范围内（spec OutOfScope）。
+   */
+  @GetMapping("/{id}/audit-log")
+  @RequiresPermission(PermissionPoint.AUDIT_VIEW)
+  public PageResponse<AuditLogDetail> auditLog(
+      @PathVariable Long id,
+      @RequestParam(required = false) String action,
+      @Valid PageParams page) {
+    service.findById(id);
+    return auditLogService.query(null, ORG_AUDIT_TYPE, id, action, page);
   }
 }
