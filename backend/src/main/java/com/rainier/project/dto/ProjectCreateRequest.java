@@ -28,8 +28,12 @@ public class ProjectCreateRequest {
    */
   @NotNull private Long ownerUserId;
 
-  /** v0.0.28 — optional org node (department/domain/team) for portfolio scoping. */
+  /** v0.0.28 — optional org node (department/domain/team) for portfolio scoping.
+   *  v0.0.64 — 缺省时 ProjectService.create 注入 owner 主组织。 */
   private Long organizationId;
+
+  /** v0.0.64 — 项目 PMO；缺省时 ProjectService.create 注入 organizationId 的 effective-PMOs 首条。 */
+  private Long pmoUserId;
 
   private LocalDate startDate;
   private LocalDate endDate;
@@ -85,6 +89,14 @@ public class ProjectCreateRequest {
 
   public void setOrganizationId(Long organizationId) {
     this.organizationId = organizationId;
+  }
+
+  public Long getPmoUserId() {
+    return pmoUserId;
+  }
+
+  public void setPmoUserId(Long pmoUserId) {
+    this.pmoUserId = pmoUserId;
   }
 
   public LocalDate getStartDate() {

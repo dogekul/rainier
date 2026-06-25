@@ -72,6 +72,11 @@ export function ProjectsPage() {
       title: '负责人',
       render: (r) => <OwnerChip name={r.ownerName} loginName={r.ownerLoginName} />,
     },
+    {
+      key: 'organization',
+      title: '团队',
+      render: (r) => r.organizationName ?? '—',
+    },
     { key: 'startDate', title: '开始', render: (r) => formatDate(r.startDate) },
     { key: 'endDate', title: '结束', render: (r) => formatDate(r.endDate) },
     { key: 'enabled', title: '启用', render: (r) => (r.enabled ? '是' : '否') },

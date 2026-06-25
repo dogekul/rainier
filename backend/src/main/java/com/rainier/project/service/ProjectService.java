@@ -7,6 +7,10 @@ import com.rainier.common.exception.NotFoundException;
 import com.rainier.common.web.PageParams;
 import com.rainier.common.web.PageResponse;
 import com.rainier.milestone.repository.MilestoneRepository;
+import com.rainier.organization.domain.Organization;
+import com.rainier.organization.repository.OrganizationRepository;
+import com.rainier.organizationpmo.dto.EffectivePmoDetail;
+import com.rainier.organizationpmo.service.OrganizationPmoService;
 import com.rainier.project.domain.Project;
 import com.rainier.project.domain.ProjectStatus;
 import com.rainier.project.domain.ProjectType;
@@ -18,7 +22,10 @@ import com.rainier.requirement.repository.RequirementRepository;
 import com.rainier.task.repository.TaskRepository;
 import com.rainier.user.domain.User;
 import com.rainier.user.repository.UserRepository;
+import com.rainier.userorganization.domain.UserOrganization;
+import com.rainier.userorganization.repository.UserOrganizationRepository;
 import com.rainier.userrole.repository.UserRoleRepository;
+import java.util.List;
 import java.util.stream.Collectors;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -46,6 +53,9 @@ public class ProjectService {
   private final UserRoleRepository userRoleRepo;
   private final TaskRepository taskRepo;
   private final MilestoneRepository milestoneRepo;
+  private final UserOrganizationRepository userOrgRepo;
+  private final OrganizationRepository organizationRepo;
+  private final OrganizationPmoService organizationPmoService;
 
   public ProjectService(
       ProjectRepository repo,
@@ -53,13 +63,19 @@ public class ProjectService {
       RequirementRepository requirementRepo,
       UserRoleRepository userRoleRepo,
       TaskRepository taskRepo,
-      MilestoneRepository milestoneRepo) {
+      MilestoneRepository milestoneRepo,
+      UserOrganizationRepository userOrgRepo,
+      OrganizationRepository organizationRepo,
+      OrganizationPmoService organizationPmoService) {
     this.repo = repo;
     this.userRepo = userRepo;
     this.requirementRepo = requirementRepo;
     this.userRoleRepo = userRoleRepo;
     this.taskRepo = taskRepo;
     this.milestoneRepo = milestoneRepo;
+    this.userOrgRepo = userOrgRepo;
+    this.organizationRepo = organizationRepo;
+    this.organizationPmoService = organizationPmoService;
   }
 
   @Transactional
@@ -75,6 +91,25 @@ public class ProjectService {
     if (!ProjectType.ALL.contains(projectType)) {
       throw new BadRequestException("invalid project type: " + projectType);
     }
+    // v0.0.64 — 默认值后端注入（仅在 request 缺值时）：
+    // 1) 缺 organizationId → 取 owner 的主组织 (user_organization.is_primary=1 AND left_at IS NULL)
+    // 2) 缺 pmoUserId 但有 organizationId → 取该组织的 effective-PMOs 首条
+    Long organizationId = req.getOrganizationId();
+    if (organizationId == null) {
+      List<UserOrganization> primaryUo =
+          userOrgRepo.findByUserIdAndIsPrimaryTrueAndLeftAtIsNull(req.getOwnerUserId());
+      if (!primaryUo.isEmpty()) {
+        organizationId = primaryUo.get(0).getOrganizationId();
+      }
+    }
+    Long pmoUserId = req.getPmoUserId();
+    if (pmoUserId == null && organizationId != null) {
+      List<EffectivePmoDetail> effective = organizationPmoService.findEffectivePmos(organizationId);
+      if (!effective.isEmpty()) {
+        pmoUserId = effective.get(0).getUserId();
+      }
+    }
+
     Project p = new Project();
     // v0.0.49 — code 不再手填：先用临时占位 insert（code 列非空、无 DB UNIQUE），拿到自增 id 后回填
     // {类型前缀}-{id}。请求中的 code 一律忽略。同事务两步保存，占位 code 不外泄。
@@ -83,7 +118,8 @@ public class ProjectService {
     p.setDescription(req.getDescription());
     p.setStatus(status);
     p.setOwnerUserId(req.getOwnerUserId());
-    p.setOrganizationId(req.getOrganizationId());
+    p.setOrganizationId(organizationId);
+    p.setPmoUserId(pmoUserId);
     p.setStartDate(req.getStartDate());
     p.setEndDate(req.getEndDate());
     p.setEnabled(req.getEnabled() == null ? Boolean.TRUE : req.getEnabled());
@@ -162,6 +198,8 @@ public class ProjectService {
       p.setProjectType(req.getProjectType());
     }
     p.setOrganizationId(req.getOrganizationId());
+    // v0.0.64 — pmoUserId 可改/可清。update 不重算默认（默认仅 create 时注入）。
+    p.setPmoUserId(req.getPmoUserId());
     p.setStartDate(req.getStartDate());
     p.setEndDate(req.getEndDate());
     // enabled stays null-guarded — DB column is NOT NULL bit(1); silently swallowing a malformed
@@ -206,6 +244,20 @@ public class ProjectService {
     if (u != null) {
       dto.setOwnerName(u.getName());
       dto.setOwnerLoginName(u.getLoginName());
+    }
+    if (p.getOrganizationId() != null) {
+      Organization o = organizationRepo.findById(p.getOrganizationId()).orElse(null);
+      if (o != null) {
+        dto.setOrganizationName(o.getName());
+        dto.setOrganizationType(o.getType() == null ? null : o.getType().name());
+      }
+    }
+    if (p.getPmoUserId() != null) {
+      User pmo = userRepo.findById(p.getPmoUserId()).orElse(null);
+      if (pmo != null) {
+        dto.setPmoName(pmo.getName());
+        dto.setPmoLoginName(pmo.getLoginName());
+      }
     }
     return dto;
   }

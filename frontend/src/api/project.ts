@@ -46,6 +46,14 @@ export interface Project {
   /** v0.0.8 enrichment — backend join with User. */
   ownerName?: string | null;
   ownerLoginName?: string | null;
+  /** v0.0.64 — 负责团队（organization id；schema 自 v0.0.28 已有，本版前端启用）. */
+  organizationId?: number | null;
+  organizationName?: string | null;
+  organizationType?: string | null;
+  /** v0.0.64 — 项目 PMO 单值字段（默认由后端从所属团队 effective-PMOs 注入）. */
+  pmoUserId?: number | null;
+  pmoName?: string | null;
+  pmoLoginName?: string | null;
   startDate?: string | null;
   endDate?: string | null;
   enabled: boolean;
@@ -64,6 +72,10 @@ export interface ProjectCreate {
   /** v0.0.16 — optional; omitted → backend defaults to CASUAL. */
   projectType?: ProjectType;
   ownerUserId: number;
+  /** v0.0.64 — 缺省时后端注入 owner 主组织（user_organization.is_primary=1）. */
+  organizationId?: number | null;
+  /** v0.0.64 — 缺省时后端从所属团队 effective-PMOs 首条注入. */
+  pmoUserId?: number | null;
   startDate?: string;
   endDate?: string;
   enabled?: boolean;
@@ -77,6 +89,10 @@ export interface ProjectUpdate {
   projectType?: ProjectType;
   /** v0.0.8: owner IS mutable (admin can transfer ownership). */
   ownerUserId: number;
+  /** v0.0.64 — 团队可改/可清. */
+  organizationId?: number | null;
+  /** v0.0.64 — PMO 可改/可清. */
+  pmoUserId?: number | null;
   startDate?: string;
   endDate?: string;
   enabled?: boolean;

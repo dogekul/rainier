@@ -6,6 +6,8 @@ import com.rainier.auth.dto.MeResponse.MeProject;
 import com.rainier.auth.dto.MeResponse.MeRole;
 import com.rainier.project.domain.Project;
 import com.rainier.project.repository.ProjectRepository;
+import com.rainier.projectmember.domain.ProjectMember;
+import com.rainier.projectmember.repository.ProjectMemberRepository;
 import com.rainier.role.domain.Role;
 import com.rainier.role.repository.RoleRepository;
 import com.rainier.user.domain.User;
@@ -37,16 +39,19 @@ public class MeService {
   private final UserRoleRepository userRoleRepo;
   private final RoleRepository roleRepo;
   private final ProjectRepository projectRepo;
+  private final ProjectMemberRepository projectMemberRepo;
 
   public MeService(
       UserRepository userRepo,
       UserRoleRepository userRoleRepo,
       RoleRepository roleRepo,
-      ProjectRepository projectRepo) {
+      ProjectRepository projectRepo,
+      ProjectMemberRepository projectMemberRepo) {
     this.userRepo = userRepo;
     this.userRoleRepo = userRoleRepo;
     this.roleRepo = roleRepo;
     this.projectRepo = projectRepo;
+    this.projectMemberRepo = projectMemberRepo;
   }
 
   public MeResponse forUsername(String username) {
@@ -99,6 +104,23 @@ public class MeService {
         if (p != null) {
           projects.put(pid, new MeProject(p.getId(), p.getCode(), p.getName()));
         }
+      }
+    }
+
+    // v0.0.64 — also include projects where the user is a registered project_member (regardless of user_role).
+    // Owner-of-project membership is implicit (owner can manage own projects through 我负责的 list elsewhere);
+    // here we focus on the user_role+project_member UNION so 「我的项目」 covers all involvement.
+    List<ProjectMember> memberships = projectMemberRepo.findByUserId(user.getId());
+    if (!memberships.isEmpty()) {
+      Set<Long> additionalProjectIds =
+          memberships.stream()
+              .map(ProjectMember::getProjectId)
+              .filter(pid -> !projects.containsKey(pid))
+              .collect(Collectors.toSet());
+      if (!additionalProjectIds.isEmpty()) {
+        projectRepo
+            .findAllById(additionalProjectIds)
+            .forEach(p -> projects.put(p.getId(), new MeProject(p.getId(), p.getCode(), p.getName())));
       }
     }
 

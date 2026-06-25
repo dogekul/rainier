@@ -231,6 +231,36 @@ public class OrganizationService {
         .orElseThrow(() -> new NotFoundException("organization not found: id=" + id));
   }
 
+  /**
+   * v0.0.64 — 沿 parent_id 链向上回溯，返回 [self, parent, grandparent, ...]（顺序：自身 → 根）。
+   *
+   * <p>停止条件：parent_id == NULL 或 parent 已被删（找不到）。环路防御（虽然 DB 应不允许）：访问过的 id 集合检查。
+   */
+  public java.util.List<Long> getAncestorIds(Long orgId) {
+    java.util.List<Long> result = new java.util.ArrayList<Long>();
+    java.util.Set<Long> seen = new java.util.HashSet<Long>();
+    Long cursor = orgId;
+    while (cursor != null && !seen.contains(cursor)) {
+      Organization o = repo.findById(cursor).orElse(null);
+      if (o == null) {
+        break;
+      }
+      result.add(cursor);
+      seen.add(cursor);
+      cursor = o.getParentId();
+    }
+    return result;
+  }
+
+  /** v0.0.64 — 按 id 查 name（OrganizationPmoService enrich 用，避开重复加载）。 */
+  public java.util.Map<Long, Organization> findAllById(java.util.Collection<Long> ids) {
+    java.util.Map<Long, Organization> map = new java.util.HashMap<Long, Organization>();
+    for (Organization o : repo.findAllById(ids)) {
+      map.put(o.getId(), o);
+    }
+    return map;
+  }
+
   private String computeWholeName(Organization o) {
     if (o.getParentId() == null) {
       return o.getName();

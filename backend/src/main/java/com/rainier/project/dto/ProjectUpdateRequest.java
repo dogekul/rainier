@@ -28,6 +28,9 @@ public class ProjectUpdateRequest {
   /** v0.0.28 — optional on update; null clears the org edge. */
   private Long organizationId;
 
+  /** v0.0.64 — 项目 PMO；可改/可清。 */
+  private Long pmoUserId;
+
   private LocalDate startDate;
   private LocalDate endDate;
   private Boolean enabled;
@@ -74,6 +77,14 @@ public class ProjectUpdateRequest {
 
   public void setOrganizationId(Long organizationId) {
     this.organizationId = organizationId;
+  }
+
+  public Long getPmoUserId() {
+    return pmoUserId;
+  }
+
+  public void setPmoUserId(Long pmoUserId) {
+    this.pmoUserId = pmoUserId;
   }
 
   public LocalDate getStartDate() {

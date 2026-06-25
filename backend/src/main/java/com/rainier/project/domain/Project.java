@@ -46,8 +46,19 @@ public class Project extends BaseEntity {
   private Long ownerUserId;
 
   /**
+   * v0.0.64 — 项目 PMO（单值；默认由 ProjectService.create 从所属团队的 effective-PMOs 注入）。
+   *
+   * <p>项目 PMO 与项目 owner 分离：owner 是项目创建者/负责人；PMO 跟进交付节奏/风险/复盘。
+   */
+  @Column(name = "pmo_user_id")
+  private Long pmoUserId;
+
+  /**
    * v0.0.28: optional edge to an organization node (department/domain/team) so portfolios can be
    * scoped by org subtree. Nullable — legacy/unscoped projects carry no org.
+   *
+   * <p>v0.0.64 — 列已就位（自 v0.0.28），本版起前端启用，作为「负责团队」字段；缺省时 ProjectService.create
+   * 注入 owner 的主组织（user_organization.is_primary=1）。
    */
   @Column(name = "organization_id")
   private Long organizationId;
@@ -116,6 +127,14 @@ public class Project extends BaseEntity {
 
   public void setOwnerUserId(Long ownerUserId) {
     this.ownerUserId = ownerUserId;
+  }
+
+  public Long getPmoUserId() {
+    return pmoUserId;
+  }
+
+  public void setPmoUserId(Long pmoUserId) {
+    this.pmoUserId = pmoUserId;
   }
 
   public LocalDate getStartDate() {

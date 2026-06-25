@@ -35,6 +35,13 @@ public interface UserOrganizationRepository
   /** v0.0.40 me-profile — all active (leftAt IS NULL) org memberships of a user. */
   List<UserOrganization> findByUserIdAndLeftAtIsNull(Long userId);
 
+  /**
+   * v0.0.64 — owner 主组织（用于 Project 创建时 organizationId 默认注入）。
+   *
+   * <p>Filters: is_primary=1 AND left_at IS NULL（即活跃主组织）。
+   */
+  List<UserOrganization> findByUserIdAndIsPrimaryTrueAndLeftAtIsNull(Long userId);
+
   /** Demote all primary assignments for a user except a given keepId. */
   @Modifying
   @Query(

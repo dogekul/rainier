@@ -21,6 +21,16 @@ public class ProjectDetail {
   private String ownerLoginName;
   /** v0.0.28 — optional org node for portfolio scoping. */
   private Long organizationId;
+  /** v0.0.64 — enrichment: organization name + type for UI display. */
+  private String organizationName;
+
+  private String organizationType;
+  /** v0.0.64 — 项目 PMO（单值，可空）. */
+  private Long pmoUserId;
+
+  private String pmoName;
+  private String pmoLoginName;
+
   private LocalDate startDate;
   private LocalDate endDate;
   private Boolean enabled;
@@ -41,6 +51,7 @@ public class ProjectDetail {
     dto.status = p.getStatus();
     dto.ownerUserId = p.getOwnerUserId();
     dto.organizationId = p.getOrganizationId();
+    dto.pmoUserId = p.getPmoUserId();
     dto.startDate = p.getStartDate();
     dto.endDate = p.getEndDate();
     dto.enabled = p.getEnabled();
@@ -126,5 +137,45 @@ public class ProjectDetail {
 
   public String getUpdateBy() {
     return updateBy;
+  }
+
+  public String getOrganizationName() {
+    return organizationName;
+  }
+
+  public void setOrganizationName(String organizationName) {
+    this.organizationName = organizationName;
+  }
+
+  public String getOrganizationType() {
+    return organizationType;
+  }
+
+  public void setOrganizationType(String organizationType) {
+    this.organizationType = organizationType;
+  }
+
+  public Long getPmoUserId() {
+    return pmoUserId;
+  }
+
+  public void setPmoUserId(Long pmoUserId) {
+    this.pmoUserId = pmoUserId;
+  }
+
+  public String getPmoName() {
+    return pmoName;
+  }
+
+  public void setPmoName(String pmoName) {
+    this.pmoName = pmoName;
+  }
+
+  public String getPmoLoginName() {
+    return pmoLoginName;
+  }
+
+  public void setPmoLoginName(String pmoLoginName) {
+    this.pmoLoginName = pmoLoginName;
   }
 }

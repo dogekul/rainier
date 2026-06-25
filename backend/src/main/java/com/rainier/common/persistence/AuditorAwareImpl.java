@@ -21,13 +21,24 @@ public class AuditorAwareImpl implements AuditorAware<String> {
   static final String SYSTEM = "system";
   static final String REQ_ATTR_USERNAME = "username";
 
+  /**
+   * v0.0.64 — also accept the canonical {@code rainier.username} attribute set by SecurityFilter (the
+   * legacy {@code "username"} key was never populated by any filter; this fix lets
+   * BaseEntity.createBy/updateBy + project_member.joined_by carry real login names).
+   */
+  static final String REQ_ATTR_USERNAME_CANONICAL = "rainier.username";
+
   @Override
   public Optional<String> getCurrentAuditor() {
-    return Optional.ofNullable(currentRequest())
-        .map(req -> req.getAttribute(REQ_ATTR_USERNAME))
-        .map(Object::toString)
-        .map(Optional::of)
-        .orElseGet(() -> Optional.of(SYSTEM));
+    HttpServletRequest req = currentRequest();
+    if (req == null) {
+      return Optional.of(SYSTEM);
+    }
+    Object v = req.getAttribute(REQ_ATTR_USERNAME_CANONICAL);
+    if (v == null) {
+      v = req.getAttribute(REQ_ATTR_USERNAME);
+    }
+    return v == null ? Optional.of(SYSTEM) : Optional.of(v.toString());
   }
 
   private static HttpServletRequest currentRequest() {

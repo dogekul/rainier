@@ -1,19 +1,26 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { OwnerChip, StatusChip } from '../../components/board';
 import { Button } from '../../components/ui/Button';
+import { Input } from '../../components/ui/Input';
 import { MarkdownView } from '../../components/ui/MarkdownView';
 import { Table, type TableColumn } from '../../components/ui/Table';
+import { TreeSelect, type TreeNode } from '../../components/ui/TreeSelect';
 import { PROJECT_STATUS_LABELS } from '../../constants/labels';
 import { formatDate, formatDateTime } from '../../utils/formatDate';
 import {
   getProject,
   PROJECT_TYPE_LABELS,
+  PROJECT_TYPE_OPTIONS,
   updateProject,
   type Project,
   type ProjectStatus,
+  type ProjectType,
   type ProjectUpdate,
 } from '../../api/project';
+import { getOrganizationTree } from '../../api/organization';
+import { listEffectivePmos, type EffectivePmoDetail } from '../../api/organizationPmo';
+import { listUserOrganizations } from '../../api/userOrganization';
 import {
   listRequirements,
   REQUIREMENT_STATUS_LABELS,
@@ -23,9 +30,28 @@ import {
 import { listSprints, type Sprint, type SprintStatus } from '../../api/sprint';
 import { listTasks, TASK_STATUS_LABELS, type Task, type TaskStatus } from '../../api/task';
 import { PRIORITY_LABELS } from '../../api/demand';
-import { ProjectEditDrawer } from './ProjectEditDrawer';
+import {
+  addProjectMember,
+  listProjectMembers,
+  PROJECT_MEMBER_ROLE_LABELS,
+  PROJECT_MEMBER_ROLE_OPTIONS,
+  removeProjectMember,
+  updateProjectMemberRole,
+  type ProjectMemberDetail,
+  type ProjectMemberRole,
+} from '../../api/projectMember';
+import { listUsers, type User } from '../../api/user';
+import { isElevated, useAuthStore } from '../../store/auth';
 import { MilestonesPanel } from './MilestonesPanel';
 import '../Pm/PmDetailPage.css';
+
+const STATUS_OPTIONS: ProjectStatus[] = [
+  'PLANNING',
+  'ACTIVE',
+  'ON_HOLD',
+  'DELIVERED',
+  'ARCHIVED',
+];
 
 const PROJECT_STATUS_TIER: Record<ProjectStatus, 'gray' | 'yellow' | 'green' | 'red'> = {
   PLANNING: 'gray',
@@ -65,7 +91,7 @@ const TASK_STATUS_TIER: Record<TaskStatus, 'gray' | 'yellow' | 'green' | 'red'> 
   CANCELLED: 'red',
 };
 
-type Tab = 'info' | 'milestones' | 'requirements' | 'sprints' | 'tasks';
+type Tab = 'info' | 'members' | 'milestones' | 'requirements' | 'sprints' | 'tasks';
 
 /**
  * v0.0.62 — Project 详情页 (/pm/projects/:id). Tabs: 基本信息 / 里程碑 / 需求 / Sprint / 任务.
@@ -82,10 +108,30 @@ export function ProjectDetailPage() {
   const [error, setError] = useState<string | null>(null);
 
   const [tab, setTab] = useState<Tab>('info');
+  const [memberCount, setMemberCount] = useState(0);
   const [reqCount, setReqCount] = useState(0);
   const [sprintCount, setSprintCount] = useState(0);
   const [taskCount, setTaskCount] = useState(0);
-  const [drawerOpen, setDrawerOpen] = useState(false);
+
+  // v0.0.64 → revised — 编辑改为「基本信息」Tab 内联编辑（用户：项目的编辑页 不要使用侧抽屉）
+  const [editing, setEditing] = useState(false);
+  const [users, setUsers] = useState<User[]>([]);
+  const [orgTree, setOrgTree] = useState<TreeNode[]>([]);
+  const [eName, setEName] = useState('');
+  const [eDescription, setEDescription] = useState('');
+  const [eStatus, setEStatus] = useState<ProjectStatus>('PLANNING');
+  const [eProjectType, setEProjectType] = useState<ProjectType>('CASUAL');
+  const [eOwnerUserId, setEOwnerUserId] = useState<number | ''>('');
+  const [eOrganizationId, setEOrganizationId] = useState<number | null>(null);
+  const [ePmoUserId, setEPmoUserId] = useState<number | ''>('');
+  const [pmoCandidates, setPmoCandidates] = useState<EffectivePmoDetail[]>([]);
+  const [pmoLoading, setPmoLoading] = useState(false);
+  const [eStartDate, setEStartDate] = useState('');
+  const [eEndDate, setEEndDate] = useState('');
+  const [eEnabled, setEEnabled] = useState(true);
+  const [eError, setEError] = useState<string | null>(null);
+  const [eSaving, setESaving] = useState(false);
+  const lastPmoReqId = useRef(0);
 
   const load = useCallback(() => {
     if (!Number.isFinite(id)) {
@@ -108,9 +154,105 @@ export function ProjectDetailPage() {
     listTasks({ projectId: id, size: 100 })
       .then((res) => setTaskCount(res.total))
       .catch(() => setTaskCount(0));
+    listProjectMembers(id)
+      .then((res) => setMemberCount(res.length))
+      .catch(() => setMemberCount(0));
   }, [id]);
 
   useEffect(load, [load]);
+
+  // v0.0.64 — Edit-mode: prefill 表单 + 拉 users / org tree
+  const startEdit = useCallback(() => {
+    if (!proj) return;
+    setEName(proj.name);
+    setEDescription(proj.description ?? '');
+    setEStatus(proj.status);
+    setEProjectType(proj.projectType);
+    setEOwnerUserId(proj.ownerUserId);
+    setEOrganizationId(proj.organizationId ?? null);
+    setEPmoUserId(proj.pmoUserId ?? '');
+    setEStartDate(proj.startDate ?? '');
+    setEEndDate(proj.endDate ?? '');
+    setEEnabled(proj.enabled);
+    setEError(null);
+    setEditing(true);
+    void listUsers({ size: 100 }).then((r) => setUsers(r.content));
+    void getOrganizationTree().then((nodes) =>
+      setOrgTree(nodes.map((n) => ({ id: n.id, name: n.name, parentId: n.parentId }))),
+    );
+  }, [proj]);
+
+  // v0.0.64 — Edit-mode: owner change → auto-fill team to owner's primary org
+  useEffect(() => {
+    if (!editing || eOwnerUserId === '') return;
+    void listUserOrganizations({ userId: Number(eOwnerUserId), activeOnly: true, size: 100 }).then(
+      (r) => {
+        const primary = r.content.find((uo) => uo.isPrimary);
+        if (primary) {
+          setEOrganizationId(primary.organizationId);
+        }
+      },
+    );
+  }, [editing, eOwnerUserId]);
+
+  // v0.0.64 — Edit-mode: team change → refresh PMO candidates + default to first
+  useEffect(() => {
+    if (!editing) return;
+    if (eOrganizationId == null) {
+      setPmoCandidates([]);
+      return;
+    }
+    const reqId = ++lastPmoReqId.current;
+    setPmoLoading(true);
+    void listEffectivePmos(eOrganizationId)
+      .then((res) => {
+        if (reqId !== lastPmoReqId.current) return;
+        setPmoCandidates(res);
+      })
+      .catch(() => {
+        if (reqId === lastPmoReqId.current) setPmoCandidates([]);
+      })
+      .finally(() => {
+        if (reqId === lastPmoReqId.current) setPmoLoading(false);
+      });
+  }, [editing, eOrganizationId]);
+
+  const cancelEdit = () => {
+    setEditing(false);
+    setEError(null);
+  };
+
+  const saveEdit = async () => {
+    if (proj == null) return;
+    if (eOwnerUserId === '') {
+      setEError('请选择负责人');
+      return;
+    }
+    setEError(null);
+    setESaving(true);
+    try {
+      const body: ProjectUpdate = {
+        name: eName,
+        description: eDescription,
+        status: eStatus,
+        projectType: eProjectType,
+        ownerUserId: eOwnerUserId,
+        organizationId: eOrganizationId,
+        pmoUserId: ePmoUserId === '' ? null : ePmoUserId,
+        startDate: eStartDate || undefined,
+        endDate: eEndDate || undefined,
+        enabled: eEnabled,
+      };
+      await updateProject(proj.id, body);
+      setEditing(false);
+      load();
+    } catch (e) {
+      const err = e as { response?: { data?: { message?: string } }; message?: string };
+      setEError(err?.response?.data?.message ?? err?.message ?? '保存失败');
+    } finally {
+      setESaving(false);
+    }
+  };
 
   if (loading) return <div className="rainier-page">加载中…</div>;
   if (error || !proj) {
@@ -146,16 +288,59 @@ export function ProjectDetailPage() {
           tier="gray"
         />
         {!proj.enabled && <StatusChip status="DISABLED" label="已停用" tier="gray" />}
+        {proj.organizationName && (
+          <StatusChip
+            status="TEAM"
+            label={`🏢 ${proj.organizationName}`}
+            tier="gray"
+            testId="project-detail-team-chip"
+          />
+        )}
+        {proj.pmoName && (
+          <StatusChip
+            status="PMO"
+            label={`👤PMO ${proj.pmoName}`}
+            tier="green"
+            testId="project-detail-pmo-chip"
+          />
+        )}
         <span className="pm-detail-hero-actions">
-          <Button type="button" variant="secondary" onClick={() => setDrawerOpen(true)} data-testid="project-detail-edit">
-            编辑
-          </Button>
+          {!editing ? (
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => {
+                setTab('info');
+                startEdit();
+              }}
+              data-testid="project-detail-edit"
+            >
+              编辑
+            </Button>
+          ) : (
+            <>
+              <Button type="button" variant="secondary" onClick={cancelEdit} data-testid="project-detail-cancel">
+                取消
+              </Button>
+              <Button
+                type="button"
+                disabled={eSaving || pmoLoading}
+                onClick={() => void saveEdit()}
+                data-testid="project-detail-save"
+              >
+                {eSaving ? '保存中…' : '保存'}
+              </Button>
+            </>
+          )}
         </span>
       </div>
 
       <div className="pm-tabs" data-testid="project-detail-tabs">
         <button type="button" className="pm-tab" data-active={tab === 'info'} onClick={() => setTab('info')} data-testid="project-tab-info">
           基本信息
+        </button>
+        <button type="button" className="pm-tab" data-active={tab === 'members'} onClick={() => setTab('members')} data-testid="project-tab-members">
+          成员<span className="pm-tab-count">· {memberCount}</span>
         </button>
         <button type="button" className="pm-tab" data-active={tab === 'milestones'} onClick={() => setTab('milestones')} data-testid="project-tab-milestones">
           里程碑
@@ -171,7 +356,7 @@ export function ProjectDetailPage() {
         </button>
       </div>
 
-      {tab === 'info' && (
+      {tab === 'info' && !editing && (
         <div className="pm-tab-pane">
           <div className="pm-info-grid">
             <span className="pm-info-label">名称</span>
@@ -199,6 +384,18 @@ export function ProjectDetailPage() {
               <OwnerChip name={proj.ownerName} loginName={proj.ownerLoginName} />
             </span>
 
+            <span className="pm-info-label">负责团队</span>
+            <span className="pm-info-value">{proj.organizationName ?? '—'}</span>
+
+            <span className="pm-info-label">项目 PMO</span>
+            <span className="pm-info-value">
+              {proj.pmoUserId ? (
+                <OwnerChip name={proj.pmoName} loginName={proj.pmoLoginName} />
+              ) : (
+                '—'
+              )}
+            </span>
+
             <span className="pm-info-label">起止</span>
             <span className="pm-info-value">
               {formatDate(proj.startDate)} → {formatDate(proj.endDate)}
@@ -219,6 +416,139 @@ export function ProjectDetailPage() {
               <MarkdownView content={proj.description} />
             </div>
           )}
+        </div>
+      )}
+
+      {tab === 'info' && editing && (
+        <div className="pm-tab-pane" data-testid="project-detail-edit-form">
+          <Input label="名称" value={eName} onChange={(e) => setEName(e.target.value)} />
+          <Input
+            label="描述"
+            value={eDescription}
+            onChange={(e) => setEDescription(e.target.value)}
+          />
+          <div className="rainier-form-group">
+            <label className="rainier-form-label">状态</label>
+            <select
+              className="rainier-form-select"
+              value={eStatus}
+              onChange={(e) => setEStatus(e.target.value as ProjectStatus)}
+            >
+              {STATUS_OPTIONS.map((s) => (
+                <option key={s} value={s}>
+                  {PROJECT_STATUS_LABELS[s] ?? s}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="rainier-form-group">
+            <label className="rainier-form-label">项目类型</label>
+            <select
+              className="rainier-form-select"
+              value={eProjectType}
+              onChange={(e) => setEProjectType(e.target.value as ProjectType)}
+            >
+              {PROJECT_TYPE_OPTIONS.map((t) => (
+                <option key={t} value={t}>
+                  {PROJECT_TYPE_LABELS[t]}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="rainier-form-group">
+            <label className="rainier-form-label">负责人</label>
+            <select
+              className="rainier-form-select"
+              value={eOwnerUserId}
+              onChange={(e) => setEOwnerUserId(e.target.value === '' ? '' : Number(e.target.value))}
+              data-testid="project-detail-edit-owner"
+            >
+              <option value="">请选择</option>
+              {users.map((u) => (
+                <option key={u.id} value={u.id}>
+                  {u.name}（{u.loginName}）
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="rainier-form-group">
+            <label className="rainier-form-label">负责团队（owner 变化时会自动取主组织，可改）</label>
+            <TreeSelect
+              value={eOrganizationId}
+              nodes={orgTree}
+              onChange={(id) => setEOrganizationId(id)}
+              placeholder="选择团队"
+            />
+          </div>
+          <div className="rainier-form-group">
+            <label className="rainier-form-label">
+              项目 PMO {pmoLoading ? '· 加载中…' : ''}
+            </label>
+            <select
+              className="rainier-form-select"
+              value={ePmoUserId}
+              onChange={(e) => setEPmoUserId(e.target.value === '' ? '' : Number(e.target.value))}
+              disabled={pmoLoading}
+              data-testid="project-detail-edit-pmo"
+            >
+              <option value="">未指定</option>
+              {pmoCandidates.map((c) => {
+                const label =
+                  c.inheritedFromOrgId === eOrganizationId
+                    ? c.userName ?? c.userLoginName ?? `#${c.userId}`
+                    : `${c.userName ?? c.userLoginName ?? '#' + c.userId}（继承自 ${c.inheritedFromOrgName ?? ''}）`;
+                return (
+                  <option key={c.userId} value={c.userId}>
+                    {label}
+                  </option>
+                );
+              })}
+            </select>
+          </div>
+          <Input
+            label="开始日期 (YYYY-MM-DD)"
+            value={eStartDate}
+            onChange={(e) => setEStartDate(e.target.value)}
+          />
+          <Input
+            label="结束日期 (YYYY-MM-DD)"
+            value={eEndDate}
+            onChange={(e) => setEEndDate(e.target.value)}
+          />
+          <div className="rainier-form-group">
+            <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+              <input
+                type="checkbox"
+                checked={eEnabled}
+                onChange={(e) => setEEnabled(e.target.checked)}
+              />
+              启用
+            </label>
+          </div>
+          {eError && (
+            <div className="rainier-error-banner" data-testid="project-detail-edit-error">
+              {eError}
+            </div>
+          )}
+          <div className="rainier-form-footer">
+            <Button type="button" variant="secondary" onClick={cancelEdit}>
+              取消
+            </Button>
+            <Button
+              type="button"
+              disabled={eSaving || pmoLoading}
+              onClick={() => void saveEdit()}
+              data-testid="project-detail-edit-save"
+            >
+              {eSaving ? '保存中…' : '保存修改'}
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {tab === 'members' && (
+        <div className="pm-tab-pane">
+          <ProjectMemberTab project={proj} onCountChange={setMemberCount} />
         </div>
       )}
 
@@ -245,20 +575,6 @@ export function ProjectDetailPage() {
           <ProjectTaskList projectId={proj.id} onCountChange={setTaskCount} />
         </div>
       )}
-
-      <ProjectEditDrawer
-        open={drawerOpen}
-        editing={proj}
-        onClose={() => setDrawerOpen(false)}
-        onCreate={async () => {
-          // not used: detail page never opens drawer in create mode
-        }}
-        onUpdate={async (pid, body: ProjectUpdate) => {
-          await updateProject(pid, body);
-          setDrawerOpen(false);
-          load();
-        }}
-      />
 
       <div>
         <Button
@@ -437,5 +753,216 @@ function ProjectTaskList({
       rowTestId={(t) => `project-task-row-${t.id}`}
       emptyText="该项目下还没有任务。"
     />
+  );
+}
+
+/**
+ * v0.0.64 — ProjectDetailPage 「成员」Tab 内容。UNION 行（owner/pmo 合成 + 真实成员）+ 添加/移除按钮
+ * 按 currentUser ∈ {owner, project.pmo, admin} 显示。owner/pmo 合成行不显示移除按钮。
+ */
+function ProjectMemberTab({
+  project,
+  onCountChange,
+}: {
+  project: Project;
+  onCountChange: (n: number) => void;
+}) {
+  const currentUser = useAuthStore((s) => s.user);
+  const admin = isElevated(currentUser);
+  const canManage =
+    admin ||
+    (currentUser?.id != null &&
+      (currentUser.id === project.ownerUserId || currentUser.id === project.pmoUserId));
+
+  const [members, setMembers] = useState<ProjectMemberDetail[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
+  const [addOpen, setAddOpen] = useState(false);
+  const [addingUserId, setAddingUserId] = useState<number | ''>('');
+  const [addingRole, setAddingRole] = useState<ProjectMemberRole>('DEV');
+  const [error, setError] = useState<string | null>(null);
+
+  const refetch = useCallback(async () => {
+    try {
+      const list = await listProjectMembers(project.id);
+      setMembers(list);
+      onCountChange(list.length);
+    } catch {
+      setMembers([]);
+    }
+  }, [project.id, onCountChange]);
+
+  useEffect(() => {
+    void refetch();
+    if (canManage) {
+      void listUsers({ size: 100 }).then((r) => setUsers(r.content));
+    }
+  }, [refetch, canManage]);
+
+  const synthRoles = new Set(['OWNER', 'PMO']);
+
+  return (
+    <div data-testid="project-member-tab">
+      {canManage && (
+        <div style={{ marginBottom: 12 }}>
+          {!addOpen ? (
+            <Button type="button" variant="secondary" onClick={() => setAddOpen(true)} data-testid="project-member-add-btn">
+              + 添加成员
+            </Button>
+          ) : (
+            <div
+              style={{
+                display: 'flex',
+                gap: 8,
+                alignItems: 'center',
+                padding: 12,
+                border: '1px solid var(--rainier-border)',
+                borderRadius: 6,
+              }}
+            >
+              <select
+                className="rainier-form-select"
+                value={addingUserId}
+                onChange={(e) =>
+                  setAddingUserId(e.target.value === '' ? '' : Number(e.target.value))
+                }
+                data-testid="project-member-add-user"
+                style={{ flex: 1 }}
+              >
+                <option value="">选择用户</option>
+                {users
+                  .filter(
+                    (u) =>
+                      u.id !== project.ownerUserId &&
+                      !members.some((m) => m.userId === u.id && !synthRoles.has(m.role)),
+                  )
+                  .map((u) => (
+                    <option key={u.id} value={u.id}>
+                      {u.name}（{u.loginName}）
+                    </option>
+                  ))}
+              </select>
+              <select
+                className="rainier-form-select"
+                value={addingRole}
+                onChange={(e) => setAddingRole(e.target.value as ProjectMemberRole)}
+                data-testid="project-member-add-role"
+                style={{ width: 120 }}
+              >
+                {PROJECT_MEMBER_ROLE_OPTIONS.map((r) => (
+                  <option key={r} value={r}>
+                    {PROJECT_MEMBER_ROLE_LABELS[r]}
+                  </option>
+                ))}
+              </select>
+              <Button
+                type="button"
+                onClick={async () => {
+                  if (addingUserId === '') return;
+                  setError(null);
+                  try {
+                    await addProjectMember(project.id, addingUserId, addingRole);
+                    setAddOpen(false);
+                    setAddingUserId('');
+                    setAddingRole('DEV');
+                    await refetch();
+                  } catch (e) {
+                    const err = e as { response?: { data?: { message?: string } } };
+                    setError(err?.response?.data?.message ?? '添加失败');
+                  }
+                }}
+                data-testid="project-member-add-confirm"
+              >
+                确认
+              </Button>
+              <Button type="button" variant="secondary" onClick={() => setAddOpen(false)}>
+                取消
+              </Button>
+            </div>
+          )}
+        </div>
+      )}
+      {error && (
+        <div className="rainier-error-banner" data-testid="project-member-error">
+          {error}
+        </div>
+      )}
+      {members.length === 0 ? (
+        <div style={{ color: 'var(--rainier-color-text-3)' }}>暂无成员</div>
+      ) : (
+        members.map((m, i) => {
+          const isSynth = synthRoles.has(m.role);
+          return (
+            <div
+              key={`${m.userId}-${m.role}-${i}`}
+              data-testid={`project-member-row-${m.userId}`}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+                padding: '10px 4px',
+                borderBottom: '1px solid var(--rainier-bg-hover)',
+              }}
+            >
+              <OwnerChip name={m.userName} loginName={m.userLoginName} />
+              <StatusChip
+                status={m.role}
+                label={m.displayLabel}
+                tier={m.role === 'OWNER' ? 'green' : m.role === 'PMO' ? 'yellow' : 'gray'}
+              />
+              <span style={{ flex: 1 }} />
+              {m.joinedBy && (
+                <span style={{ fontSize: 12, color: 'var(--rainier-color-text-3)' }}>
+                  添加人 {m.joinedBy}
+                </span>
+              )}
+              {canManage && !isSynth && (
+                <>
+                  <select
+                    className="rainier-form-select"
+                    value={m.role}
+                    onChange={async (e) => {
+                      const newRole = e.target.value as ProjectMemberRole;
+                      setError(null);
+                      try {
+                        await updateProjectMemberRole(project.id, m.userId, newRole);
+                        await refetch();
+                      } catch (err) {
+                        const ex = err as { response?: { data?: { message?: string } } };
+                        setError(ex?.response?.data?.message ?? '更新失败');
+                      }
+                    }}
+                    data-testid={`project-member-role-${m.userId}`}
+                    style={{ width: 100 }}
+                  >
+                    {PROJECT_MEMBER_ROLE_OPTIONS.map((r) => (
+                      <option key={r} value={r}>
+                        {PROJECT_MEMBER_ROLE_LABELS[r]}
+                      </option>
+                    ))}
+                  </select>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={async () => {
+                      setError(null);
+                      try {
+                        await removeProjectMember(project.id, m.userId);
+                        await refetch();
+                      } catch (err) {
+                        const ex = err as { response?: { data?: { message?: string } } };
+                        setError(ex?.response?.data?.message ?? '移除失败');
+                      }
+                    }}
+                    data-testid={`project-member-remove-${m.userId}`}
+                  >
+                    移除
+                  </Button>
+                </>
+              )}
+            </div>
+          );
+        })
+      )}
+    </div>
   );
 }

@@ -32,6 +32,50 @@ vi.mock('../../api/user', async () => {
   };
 });
 
+vi.mock('../../api/projectMember', async () => {
+  const actual = await vi.importActual<typeof import('../../api/projectMember')>(
+    '../../api/projectMember',
+  );
+  return {
+    ...actual,
+    listProjectMembers: vi.fn().mockResolvedValue([]),
+    addProjectMember: vi.fn(),
+    updateProjectMemberRole: vi.fn(),
+    removeProjectMember: vi.fn(),
+  };
+});
+
+vi.mock('../../api/organizationPmo', async () => {
+  const actual = await vi.importActual<typeof import('../../api/organizationPmo')>(
+    '../../api/organizationPmo',
+  );
+  return {
+    ...actual,
+    listEffectivePmos: vi.fn().mockResolvedValue([]),
+    listOrganizationPmos: vi.fn().mockResolvedValue([]),
+  };
+});
+
+vi.mock('../../api/userOrganization', async () => {
+  const actual = await vi.importActual<typeof import('../../api/userOrganization')>(
+    '../../api/userOrganization',
+  );
+  return {
+    ...actual,
+    listUserOrganizations: vi.fn().mockResolvedValue({ content: [], total: 0, page: 0, size: 20 }),
+  };
+});
+
+vi.mock('../../api/organization', async () => {
+  const actual = await vi.importActual<typeof import('../../api/organization')>(
+    '../../api/organization',
+  );
+  return {
+    ...actual,
+    getOrganizationTree: vi.fn().mockResolvedValue([]),
+  };
+});
+
 vi.mock('../../api/milestone', async () => {
   const actual =
     await vi.importActual<typeof import('../../api/milestone')>('../../api/milestone');
@@ -122,15 +166,16 @@ describe('ProjectsPage', () => {
       expect(screen.getByTestId('project-detail-edit')).toBeInTheDocument();
     });
     fireEvent.click(screen.getByTestId('project-detail-edit'));
+    // v0.0.64-revised: 编辑改为「基本信息」Tab 内联编辑（不再开侧抽屉）
     await waitFor(() => {
-      const sel = screen.getByTestId('projects-owner-select') as HTMLSelectElement;
+      const sel = screen.getByTestId('project-detail-edit-owner') as HTMLSelectElement;
       expect(sel).not.toBeDisabled();
       expect(sel.value).toBe('1');
     });
-    fireEvent.change(screen.getByTestId('projects-owner-select'), {
+    fireEvent.change(screen.getByTestId('project-detail-edit-owner'), {
       target: { value: '2' },
     });
-    fireEvent.click(screen.getByRole('button', { name: '保存' }));
+    fireEvent.click(screen.getByTestId('project-detail-edit-save'));
     await waitFor(() => {
       expect(updateProject).toHaveBeenCalledTimes(1);
     });
