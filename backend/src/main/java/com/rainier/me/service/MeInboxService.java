@@ -8,6 +8,8 @@ import com.rainier.demand.repository.DemandRepository;
 import com.rainier.demandrequirement.domain.DemandRequirementLink;
 import com.rainier.demandrequirement.repository.DemandRequirementLinkRepository;
 import com.rainier.me.dto.InboxResponse;
+import com.rainier.opportunity.domain.Opportunity;
+import com.rainier.opportunity.repository.OpportunityRepository;
 import com.rainier.project.domain.Project;
 import com.rainier.project.repository.ProjectRepository;
 import com.rainier.requirement.domain.Requirement;
@@ -48,29 +50,104 @@ public class MeInboxService {
   private final DemandRequirementLinkRepository linkRepo;
   private final RequirementRepository requirementRepo;
   private final ProjectRepository projectRepo;
+  private final OpportunityRepository opportunityRepo;
 
   public MeInboxService(
       UserRepository userRepo,
       DemandRepository demandRepo,
       DemandRequirementLinkRepository linkRepo,
       RequirementRepository requirementRepo,
-      ProjectRepository projectRepo) {
+      ProjectRepository projectRepo,
+      OpportunityRepository opportunityRepo) {
     this.userRepo = userRepo;
     this.demandRepo = demandRepo;
     this.linkRepo = linkRepo;
     this.requirementRepo = requirementRepo;
     this.projectRepo = projectRepo;
+    this.opportunityRepo = opportunityRepo;
   }
 
   public InboxResponse inbox(String username) {
+    return inbox(username, null);
+  }
+
+  /**
+   * v0.0.95 — overload with PO product scope. When {@code productId} is non-null:
+   *
+   * <ul>
+   *   <li>{@code myRequirements} keep only those whose {@code opportunityId} resolves to an
+   *       Opportunity with {@code productId == filter}; requirements without opportunity are dropped.
+   *   <li>{@code unconvertedDemands} are left empty — demands are not product-tagged in the entity
+   *       model, so the PO scope narrows to the requirements list only.
+   * </ul>
+   *
+   * When {@code productId} is null, behaviour is identical to the original single-arg path.
+   */
+  public InboxResponse inbox(String username, Long productId) {
     InboxResponse out = new InboxResponse();
     User me = userRepo.findByLoginName(username).orElse(null);
     if (me == null) {
       return out; // degraded: both sections empty
     }
-    out.setUnconvertedDemands(unconvertedDemands());
-    out.setMyRequirements(myRequirements(me.getId()));
+    if (productId == null) {
+      out.setUnconvertedDemands(unconvertedDemands());
+      out.setMyRequirements(myRequirements(me.getId()));
+    } else {
+      // PO product scope: demands have no product tag → empty; requirements filtered via opp.
+      out.setMyRequirements(myRequirementsByProduct(me.getId(), productId));
+    }
     return out;
+  }
+
+  private List<InboxResponse.InboxRequirement> myRequirementsByProduct(
+      Long ownerUserId, Long productId) {
+    List<Requirement> reqs = requirementRepo.findByOwnerUserId(ownerUserId);
+    Set<Long> oppIds =
+        reqs.stream()
+            .map(Requirement::getOpportunityId)
+            .filter(Objects::nonNull)
+            .collect(Collectors.toSet());
+    if (oppIds.isEmpty()) {
+      return Collections.emptyList();
+    }
+    Map<Long, Long> oppToProduct = new HashMap<>();
+    opportunityRepo
+        .findAllById(oppIds)
+        .forEach(o -> oppToProduct.put(o.getId(), o.getProductId()));
+    List<Requirement> matched =
+        reqs.stream()
+            .filter(r -> r.getOpportunityId() != null)
+            .filter(r -> productId.equals(oppToProduct.get(r.getOpportunityId())))
+            .collect(Collectors.toList());
+    return enrichRequirements(matched);
+  }
+
+  private List<InboxResponse.InboxRequirement> enrichRequirements(List<Requirement> reqs) {
+    Set<Long> projectIds =
+        reqs.stream().map(Requirement::getProjectId).filter(Objects::nonNull).collect(Collectors.toSet());
+    Map<Long, Project> projectMap = new HashMap<>();
+    if (!projectIds.isEmpty()) {
+      projectRepo.findAllById(projectIds).forEach(p -> projectMap.put(p.getId(), p));
+    }
+    return reqs.stream()
+        .sorted(
+            Comparator.comparingInt((Requirement r) -> priorityRank(r.getPriority()))
+                .thenComparing(
+                    Requirement::getCreateTime, Comparator.nullsLast(Comparator.naturalOrder())))
+        .map(
+            r -> {
+              Project p = r.getProjectId() == null ? null : projectMap.get(r.getProjectId());
+              return new InboxResponse.InboxRequirement(
+                  r.getId(),
+                  r.getCode(),
+                  r.getTitle(),
+                  r.getStatus(),
+                  r.getPriority(),
+                  r.getExpectedDate(),
+                  r.getProjectId(),
+                  p == null ? null : p.getName());
+            })
+        .collect(Collectors.toList());
   }
 
   private List<InboxResponse.InboxDemand> unconvertedDemands() {

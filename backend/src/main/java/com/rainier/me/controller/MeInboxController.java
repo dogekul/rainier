@@ -8,6 +8,7 @@ import com.rainier.me.service.MeInboxService;
 import javax.servlet.http.HttpServletRequest;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -26,8 +27,10 @@ public class MeInboxController {
   }
 
   @GetMapping(path = "/inbox", produces = "application/json")
-  public InboxResponse inbox(HttpServletRequest request) {
-    return service.inbox(currentUsername(request));
+  public InboxResponse inbox(
+      HttpServletRequest request,
+      @RequestParam(name = "productId", required = false) Long productId) {
+    return service.inbox(currentUsername(request), productId);
   }
 
   private static String currentUsername(HttpServletRequest request) {

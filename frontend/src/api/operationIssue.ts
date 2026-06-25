@@ -1,7 +1,7 @@
 import client from './client';
 
 export type IssueSeverity = 'HIGH' | 'MEDIUM' | 'LOW';
-export type IssueStatus = 'OPEN' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED';
+export type IssueStatus = 'OPEN' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED' | 'CONVERTED';
 
 export const ISSUE_SEVERITY_LABELS: Record<IssueSeverity, string> = {
   HIGH: '高',
@@ -13,6 +13,7 @@ export const ISSUE_STATUS_LABELS: Record<IssueStatus, string> = {
   IN_PROGRESS: '处理中',
   RESOLVED: '已解决',
   CLOSED: '已关闭',
+  CONVERTED: '已转工单',
 };
 
 /** Map IssueStatus → board status tier (tints in the chip). */
@@ -25,6 +26,7 @@ export function issueStatusTier(s: IssueStatus): 'red' | 'yellow' | 'green' | 'g
     case 'RESOLVED':
       return 'green';
     case 'CLOSED':
+    case 'CONVERTED':
     default:
       return 'gray';
   }
@@ -86,4 +88,40 @@ export async function updateOperationIssue(
 
 export async function deleteOperationIssue(id: number): Promise<void> {
   await client.delete(`/operation-issues/${id}`);
+}
+
+/** v0.0.95 — paged issues for the Operation detail board. */
+export interface PagedOperationIssues {
+  content: OperationIssue[];
+  page: number;
+  size: number;
+  total: number;
+}
+
+export async function listOperationIssuesPaged(
+  operationId: number,
+  params: { page?: number; size?: number; status?: IssueStatus; severity?: IssueSeverity } = {},
+): Promise<PagedOperationIssues> {
+  const res = await client.get<PagedOperationIssues>(`/operations/${operationId}/issues/page`, {
+    params,
+  });
+  return res.data;
+}
+
+/** v0.0.95 — convert an issue to a Task; returns the created Task (subset). */
+export interface ConvertedTask {
+  id: number;
+  code: string;
+  title: string;
+  projectId: number;
+}
+
+export async function convertOperationIssueToTask(
+  issueId: number,
+  projectId: number,
+): Promise<ConvertedTask> {
+  const res = await client.post<ConvertedTask>(`/operation-issues/${issueId}/convert-to-task`, {
+    projectId,
+  });
+  return res.data;
 }

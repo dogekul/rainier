@@ -23,6 +23,7 @@ import {
 import { listDemands, type Demand } from '../../api/demand';
 import { listRequirements, type Requirement } from '../../api/requirement';
 import {
+  convertOperationIssueToTask,
   createOperationIssue,
   deleteOperationIssue,
   ISSUE_SEVERITY_LABELS,
@@ -91,6 +92,9 @@ export default function OperationDetailPage() {
   const [drCollapsed, setDrCollapsed] = useState(true);
   // v0.0.59 — 问题清单状态过滤：null=全部，否则按 status 过滤
   const [issueFilter, setIssueFilter] = useState<IssueStatus | null>(null);
+  // v0.0.95 D7 — 客户端分页：默认 size=10，下一页按钮加载更多。
+  const [issuePage, setIssuePage] = useState(0);
+  const ISSUE_PAGE_SIZE = 10;
 
   // issues
   const [issues, setIssues] = useState<OperationIssue[]>([]);
@@ -254,6 +258,26 @@ export default function OperationDetailPage() {
   // v0.0.60 — replace window.confirm with state-managed ConfirmDialog (Feishu pattern, mirrors CustomerPage).
   const [confirmDeleteIssueId, setConfirmDeleteIssueId] = useState<number | null>(null);
   const removeIssue = (issueId: number) => setConfirmDeleteIssueId(issueId);
+
+  // v0.0.95 D7 — 转工单：prompt 一个 projectId（保持轻量；正规对话框可在 E 批升级）。
+  const convertIssue = async (issue: OperationIssue) => {
+    const fallback = op?.projectId ? String(op.projectId) : '';
+    const input = window.prompt('转工单 — 请输入目标项目 ID', fallback);
+    if (input == null) return;
+    const projectId = Number(input);
+    if (!Number.isFinite(projectId) || projectId <= 0) {
+      window.alert('无效的项目 ID');
+      return;
+    }
+    try {
+      const task = await convertOperationIssueToTask(issue.id, projectId);
+      window.alert(`已创建工单 ${task.code}（项目 ${task.projectId}）。`);
+      loadIssues();
+    } catch (e) {
+      const err = e as { response?: { data?: { message?: string } }; message?: string };
+      window.alert(err?.response?.data?.message ?? err?.message ?? '转工单失败');
+    }
+  };
 
   return (
     <div className="rainier-page" data-testid="op-detail-page">
@@ -689,6 +713,7 @@ export default function OperationDetailPage() {
                       IN_PROGRESS: 1,
                       RESOLVED: 2,
                       CLOSED: 3,
+                      CONVERTED: 4,
                     };
                     return ord[a.status] - ord[b.status];
                   });
@@ -699,118 +724,162 @@ export default function OperationDetailPage() {
                     </div>
                   );
                 }
-                return filtered.map((issue) => (
-                <div
-                  key={issue.id}
-                  data-testid={`op-issue-${issue.id}`}
-                  className="op-issue"
-                  data-sev={issue.severity}
-                >
-                  <div className="op-issue-main">
-                    <StatusChip
-                      status={issue.status}
-                      label={ISSUE_STATUS_LABELS[issue.status]}
-                      tier={issueStatusTier(issue.status)}
-                    />
-                    <StatusChip
-                      status={issue.severity}
-                      label={ISSUE_SEVERITY_LABELS[issue.severity]}
-                      tier={issue.severity === 'HIGH' ? 'red' : issue.severity === 'MEDIUM' ? 'yellow' : 'gray'}
-                    />
-                    <span className="op-issue-title">{issue.title}</span>
-                    <span className="op-issue-meta">
-                      <span>上报 {issue.reporterName ?? `#${issue.reporterUserId}`}</span>
-                      {issue.assigneeName && (
-                        <>
-                          <span className="op-issue-meta-sep">·</span>
-                          <span>负责 {issue.assigneeName}</span>
-                        </>
-                      )}
-                    </span>
-                    {editIssueId !== issue.id && (
-                      <span className="op-issue-actions">
-                        <Button
+                // v0.0.95 D7 — 客户端分页
+                const totalPages = Math.max(1, Math.ceil(filtered.length / ISSUE_PAGE_SIZE));
+                const pageSafe = Math.min(issuePage, totalPages - 1);
+                const start = pageSafe * ISSUE_PAGE_SIZE;
+                const pageItems = filtered.slice(start, start + ISSUE_PAGE_SIZE);
+                return (
+                  <>
+                    {pageItems.map((issue) => (
+                      <div
+                        key={issue.id}
+                        data-testid={`op-issue-${issue.id}`}
+                        className="op-issue"
+                        data-sev={issue.severity}
+                      >
+                        <div className="op-issue-main">
+                          <StatusChip
+                            status={issue.status}
+                            label={ISSUE_STATUS_LABELS[issue.status]}
+                            tier={issueStatusTier(issue.status)}
+                          />
+                          <StatusChip
+                            status={issue.severity}
+                            label={ISSUE_SEVERITY_LABELS[issue.severity]}
+                            tier={issue.severity === 'HIGH' ? 'red' : issue.severity === 'MEDIUM' ? 'yellow' : 'gray'}
+                          />
+                          <span className="op-issue-title">{issue.title}</span>
+                          <span className="op-issue-meta">
+                            <span>上报 {issue.reporterName ?? `#${issue.reporterUserId}`}</span>
+                            {issue.assigneeName && (
+                              <>
+                                <span className="op-issue-meta-sep">·</span>
+                                <span>负责 {issue.assigneeName}</span>
+                              </>
+                            )}
+                          </span>
+                          {editIssueId !== issue.id && (
+                            <span className="op-issue-actions">
+                              <Button
+                                type="button"
+                                variant="secondary"
+                                onClick={() => startEditIssue(issue)}
+                                data-testid={`op-issue-edit-${issue.id}`}
+                              >
+                                编辑
+                              </Button>
+                              {issue.status !== 'CONVERTED' && (
+                                <Button
+                                  type="button"
+                                  variant="secondary"
+                                  onClick={() => void convertIssue(issue)}
+                                  data-testid={`op-issue-convert-${issue.id}`}
+                                >
+                                  转工单
+                                </Button>
+                              )}
+                              <Button
+                                type="button"
+                                variant="secondary"
+                                onClick={() => void removeIssue(issue.id)}
+                                data-testid={`op-issue-delete-${issue.id}`}
+                              >
+                                删除
+                              </Button>
+                            </span>
+                          )}
+                        </div>
+                        {issue.description ? (
+                          <div className="op-issue-desc">
+                            <MarkdownView content={issue.description} />
+                          </div>
+                        ) : null}
+                        {editIssueId === issue.id && (
+                          <div className="op-issue-edit">
+                            <div className="opp-form-block">
+                              <label className="opp-form-label">状态</label>
+                              <select
+                                className="rainier-form-select"
+                                value={iEditStatus}
+                                onChange={(e) => setIEditStatus(e.target.value as IssueStatus)}
+                                data-testid={`op-issue-edit-status-${issue.id}`}
+                              >
+                                {STATUSES.map((s) => (
+                                  <option key={s} value={s}>
+                                    {ISSUE_STATUS_LABELS[s]}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                            <div className="opp-form-block">
+                              <label className="opp-form-label">负责人</label>
+                              <select
+                                className="rainier-form-select"
+                                value={iEditAssignee}
+                                onChange={(e) =>
+                                  setIEditAssignee(e.target.value === '' ? '' : Number(e.target.value))
+                                }
+                              >
+                                <option value="">（未指派）</option>
+                                {users.map((u) => (
+                                  <option key={u.id} value={u.id}>
+                                    {u.name}（{u.loginName}）
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                            {(iEditStatus === 'CLOSED' || iEditStatus === 'RESOLVED') && (
+                              <Input
+                                label="关闭/解决原因（可空）"
+                                value={iEditClose}
+                                onChange={(e) => setIEditClose(e.target.value)}
+                                data-testid={`op-issue-edit-close-${issue.id}`}
+                              />
+                            )}
+                            <div className="opp-actions-end">
+                              <Button type="button" variant="secondary" onClick={() => setEditIssueId(null)}>
+                                取消
+                              </Button>
+                              <Button
+                                type="button"
+                                onClick={() => void saveEditIssue(issue)}
+                                data-testid={`op-issue-edit-save-${issue.id}`}
+                              >
+                                保存
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                    {totalPages > 1 && (
+                      <div className="rainier-filter-bar" data-testid="op-issue-pagination" style={{ marginTop: 8 }}>
+                        <button
                           type="button"
-                          variant="secondary"
-                          onClick={() => startEditIssue(issue)}
-                          data-testid={`op-issue-edit-${issue.id}`}
+                          className="rainier-filter-chip"
+                          disabled={pageSafe <= 0}
+                          onClick={() => setIssuePage((p) => Math.max(0, p - 1))}
+                          data-testid="op-issue-page-prev"
                         >
-                          编辑
-                        </Button>
-                        <Button
+                          上一页
+                        </button>
+                        <span className="opp-muted" style={{ alignSelf: 'center', fontSize: 12 }}>
+                          第 {pageSafe + 1} / {totalPages} 页 · 共 {filtered.length}
+                        </span>
+                        <button
                           type="button"
-                          variant="secondary"
-                          onClick={() => void removeIssue(issue.id)}
-                          data-testid={`op-issue-delete-${issue.id}`}
+                          className="rainier-filter-chip"
+                          disabled={pageSafe >= totalPages - 1}
+                          onClick={() => setIssuePage((p) => Math.min(totalPages - 1, p + 1))}
+                          data-testid="op-issue-page-next"
                         >
-                          删除
-                        </Button>
-                      </span>
+                          下一页
+                        </button>
+                      </div>
                     )}
-                  </div>
-                  {issue.description ? (
-                    <div className="op-issue-desc">
-                      <MarkdownView content={issue.description} />
-                    </div>
-                  ) : null}
-                  {editIssueId === issue.id && (
-                    <div className="op-issue-edit">
-                      <div className="opp-form-block">
-                        <label className="opp-form-label">状态</label>
-                        <select
-                          className="rainier-form-select"
-                          value={iEditStatus}
-                          onChange={(e) => setIEditStatus(e.target.value as IssueStatus)}
-                          data-testid={`op-issue-edit-status-${issue.id}`}
-                        >
-                          {STATUSES.map((s) => (
-                            <option key={s} value={s}>
-                              {ISSUE_STATUS_LABELS[s]}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                      <div className="opp-form-block">
-                        <label className="opp-form-label">负责人</label>
-                        <select
-                          className="rainier-form-select"
-                          value={iEditAssignee}
-                          onChange={(e) =>
-                            setIEditAssignee(e.target.value === '' ? '' : Number(e.target.value))
-                          }
-                        >
-                          <option value="">（未指派）</option>
-                          {users.map((u) => (
-                            <option key={u.id} value={u.id}>
-                              {u.name}（{u.loginName}）
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                      {(iEditStatus === 'CLOSED' || iEditStatus === 'RESOLVED') && (
-                        <Input
-                          label="关闭/解决原因（可空）"
-                          value={iEditClose}
-                          onChange={(e) => setIEditClose(e.target.value)}
-                          data-testid={`op-issue-edit-close-${issue.id}`}
-                        />
-                      )}
-                      <div className="opp-actions-end">
-                        <Button type="button" variant="secondary" onClick={() => setEditIssueId(null)}>
-                          取消
-                        </Button>
-                        <Button
-                          type="button"
-                          onClick={() => void saveEditIssue(issue)}
-                          data-testid={`op-issue-edit-save-${issue.id}`}
-                        >
-                          保存
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-                ));
+                  </>
+                );
               })()
             )}
           </div>
