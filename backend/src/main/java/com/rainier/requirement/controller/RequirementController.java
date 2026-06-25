@@ -9,6 +9,8 @@ import com.rainier.requirement.dto.RequirementCreateRequest;
 import com.rainier.requirement.dto.RequirementDetail;
 import com.rainier.requirement.dto.RequirementUpdateRequest;
 import com.rainier.requirement.service.RequirementService;
+import com.rainier.requirementfeature.dto.RequirementFeatureLinkDetail;
+import com.rainier.requirementfeature.service.RequirementFeatureLinkService;
 import com.rainier.sprintfeature.dto.SprintFeatureView;
 import com.rainier.sprintfeature.service.SprintFeatureLinkService;
 import java.net.URI;
@@ -33,14 +35,17 @@ public class RequirementController {
   private final RequirementService service;
   private final DemandRequirementLinkService linkService;
   private final SprintFeatureLinkService sprintFeatureLinkService;
+  private final RequirementFeatureLinkService requirementFeatureLinkService;
 
   public RequirementController(
       RequirementService service,
       DemandRequirementLinkService linkService,
-      SprintFeatureLinkService sprintFeatureLinkService) {
+      SprintFeatureLinkService sprintFeatureLinkService,
+      RequirementFeatureLinkService requirementFeatureLinkService) {
     this.service = service;
     this.linkService = linkService;
     this.sprintFeatureLinkService = sprintFeatureLinkService;
+    this.requirementFeatureLinkService = requirementFeatureLinkService;
   }
 
   @PostMapping
@@ -87,5 +92,14 @@ public class RequirementController {
   @GetMapping("/{id}/features")
   public List<SprintFeatureView> getFeatures(@PathVariable Long id) {
     return sprintFeatureLinkService.findFeaturesByRequirement(id);
+  }
+
+  /**
+   * v0.0.86 (C6): direct Requirement↔Feature links (1-hop, distinct from the 2-hop sprint-feature
+   * derivation above).
+   */
+  @GetMapping("/{id}/linked-features")
+  public List<RequirementFeatureLinkDetail> getLinkedFeatures(@PathVariable Long id) {
+    return requirementFeatureLinkService.listByRequirement(id);
   }
 }

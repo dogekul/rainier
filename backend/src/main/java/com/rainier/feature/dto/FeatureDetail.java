@@ -3,6 +3,8 @@ package com.rainier.feature.dto;
 
 import com.rainier.feature.domain.Feature;
 import java.time.Instant;
+import java.util.Collections;
+import java.util.List;
 
 public class FeatureDetail {
 
@@ -21,6 +23,8 @@ public class FeatureDetail {
   private Instant updateTime;
   private String createBy;
   private String updateBy;
+  /** v0.0.86 (C6) — directly linked Requirement ids. */
+  private List<Long> requirementIds = Collections.emptyList();
 
   public static FeatureDetail from(Feature f) {
     FeatureDetail dto = new FeatureDetail();
@@ -68,4 +72,8 @@ public class FeatureDetail {
   public void setCreateBy(String createBy) { this.createBy = createBy; }
   public String getUpdateBy() { return updateBy; }
   public void setUpdateBy(String updateBy) { this.updateBy = updateBy; }
+  public List<Long> getRequirementIds() { return requirementIds; }
+  public void setRequirementIds(List<Long> requirementIds) {
+    this.requirementIds = requirementIds == null ? Collections.<Long>emptyList() : requirementIds;
+  }
 }

@@ -20,6 +20,7 @@ import com.rainier.requirement.dto.RequirementCreateRequest;
 import com.rainier.requirement.dto.RequirementDetail;
 import com.rainier.requirement.dto.RequirementUpdateRequest;
 import com.rainier.requirement.repository.RequirementRepository;
+import com.rainier.requirementfeature.service.RequirementFeatureLinkService;
 import com.rainier.user.repository.UserRepository;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -49,6 +50,7 @@ public class RequirementService {
   private final ProjectRepository projectRepo;
   private final com.rainier.sprint.repository.SprintRepository sprintRepo;
   private final com.rainier.opportunity.repository.OpportunityRepository opportunityRepo;
+  private final RequirementFeatureLinkService requirementFeatureLinkService;
 
   public RequirementService(
       RequirementRepository repo,
@@ -57,7 +59,8 @@ public class RequirementService {
       DemandRequirementLinkRepository linkRepo,
       ProjectRepository projectRepo,
       com.rainier.sprint.repository.SprintRepository sprintRepo,
-      com.rainier.opportunity.repository.OpportunityRepository opportunityRepo) {
+      com.rainier.opportunity.repository.OpportunityRepository opportunityRepo,
+      RequirementFeatureLinkService requirementFeatureLinkService) {
     this.repo = repo;
     this.userRepo = userRepo;
     this.demandRepo = demandRepo;
@@ -65,6 +68,7 @@ public class RequirementService {
     this.projectRepo = projectRepo;
     this.sprintRepo = sprintRepo;
     this.opportunityRepo = opportunityRepo;
+    this.requirementFeatureLinkService = requirementFeatureLinkService;
   }
 
   @Transactional(rollbackFor = Exception.class)
@@ -285,6 +289,8 @@ public class RequirementService {
     }
     // v0.0.10: sprintCount enrichment replaces v0.0.9 storyCount (Story now under Sprint).
     dto.setSprintCount(sprintRepo.countByRequirementId(r.getId()));
+    // v0.0.86 (C6): direct Requirement↔Feature link ids.
+    dto.setFeatureIds(requirementFeatureLinkService.findFeatureIdsByRequirement(r.getId()));
     return dto;
   }
 }

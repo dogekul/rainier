@@ -4,6 +4,8 @@ package com.rainier.requirement.dto;
 import com.rainier.requirement.domain.Requirement;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.Collections;
+import java.util.List;
 
 /** Response DTO for {@link Requirement} read endpoints. */
 public class RequirementDetail {
@@ -35,6 +37,8 @@ public class RequirementDetail {
   private Long sprintCount;
   /** v0.0.56 — 来源商机（可空）。 */
   private Long opportunityId;
+  /** v0.0.86 (C6) — directly linked Feature ids (empty list if none). */
+  private List<Long> featureIds = Collections.emptyList();
 
   private Instant createTime;
   private Instant updateTime;
@@ -140,6 +144,14 @@ public class RequirementDetail {
 
   public Long getOpportunityId() {
     return opportunityId;
+  }
+
+  public List<Long> getFeatureIds() {
+    return featureIds;
+  }
+
+  public void setFeatureIds(List<Long> featureIds) {
+    this.featureIds = featureIds == null ? Collections.<Long>emptyList() : featureIds;
   }
 
   public Long getSprintCount() {

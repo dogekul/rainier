@@ -7,6 +7,8 @@ import com.rainier.feature.dto.FeatureCreateRequest;
 import com.rainier.feature.dto.FeatureDetail;
 import com.rainier.feature.dto.FeatureUpdateRequest;
 import com.rainier.feature.service.FeatureService;
+import com.rainier.requirementfeature.dto.RequirementFeatureLinkDetail;
+import com.rainier.requirementfeature.service.RequirementFeatureLinkService;
 import com.rainier.sprintfeature.dto.FeatureSprintView;
 import com.rainier.sprintfeature.service.SprintFeatureLinkService;
 import java.net.URI;
@@ -29,10 +31,15 @@ public class FeatureController {
 
   private final FeatureService service;
   private final SprintFeatureLinkService linkService;
+  private final RequirementFeatureLinkService requirementFeatureLinkService;
 
-  public FeatureController(FeatureService service, SprintFeatureLinkService linkService) {
+  public FeatureController(
+      FeatureService service,
+      SprintFeatureLinkService linkService,
+      RequirementFeatureLinkService requirementFeatureLinkService) {
     this.service = service;
     this.linkService = linkService;
+    this.requirementFeatureLinkService = requirementFeatureLinkService;
   }
 
   @PostMapping
@@ -50,6 +57,12 @@ public class FeatureController {
   @GetMapping("/{id}/sprints")
   public List<FeatureSprintView> sprints(@PathVariable Long id) {
     return linkService.findSprintsByFeature(id);
+  }
+
+  /** v0.0.86 (C6): requirements directly linked to this feature. */
+  @GetMapping("/{id}/requirements")
+  public List<RequirementFeatureLinkDetail> requirements(@PathVariable Long id) {
+    return requirementFeatureLinkService.listByFeature(id);
   }
 
   @GetMapping

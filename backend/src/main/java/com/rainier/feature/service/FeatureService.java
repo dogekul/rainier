@@ -14,6 +14,7 @@ import com.rainier.feature.dto.FeatureUpdateRequest;
 import com.rainier.feature.repository.FeatureRepository;
 import com.rainier.productmodule.domain.ProductModule;
 import com.rainier.productmodule.repository.ProductModuleRepository;
+import com.rainier.requirementfeature.service.RequirementFeatureLinkService;
 import com.rainier.user.domain.User;
 import com.rainier.user.repository.UserRepository;
 import java.util.Collections;
@@ -48,12 +49,17 @@ public class FeatureService {
   private final FeatureRepository repo;
   private final ProductModuleRepository moduleRepo;
   private final UserRepository userRepo;
+  private final RequirementFeatureLinkService requirementFeatureLinkService;
 
   public FeatureService(
-      FeatureRepository repo, ProductModuleRepository moduleRepo, UserRepository userRepo) {
+      FeatureRepository repo,
+      ProductModuleRepository moduleRepo,
+      UserRepository userRepo,
+      RequirementFeatureLinkService requirementFeatureLinkService) {
     this.repo = repo;
     this.moduleRepo = moduleRepo;
     this.userRepo = userRepo;
+    this.requirementFeatureLinkService = requirementFeatureLinkService;
   }
 
   @Transactional
@@ -131,9 +137,13 @@ public class FeatureService {
         moduleIds.isEmpty()
             ? Collections.emptyMap()
             : batchModuleById(moduleRepo.findAllById(moduleIds));
+    Set<Long> featureIds =
+        features.stream().map(Feature::getId).collect(Collectors.toCollection(HashSet::new));
+    Map<Long, List<Long>> reqIdsMap =
+        requirementFeatureLinkService.findRequirementIdsByFeatureIds(featureIds);
     return PageResponse.of(
         features.stream()
-            .map(f -> enrichBatch(f, userMap, moduleMap))
+            .map(f -> enrichBatch(f, userMap, moduleMap, reqIdsMap))
             .collect(Collectors.toList()),
         page.getPage(),
         page.getSize(),
@@ -192,6 +202,7 @@ public class FeatureService {
               dto.setModuleCode(m.getCode());
               dto.setModuleName(m.getName());
             });
+    dto.setRequirementIds(requirementFeatureLinkService.findRequirementIdsByFeature(f.getId()));
     return dto;
   }
 
@@ -212,7 +223,10 @@ public class FeatureService {
   }
 
   private FeatureDetail enrichBatch(
-      Feature f, Map<Long, User> userMap, Map<Long, ProductModule> moduleMap) {
+      Feature f,
+      Map<Long, User> userMap,
+      Map<Long, ProductModule> moduleMap,
+      Map<Long, List<Long>> reqIdsMap) {
     FeatureDetail dto = FeatureDetail.from(f);
     User u = userMap.get(f.getOwnerUserId());
     if (u != null) {
@@ -224,6 +238,8 @@ public class FeatureService {
       dto.setModuleCode(m.getCode());
       dto.setModuleName(m.getName());
     }
+    List<Long> ids = reqIdsMap.get(f.getId());
+    dto.setRequirementIds(ids == null ? Collections.<Long>emptyList() : ids);
     return dto;
   }
 }
