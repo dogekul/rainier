@@ -1,6 +1,7 @@
 /* (C) 2026 Rainier — internal use only. */
 package com.rainier.config;
 
+import com.rainier.auth.RequestUserContext;
 import com.rainier.auth.controller.AuthController;
 import com.rainier.auth.service.AuthService;
 import com.rainier.common.exception.UnauthorizedException;
@@ -57,17 +58,25 @@ public class SecurityFilter extends OncePerRequestFilter {
     String username = resolveUsername(request);
     if (username != null) {
       request.setAttribute(AuthController.ATTR_USERNAME, username);
+      // v0.0.79 (B6): propagate the real loginName via ThreadLocal so the audit aspect (and other
+      // non-servlet callers) can record actor without depending on RequestContextHolder.
+      RequestUserContext.set(username);
     }
 
-    // Baseline gate: every /api/** (minus the whitelist) requires a valid token when enabled.
-    if (requireAllUsersToken && username == null) {
-      String path = PATH_HELPER.getRequestUri(request); // semicolon-stripped → no matrix bypass
-      if (isGuarded(path, request.getMethod())) {
-        writeUnauthorized(response);
-        return;
+    try {
+      // Baseline gate: every /api/** (minus the whitelist) requires a valid token when enabled.
+      if (requireAllUsersToken && username == null) {
+        String path = PATH_HELPER.getRequestUri(request); // semicolon-stripped → no matrix bypass
+        if (isGuarded(path, request.getMethod())) {
+          writeUnauthorized(response);
+          return;
+        }
       }
+      chain.doFilter(request, response);
+    } finally {
+      // Always clear ThreadLocal so identity never leaks into pooled threads.
+      RequestUserContext.clear();
     }
-    chain.doFilter(request, response);
   }
 
   /** Returns the token subject for a valid Bearer token, or null when absent/invalid. */

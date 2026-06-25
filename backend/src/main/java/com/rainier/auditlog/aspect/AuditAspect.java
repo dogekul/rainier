@@ -1,6 +1,7 @@
 /* (C) 2026 Rainier — internal use only. */
 package com.rainier.auditlog.aspect;
 
+import com.rainier.auth.RequestUserContext;
 import com.rainier.auditlog.domain.AuditAction;
 import com.rainier.auditlog.service.AuditLogService;
 import org.aspectj.lang.JoinPoint;
@@ -69,7 +70,13 @@ public class AuditAspect {
   }
 
   private void record(String entityType, String action, Long entityId) {
-    String actor = auditorAware.getCurrentAuditor().orElse("system");
+    // v0.0.79 (B6): prefer real loginName from SecurityFilter ThreadLocal (works for callers
+    // outside RequestContextHolder too); fall back to AuditorAware (request attribute), then
+    // "system" when no identity is bound at all.
+    String actor = RequestUserContext.get();
+    if (actor == null || actor.isEmpty()) {
+      actor = auditorAware.getCurrentAuditor().orElse("system");
+    }
     String summary = action + " " + entityType + "#" + entityId;
     auditLogService.record(actor, entityType, entityId, action, summary);
   }
