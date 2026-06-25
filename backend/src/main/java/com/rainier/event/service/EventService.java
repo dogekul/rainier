@@ -5,6 +5,7 @@ import com.rainier.event.domain.Event;
 import com.rainier.event.extractor.EventExtractor;
 import com.rainier.event.extractor.ExtractionResult;
 import com.rainier.event.repository.EventRepository;
+import com.rainier.event.sync.StatusSyncService;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -30,10 +31,13 @@ public class EventService {
 
   private final EventRepository repo;
   private final List<EventExtractor> extractors;
+  private final StatusSyncService statusSync;
 
-  public EventService(EventRepository repo, List<EventExtractor> extractors) {
+  public EventService(
+      EventRepository repo, List<EventExtractor> extractors, StatusSyncService statusSync) {
     this.repo = repo;
     this.extractors = extractors == null ? Collections.<EventExtractor>emptyList() : extractors;
+    this.statusSync = statusSync;
   }
 
   @Transactional
@@ -80,6 +84,9 @@ public class EventService {
       }
       e.setProcessed(Boolean.TRUE);
       dirty.add(e);
+      if (statusSync != null) {
+        statusSync.applyExtraction(e);
+      }
     }
     if (!dirty.isEmpty()) {
       repo.saveAll(dirty);

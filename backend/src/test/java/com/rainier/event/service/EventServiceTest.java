@@ -57,7 +57,8 @@ class EventServiceTest {
   /** TC-EVT-S-001: record() persists with processed=false + receivedAt auto. */
   @Test
   void record_persistsWithProcessedFalse() {
-    EventService svc = new EventService(repo, java.util.Collections.<EventExtractor>emptyList());
+    EventService svc =
+        new EventService(repo, java.util.Collections.<EventExtractor>emptyList(), null);
 
     LocalDateTime occ = LocalDateTime.now().minusMinutes(1);
     Event saved = svc.record("GITLAB", "mr-1", "PR_OPEN", "{\"x\":1}", occ);
@@ -74,7 +75,7 @@ class EventServiceTest {
   void process_matchingExtractor_writesEntityRef() {
     EventExtractor matchTask =
         new FakeExtractor("GITLAB", new ExtractionResult("TASK", 123L, "UPDATE"));
-    EventService svc = new EventService(repo, java.util.Arrays.asList(matchTask));
+    EventService svc = new EventService(repo, java.util.Arrays.asList(matchTask), null);
 
     Event e = svc.record("GITLAB", "mr-1", "PR_OPEN", "{}", LocalDateTime.now());
     Long id = e.getId();
@@ -93,7 +94,7 @@ class EventServiceTest {
   void process_noMatchingExtractor_stillMarksProcessed() {
     EventExtractor onlyDing =
         new FakeExtractor("DINGTALK", new ExtractionResult("STORY", 1L, "NOTE"));
-    EventService svc = new EventService(repo, java.util.Arrays.asList(onlyDing));
+    EventService svc = new EventService(repo, java.util.Arrays.asList(onlyDing), null);
 
     Event e = svc.record("GITLAB", "mr-1", "PR_OPEN", "{}", LocalDateTime.now());
     Long id = e.getId();
@@ -110,7 +111,8 @@ class EventServiceTest {
   /** TC-EVT-S-004: process() respects oldest-first FIFO via occurredAt. */
   @Test
   void process_drainsOldestFirst() {
-    EventService svc = new EventService(repo, java.util.Collections.<EventExtractor>emptyList());
+    EventService svc =
+        new EventService(repo, java.util.Collections.<EventExtractor>emptyList(), null);
     LocalDateTime now = LocalDateTime.now();
     svc.record("GITLAB", "newer", "PR_OPEN", "{}", now.minusMinutes(1));
     svc.record("GITLAB", "older", "PR_OPEN", "{}", now.minusMinutes(5));
@@ -125,7 +127,8 @@ class EventServiceTest {
   /** TC-EVT-S-005: process(0) is a no-op. */
   @Test
   void process_zeroBatch_isNoOp() {
-    EventService svc = new EventService(repo, java.util.Collections.<EventExtractor>emptyList());
+    EventService svc =
+        new EventService(repo, java.util.Collections.<EventExtractor>emptyList(), null);
     svc.record("GITLAB", "x", "PR_OPEN", "{}", LocalDateTime.now());
 
     assertThat(svc.process(0)).isEqualTo(0);
