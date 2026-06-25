@@ -60,7 +60,10 @@ export const navGroups: NavGroup[] = [
   {
     key: 'ai',
     title: 'AI',
-    items: [{ to: '/ai/work-logs', label: 'AI 工作日志', icon: 'loop' }],
+    items: [
+      { to: '/ai/work-logs', label: 'AI 工作日志', icon: 'loop' },
+      { to: '/ai/errors', label: '错误公示板', icon: 'shield' },
+    ],
   },
   {
     key: 'org',
