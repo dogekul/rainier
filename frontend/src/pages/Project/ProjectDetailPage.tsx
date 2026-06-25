@@ -43,6 +43,11 @@ import {
 import { listUsers, type User } from '../../api/user';
 import { isElevated, useAuthStore } from '../../store/auth';
 import { MilestonesPanel } from './MilestonesPanel';
+import {
+  getProjectImplementation,
+  upsertProjectImplementation,
+  type ProjectImplementation as PIType,
+} from '../../api/projectImplementation';
 import '../Pm/PmDetailPage.css';
 
 const STATUS_OPTIONS: ProjectStatus[] = [
@@ -91,7 +96,14 @@ const TASK_STATUS_TIER: Record<TaskStatus, 'gray' | 'yellow' | 'green' | 'red'> 
   CANCELLED: 'red',
 };
 
-type Tab = 'info' | 'members' | 'milestones' | 'requirements' | 'sprints' | 'tasks';
+type Tab =
+  | 'info'
+  | 'members'
+  | 'milestones'
+  | 'implementation'
+  | 'requirements'
+  | 'sprints'
+  | 'tasks';
 
 /**
  * v0.0.62 — Project 详情页 (/pm/projects/:id). Tabs: 基本信息 / 里程碑 / 需求 / Sprint / 任务.
@@ -345,6 +357,9 @@ export function ProjectDetailPage() {
         <button type="button" className="pm-tab" data-active={tab === 'milestones'} onClick={() => setTab('milestones')} data-testid="project-tab-milestones">
           里程碑
         </button>
+        <button type="button" className="pm-tab" data-active={tab === 'implementation'} onClick={() => setTab('implementation')} data-testid="project-tab-implementation">
+          施工内容
+        </button>
         <button type="button" className="pm-tab" data-active={tab === 'requirements'} onClick={() => setTab('requirements')} data-testid="project-tab-requirements">
           需求<span className="pm-tab-count">· {reqCount}</span>
         </button>
@@ -555,6 +570,12 @@ export function ProjectDetailPage() {
       {tab === 'milestones' && (
         <div className="pm-tab-pane">
           <MilestonesPanel projectId={proj.id} />
+        </div>
+      )}
+
+      {tab === 'implementation' && (
+        <div className="pm-tab-pane">
+          <ProjectImplementationPanel projectId={proj.id} />
         </div>
       )}
 
@@ -963,6 +984,136 @@ function ProjectMemberTab({
           );
         })
       )}
+    </div>
+  );
+}
+
+/**
+ * v0.0.89 — 施工内容表单 Tab。简单 markdown 文本域 + estimated/risk/milestones JSON。upsert 幂等。
+ */
+function ProjectImplementationPanel({ projectId }: { projectId: number }) {
+  const [loaded, setLoaded] = useState(false);
+  const [scope, setScope] = useState('');
+  const [manDays, setManDays] = useState<string>('');
+  const [risk, setRisk] = useState('');
+  const [milestonesJson, setMilestonesJson] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [savedAt, setSavedAt] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoaded(false);
+    setError(null);
+    void getProjectImplementation(projectId)
+      .then((p: PIType | null) => {
+        if (cancelled) return;
+        if (p) {
+          setScope(p.scopeMarkdown);
+          setManDays(p.estimatedManDays == null ? '' : String(p.estimatedManDays));
+          setRisk(p.riskNotes ?? '');
+          setMilestonesJson(p.keyMilestonesJson ?? '');
+          setSavedAt(p.updateTime ?? null);
+        } else {
+          setScope('');
+          setManDays('');
+          setRisk('');
+          setMilestonesJson('');
+          setSavedAt(null);
+        }
+      })
+      .catch(() => setError('加载施工内容失败'))
+      .finally(() => {
+        if (!cancelled) setLoaded(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [projectId]);
+
+  const onSave = async () => {
+    if (!scope.trim()) {
+      setError('施工范围不能为空');
+      return;
+    }
+    setError(null);
+    setSaving(true);
+    try {
+      const md = manDays.trim() === '' ? null : Number(manDays);
+      const result = await upsertProjectImplementation(projectId, {
+        scopeMarkdown: scope,
+        estimatedManDays: md,
+        riskNotes: risk || null,
+        keyMilestonesJson: milestonesJson || null,
+      });
+      setSavedAt(result.updateTime ?? new Date().toISOString());
+    } catch (e) {
+      const err = e as { response?: { data?: { message?: string } }; message?: string };
+      setError(err?.response?.data?.message ?? err?.message ?? '保存失败');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (!loaded) return <div>加载中…</div>;
+
+  return (
+    <div data-testid="project-implementation-panel">
+      <div className="rainier-form-group">
+        <label className="rainier-form-label">施工范围（Markdown）</label>
+        <textarea
+          className="rainier-form-input"
+          value={scope}
+          onChange={(e) => setScope(e.target.value)}
+          rows={10}
+          style={{ width: '100%', fontFamily: 'monospace' }}
+          data-testid="project-implementation-scope"
+        />
+      </div>
+      <Input
+        label="估算工时（人日）"
+        value={manDays}
+        onChange={(e) => setManDays(e.target.value.replace(/[^0-9]/g, ''))}
+        data-testid="project-implementation-mandays"
+      />
+      <Input
+        label="风险备注"
+        value={risk}
+        onChange={(e) => setRisk(e.target.value)}
+        data-testid="project-implementation-risk"
+      />
+      <div className="rainier-form-group">
+        <label className="rainier-form-label">关键里程碑（JSON 数组，可选）</label>
+        <textarea
+          className="rainier-form-input"
+          value={milestonesJson}
+          onChange={(e) => setMilestonesJson(e.target.value)}
+          rows={4}
+          placeholder='[{"name":"M1","date":"2026-07-15"}]'
+          style={{ width: '100%', fontFamily: 'monospace' }}
+          data-testid="project-implementation-milestones"
+        />
+      </div>
+      {error && (
+        <div className="rainier-error-banner" data-testid="project-implementation-error">
+          {error}
+        </div>
+      )}
+      <div className="rainier-form-footer">
+        {savedAt && (
+          <span style={{ color: 'var(--rainier-color-text-3)', fontSize: 12, marginRight: 12 }}>
+            上次保存 {formatDateTime(savedAt)}
+          </span>
+        )}
+        <Button
+          type="button"
+          disabled={saving}
+          onClick={() => void onSave()}
+          data-testid="project-implementation-save"
+        >
+          {saving ? '保存中…' : '保存'}
+        </Button>
+      </div>
     </div>
   );
 }
