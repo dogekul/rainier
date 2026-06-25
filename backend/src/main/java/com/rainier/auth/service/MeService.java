@@ -125,6 +125,11 @@ public class MeService {
     }
 
     return new MeResponse(
-        user.getId(), username, user.getName(), roles, new ArrayList<>(projects.values()));
+        user.getId(),
+        username,
+        user.getName(),
+        roles,
+        new ArrayList<>(projects.values()),
+        user.getAiAuthLevel());
   }
 }

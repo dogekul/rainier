@@ -49,6 +49,13 @@ public class User extends BaseEntity {
   @Column(name = "password_hash", length = 100)
   private String passwordHash;
 
+  /**
+   * v0.0.69 (A5): AI 授权级别 — BASIC / INTERMEDIATE / DEPTH。Nullable —— 旧行未设置时 getter 派生为
+   * "BASIC"。控制 AI Agent 可以写到哪一层（后续 A6/A7 在执行前查阅）。
+   */
+  @Column(name = "ai_auth_level", length = 16)
+  private String aiAuthLevel;
+
   public String getLoginName() {
     return loginName;
   }
@@ -111,5 +118,14 @@ public class User extends BaseEntity {
 
   public void setPasswordHash(String passwordHash) {
     this.passwordHash = passwordHash;
+  }
+
+  /** v0.0.69: getter coalesces NULL → "BASIC" (default 授权级别). */
+  public String getAiAuthLevel() {
+    return aiAuthLevel == null ? "BASIC" : aiAuthLevel;
+  }
+
+  public void setAiAuthLevel(String aiAuthLevel) {
+    this.aiAuthLevel = aiAuthLevel;
   }
 }

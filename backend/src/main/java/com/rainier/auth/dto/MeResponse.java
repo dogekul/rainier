@@ -17,14 +17,27 @@ public class MeResponse {
   private final String name;
   private final List<MeRole> roles;
   private final List<MeProject> projects;
+  /** v0.0.69 (A5): 当前用户的 AI 授权级别 — BASIC / INTERMEDIATE / DEPTH，未设置默认 "BASIC"。 */
+  private final String aiAuthLevel;
 
   public MeResponse(
       Long id, String username, String name, List<MeRole> roles, List<MeProject> projects) {
+    this(id, username, name, roles, projects, "BASIC");
+  }
+
+  public MeResponse(
+      Long id,
+      String username,
+      String name,
+      List<MeRole> roles,
+      List<MeProject> projects,
+      String aiAuthLevel) {
     this.id = id;
     this.username = username;
     this.name = name;
     this.roles = roles;
     this.projects = projects;
+    this.aiAuthLevel = aiAuthLevel == null ? "BASIC" : aiAuthLevel;
   }
 
   public Long getId() {
@@ -45,6 +58,10 @@ public class MeResponse {
 
   public List<MeProject> getProjects() {
     return projects;
+  }
+
+  public String getAiAuthLevel() {
+    return aiAuthLevel;
   }
 
   /** One role assignment of the current user (role + the project it applies to, if any). */
