@@ -5,6 +5,7 @@ import com.rainier.common.web.PageParams;
 import com.rainier.common.web.PageResponse;
 import com.rainier.milestone.dto.MilestoneCreateRequest;
 import com.rainier.milestone.dto.MilestoneDetail;
+import com.rainier.milestone.dto.MilestoneTransitionRequest;
 import com.rainier.milestone.dto.MilestoneUpdateRequest;
 import com.rainier.milestone.service.MilestoneService;
 import java.net.URI;
@@ -60,5 +61,12 @@ public class MilestoneController {
   public ResponseEntity<Void> delete(@PathVariable Long id) {
     service.delete(id);
     return ResponseEntity.noContent().build();
+  }
+
+  /** v0.0.87 (C7): explicit status transition endpoint — coexists with PUT for compat. */
+  @PostMapping("/{id}/transition")
+  public MilestoneDetail transition(
+      @PathVariable Long id, @Valid @RequestBody MilestoneTransitionRequest req) {
+    return service.transition(id, req.getTo(), req.getReason());
   }
 }

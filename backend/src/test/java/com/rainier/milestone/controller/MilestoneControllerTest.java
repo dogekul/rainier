@@ -103,7 +103,10 @@ class MilestoneControllerTest {
         .andExpect(jsonPath("$.sortOrder").value(0));
   }
 
-  /** TC-MILE-002: 显式 status / sortOrder / actualDate. */
+  /**
+   * TC-MILE-002: 显式 status / sortOrder / actualDate (v0.0.87: legacy REACHED 输入 normalize 为
+   * canonical DONE).
+   */
   @Test
   void post_explicitFields_persisted() throws Exception {
     ObjectNode body = json.createObjectNode();
@@ -120,7 +123,7 @@ class MilestoneControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(body.toString()))
         .andExpect(status().isCreated())
-        .andExpect(jsonPath("$.status").value("REACHED"))
+        .andExpect(jsonPath("$.status").value("DONE"))
         .andExpect(jsonPath("$.sortOrder").value(5))
         .andExpect(jsonPath("$.actualDate").value("2026-06-30"));
   }
@@ -174,7 +177,9 @@ class MilestoneControllerTest {
         .andExpect(jsonPath("$.fieldErrors[*].field", hasItem("code")));
   }
 
-  /** TC-MILE-005: 非法 status → 400. */
+  /**
+   * TC-MILE-005: 非法 status → 400 (v0.0.87: 旧用例 "DONE" 现在合法；改用真正未知的 "XXX" 触发校验)。
+   */
   @Test
   void post_invalidStatus_returns400() throws Exception {
     ObjectNode body = json.createObjectNode();
@@ -182,7 +187,7 @@ class MilestoneControllerTest {
     body.put("code", "M-5");
     body.put("name", "X");
     body.put("targetDate", "2026-07-01");
-    body.put("status", "DONE");
+    body.put("status", "XXX");
     mockMvc
         .perform(
             post("/api/milestones")
@@ -262,23 +267,39 @@ class MilestoneControllerTest {
         .andExpect(jsonPath("$.content[*].status", everyItem(is("PLANNED"))));
   }
 
-  /** TC-MILE-010: 标记达成 PLANNED→REACHED + actualDate. */
+  /**
+   * TC-MILE-010: 标记达成 (v0.0.87: 状态机要求 PLANNED → IN_PROGRESS → DONE，禁止 PLANNED 直跳 DONE)。
+   */
   @Test
   void put_markReached_setsStatusAndActualDate() throws Exception {
     Long id = createMilestone(projectId, "M-1", "PLANNED", 0);
-    ObjectNode body = json.createObjectNode();
-    body.put("code", "M-1");
-    body.put("name", "MS-M-1");
-    body.put("targetDate", "2026-07-01");
-    body.put("status", "REACHED");
-    body.put("actualDate", "2026-07-02");
+    // Step 1: PLANNED → IN_PROGRESS
+    ObjectNode body1 = json.createObjectNode();
+    body1.put("code", "M-1");
+    body1.put("name", "MS-M-1");
+    body1.put("targetDate", "2026-07-01");
+    body1.put("status", "IN_PROGRESS");
     mockMvc
         .perform(
             put("/api/milestones/" + id)
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(body.toString()))
+                .content(body1.toString()))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.status").value("REACHED"))
+        .andExpect(jsonPath("$.status").value("IN_PROGRESS"));
+    // Step 2: IN_PROGRESS → DONE + actualDate
+    ObjectNode body2 = json.createObjectNode();
+    body2.put("code", "M-1");
+    body2.put("name", "MS-M-1");
+    body2.put("targetDate", "2026-07-01");
+    body2.put("status", "DONE");
+    body2.put("actualDate", "2026-07-02");
+    mockMvc
+        .perform(
+            put("/api/milestones/" + id)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(body2.toString()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.status").value("DONE"))
         .andExpect(jsonPath("$.actualDate").value("2026-07-02"));
   }
 

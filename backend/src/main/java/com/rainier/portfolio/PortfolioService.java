@@ -28,11 +28,18 @@ public class PortfolioService {
 
   private static final Set<String> CLOSED_TASK = new HashSet<>();
   private static final String BLOCKED = "BLOCKED";
-  private static final String MILESTONE_REACHED = "REACHED";
+
+  /**
+   * v0.0.87 (C7): a milestone is "reached" if status is canonical {@code DONE} (post-status-machine)
+   * or legacy {@code REACHED} (pre-0.0.87 rows that never got rewritten).
+   */
+  private static final Set<String> MILESTONE_REACHED_SET = new HashSet<>();
 
   static {
     CLOSED_TASK.add("DONE");
     CLOSED_TASK.add("CANCELLED");
+    MILESTONE_REACHED_SET.add("DONE");
+    MILESTONE_REACHED_SET.add("REACHED");
   }
 
   private final ProjectRepository projectRepo;
@@ -74,7 +81,7 @@ public class PortfolioService {
       int overdueMilestones = 0;
       for (Milestone m : milestones) {
         if (p.getId().equals(m.getProjectId())
-            && !MILESTONE_REACHED.equals(m.getStatus())
+            && !MILESTONE_REACHED_SET.contains(m.getStatus())
             && isOverdue(m.getTargetDate(), today)) {
           overdueMilestones++;
         }
