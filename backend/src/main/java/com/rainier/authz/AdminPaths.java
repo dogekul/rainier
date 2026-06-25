@@ -31,6 +31,8 @@ public final class AdminPaths {
               "/api/roles",
               "/api/user-roles",
               "/api/audit-logs",
+              // v0.0.41 read; v0.0.80 B7 also covers POST /api/compliance/users/{id}/revoke-roles
+              // and POST /api/compliance/disable-user/{id} — both ride this Tier A prefix.
               "/api/compliance",
               "/api/products",
               // v0.0.76 B3: admin-only password reset (/api/admin/users/{id}/reset-password) +

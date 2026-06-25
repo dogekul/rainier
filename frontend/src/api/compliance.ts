@@ -35,3 +35,22 @@ export async function getResidualPermissions(): Promise<ResidualPermission[]> {
   const res = await client.get<ResidualPermission[]>('/compliance/residual-permissions');
   return res.data;
 }
+
+/** v0.0.80 B7 — result of a residual-permission recycle call (revoke or disable+revoke). */
+export interface RevokeResult {
+  ok: boolean;
+  revokedCount: number;
+  alreadyDisabled: boolean;
+}
+
+/** POST /api/compliance/users/{id}/revoke-roles — hard-delete all UserRoles of a disabled user. */
+export async function revokeResidualRoles(userId: number): Promise<RevokeResult> {
+  const res = await client.post<RevokeResult>(`/compliance/users/${userId}/revoke-roles`);
+  return res.data;
+}
+
+/** POST /api/compliance/disable-user/{id} — disable + revoke all UserRoles in one step. */
+export async function disableUserAndRevoke(userId: number): Promise<RevokeResult> {
+  const res = await client.post<RevokeResult>(`/compliance/disable-user/${userId}`);
+  return res.data;
+}

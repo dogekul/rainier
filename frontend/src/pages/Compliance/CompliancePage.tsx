@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { DashboardCard, EmptyState, StatTiles } from '../../components/board';
 import {
   getAuditSummary,
   getResidualPermissions,
+  revokeResidualRoles,
   type AuditSummary,
   type ResidualPermission,
 } from '../../api/compliance';
@@ -18,24 +19,38 @@ export function CompliancePage() {
   const [summary, setSummary] = useState<AuditSummary | null>(null);
   const [residual, setResidual] = useState<ResidualPermission[]>([]);
   const [loading, setLoading] = useState(true);
+  const [pendingId, setPendingId] = useState<number | null>(null);
+
+  const reload = useCallback(async () => {
+    const [s, r] = await Promise.all([getAuditSummary(), getResidualPermissions()]);
+    setSummary(s);
+    setResidual(r);
+  }, []);
 
   useEffect(() => {
     let active = true;
-    void Promise.all([getAuditSummary(), getResidualPermissions()])
-      .then(([s, r]) => {
-        if (active) {
-          setSummary(s);
-          setResidual(r);
-          setLoading(false);
-        }
-      })
-      .catch(() => {
+    void reload()
+      .catch(() => {})
+      .finally(() => {
         if (active) setLoading(false);
       });
     return () => {
       active = false;
     };
-  }, []);
+  }, [reload]);
+
+  const handleRevoke = useCallback(
+    async (userId: number) => {
+      setPendingId(userId);
+      try {
+        await revokeResidualRoles(userId);
+        await reload();
+      } finally {
+        setPendingId(null);
+      }
+    },
+    [reload],
+  );
 
   return (
     <div className="rainier-page">
@@ -72,6 +87,24 @@ export function CompliancePage() {
                   <td style={{ padding: '6px 8px', width: 80 }}>{r.roleCount} 个角色</td>
                   <td style={{ padding: '6px 8px', color: 'var(--rainier-color-text-2)' }}>
                     {r.roleNames.join('、')}
+                  </td>
+                  <td style={{ padding: '6px 8px', width: 100, textAlign: 'right' }}>
+                    <button
+                      type="button"
+                      data-testid={`compliance-residual-revoke-${r.userId}`}
+                      disabled={pendingId === r.userId}
+                      onClick={() => void handleRevoke(r.userId)}
+                      style={{
+                        padding: '2px 10px',
+                        fontSize: 12,
+                        border: '1px solid var(--rainier-color-border, #d0d7de)',
+                        background: 'var(--rainier-color-bg-1, #fff)',
+                        borderRadius: 4,
+                        cursor: pendingId === r.userId ? 'default' : 'pointer',
+                      }}
+                    >
+                      {pendingId === r.userId ? '回收中…' : '一键回收'}
+                    </button>
                   </td>
                 </tr>
               ))}
