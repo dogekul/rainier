@@ -72,6 +72,10 @@ app:
     # data, no real AI). Disabled in the test profile so tests get a clean rainier_ai_work_log table.
     ai-work-log-seed:
       enabled: true
+    # v0.0.66: seed 5 sample events (one per source type) on startup when rainier_event is empty
+    # so the flywheel pipeline demo has data. Disabled in test profile.
+    event-seed:
+      enabled: true
 
 logging:
   level:

@@ -41,6 +41,9 @@ app:
   demo:
     ai-work-log-seed:
       enabled: false
+    # v0.0.66: event seed OFF in the default test profile so tests get a clean rainier_event table.
+    event-seed:
+      enabled: false
 
 rainier:
   product-module:
