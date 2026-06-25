@@ -39,6 +39,14 @@ public class OpportunityArtifact extends BaseEntity {
   @Column(name = "decision", length = 16)
   private String decision;
 
+  /**
+   * v0.0.91 D3 — opaque key returned by {@code FileStorage.put}; non-null when this artifact has a
+   * real uploaded attachment (download via {@code GET /api/files/<storageKey>}). Coexists with
+   * {@link #link} (legacy URL pointer); no migration of historical rows.
+   */
+  @Column(name = "storage_key", length = 500)
+  private String storageKey;
+
   public Long getOpportunityId() {
     return opportunityId;
   }
@@ -93,5 +101,13 @@ public class OpportunityArtifact extends BaseEntity {
 
   public void setDecision(String decision) {
     this.decision = decision;
+  }
+
+  public String getStorageKey() {
+    return storageKey;
+  }
+
+  public void setStorageKey(String storageKey) {
+    this.storageKey = storageKey;
   }
 }

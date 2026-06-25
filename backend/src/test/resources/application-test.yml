@@ -57,6 +57,12 @@ app:
   migration:
     project-member-role:
       enabled: false
+  # v0.0.91 (D3): tests use a throwaway dir under target/ so they never collide with the dev
+  # ./.storage/files tree; LocalFsFileStorage creates dirs lazily on construction.
+  storage:
+    kind: local
+    local:
+      root: ./target/.storage-test
 
 rainier:
   product-module:

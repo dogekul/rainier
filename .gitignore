@@ -18,6 +18,11 @@ backend/target/
 backend/**/*.class
 backend/.mvn/wrapper/maven-wrapper.jar
 
+# Local file-storage backend (v0.0.91 D3) — dev/test runtime artefacts only.
+.storage/
+backend/.storage/
+backend/target/.storage-test/
+
 # Frontend (Node / Vite)
 frontend/node_modules/
 frontend/dist/

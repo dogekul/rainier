@@ -8,6 +8,11 @@ spring:
   web:
     resources:
       add-mappings: false
+  servlet:
+    multipart:
+      # v0.0.91 D3 — cap artifact upload size at 10MB (per-file & total request).
+      max-file-size: 10MB
+      max-request-size: 10MB
   jpa:
     hibernate:
       # NOTE (Adjustment): Flyway 8.5.13 (Spring Boot 2.7-managed) rejects MySQL 8 with
@@ -80,6 +85,13 @@ app:
     # rainier_capability_tag is empty so the「我的档案」能力栏目 has data. Disabled in test profile.
     capability-seed:
       enabled: true
+  # v0.0.91 (D3): file storage backend for artifact attachments. kind=local → LocalFsFileStorage,
+  # kind=s3 → S3FileStorageStub (throws UnsupportedOperationException; SDK 接入留给后续). Default
+  # is local (matchIfMissing=true on the impl).
+  storage:
+    kind: local
+    local:
+      root: ./.storage/files
 
 logging:
   level:
