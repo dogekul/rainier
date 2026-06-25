@@ -72,7 +72,8 @@ class LegacyProductCategoryCleanupTest {
     // v0.0.65 added rainier_event (flywheel event-pipeline base) → 29 tables.
     // v0.0.68 added rainier_ai_error (AI 错误公示板, A4) → 30 tables.
     // v0.0.69 added rainier_field_lock (AI 分级授权字段锁, A5) → 31 tables.
-    assertEquals(31, rows.size(), "schema must have exactly 31 rainier_* tables: " + rows);
+    // v0.0.71 added rainier_weekly_draft (AI 周报草稿模板版, A7) → 32 tables.
+    assertEquals(32, rows.size(), "schema must have exactly 32 rainier_* tables: " + rows);
     assertTrue(rows.contains("rainier_operation_issue"));
     assertTrue(rows.contains("rainier_organization_pmo"));
     assertTrue(rows.contains("rainier_project_member"));
