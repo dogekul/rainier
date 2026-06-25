@@ -1,5 +1,6 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { MemoryRouter } from 'react-router-dom';
 import { TasksPage } from './TasksPage';
 import { useAuthStore } from '../../store/auth';
 
@@ -51,7 +52,11 @@ describe('TasksPage', () => {
 
   /** TC-FES-TSK-002 (partial): /pm/tasks renders TasksPage w/ list + 新建按钮 + 中文状态. */
   it('renders task list w/ 新建任务 button and Chinese status label', async () => {
-    render(<TasksPage />);
+    render(
+      <MemoryRouter>
+        <TasksPage />
+      </MemoryRouter>,
+    );
     await waitFor(() => {
       expect(screen.getByText('TASK-1')).toBeInTheDocument();
     });
@@ -64,7 +69,11 @@ describe('TasksPage', () => {
 
   /** TC-FES-PRIO-001: the task edit drawer's priority dropdown includes 最低 (shared 5-level). */
   it('task drawer priority dropdown includes 最低 (TC-FES-PRIO-001)', async () => {
-    render(<TasksPage />);
+    render(
+      <MemoryRouter>
+        <TasksPage />
+      </MemoryRouter>,
+    );
     await waitFor(() => {
       expect(screen.getByTestId('task-new-btn')).toBeInTheDocument();
     });

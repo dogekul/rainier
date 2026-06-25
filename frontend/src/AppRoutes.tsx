@@ -29,8 +29,12 @@ import ProductModulesPage from './pages/ProductModule';
 import ProductsPage from './pages/Product';
 import ProjectsPage from './pages/Project';
 import RequirementsPage from './pages/Requirement';
+import { RequirementDetailPage } from './pages/Requirement/RequirementDetailPage';
+import { StoryDetailPage } from './pages/Requirement/StoryDetailPage';
 import SprintsPage from './pages/Sprint';
+import { SprintDetailPage } from './pages/Sprint/SprintDetailPage';
 import TasksPage from './pages/Task';
+import { TaskDetailPage } from './pages/Task/TaskDetailPage';
 import RolesPage from './pages/Role';
 import UsersPage from './pages/User';
 import UserOrganizationsPage from './pages/UserOrganization';
@@ -69,9 +73,13 @@ export function AppRoutes() {
           <Route path="/pm/features" element={<FeaturesPage />} />
           <Route path="/pm/projects" element={<ProjectsPage />} />
           <Route path="/pm/sprints" element={<SprintsPage />} />
+          <Route path="/pm/sprints/:id" element={<SprintDetailPage />} />
           <Route path="/pm/tasks" element={<TasksPage />} />
+          <Route path="/pm/tasks/:id" element={<TaskDetailPage />} />
+          <Route path="/pm/stories/:id" element={<StoryDetailPage />} />
           <Route path="/pm/demands" element={<DemandsPage />} />
           <Route path="/pm/requirements" element={<RequirementsPage />} />
+          <Route path="/pm/requirements/:id" element={<RequirementDetailPage />} />
           <Route path="/pm/demand-requirements" element={<DemandRequirementsPage />} />
           <Route path="/hr" element={<Navigate to="/hr/positions" replace />} />
           <Route path="/hr/positions" element={<PositionsPage />} />

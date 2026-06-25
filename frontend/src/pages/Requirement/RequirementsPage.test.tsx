@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { RequirementsPage } from './RequirementsPage';
 import { useAuthStore } from '../../store/auth';
 
@@ -31,38 +31,6 @@ vi.mock('../../api/requirement', async () => {
   };
 });
 
-vi.mock('../../api/sprint', async () => {
-  const actual = await vi.importActual<typeof import('../../api/sprint')>('../../api/sprint');
-  return {
-    ...actual,
-    listSprints: vi.fn().mockResolvedValue({
-      content: [
-        {
-          id: 10,
-          code: 'SPR-A',
-          name: 'Phase 1',
-          status: 'PLANNING',
-          requirementId: 1,
-          ownerUserId: 1,
-          storyCount: 0,
-        },
-        {
-          id: 11,
-          code: 'SPR-B',
-          name: 'Phase 2',
-          status: 'ACTIVE',
-          requirementId: 1,
-          ownerUserId: 1,
-          storyCount: 0,
-        },
-      ],
-      total: 2,
-      page: 0,
-      size: 100,
-    }),
-  };
-});
-
 vi.mock('../../api/user', async () => {
   const actual = await vi.importActual<typeof import('../../api/user')>('../../api/user');
   return {
@@ -78,13 +46,14 @@ vi.mock('../../api/user', async () => {
   };
 });
 
-describe('RequirementsPage drilldown', () => {
+describe('RequirementsPage', () => {
   beforeEach(() => {
     useAuthStore.setState({ token: 'tk', user: { username: 'alice' } });
   });
 
-  /** TC-FES-SPR-05 (v0.0.10): 表格含 "Sprint 数" 列 + 单元格显示 r.sprintCount. */
-  it('renders Sprint 数 column with sprintCount value (TC-FES-SPR-05)', async () => {
+  /** TC-FES-SPR-05 (v0.0.10 → v0.0.61): 表格含 "Sprint 数" 列 + 单元格显示 r.sprintCount.
+   *  v0.0.61: 「展开」按钮废弃，验证存在 req-row-{id} 即可。 */
+  it('renders Sprint 数 column + clickable row (TC-FES-SPR-05)', async () => {
     render(
       <MemoryRouter>
         <RequirementsPage />
@@ -95,27 +64,25 @@ describe('RequirementsPage drilldown', () => {
     });
     expect(screen.getByText('Sprint 数')).toBeInTheDocument();
     expect(screen.getByText('3')).toBeInTheDocument();
-    expect(screen.getByTestId('req-expand-btn-1')).toBeInTheDocument();
+    expect(screen.getByTestId('req-row-1')).toBeInTheDocument();
   });
 
-  /** TC-FES-SPR-05 part B (v0.0.10): expanding a row renders SprintListPanel + sub-table. */
-  it('expanding a row renders the SprintListPanel sub-table (TC-FES-SPR-05)', async () => {
+  /** TC-FES-REQ-DETAIL-01 (v0.0.61): row click 跳转 /pm/requirements/:id，替代了 v0.0.10 的「展开」逻辑。 */
+  it('row click navigates to /pm/requirements/:id', async () => {
     render(
-      <MemoryRouter>
-        <RequirementsPage />
+      <MemoryRouter initialEntries={['/pm/requirements']}>
+        <Routes>
+          <Route path="/pm/requirements" element={<RequirementsPage />} />
+          <Route path="/pm/requirements/:id" element={<div data-testid="req-detail-stub">detail</div>} />
+        </Routes>
       </MemoryRouter>,
     );
     await waitFor(() => {
-      expect(screen.getByTestId('req-expand-btn-1')).toBeInTheDocument();
+      expect(screen.getByTestId('req-row-1')).toBeInTheDocument();
     });
-    fireEvent.click(screen.getByTestId('req-expand-btn-1'));
+    fireEvent.click(screen.getByTestId('req-row-1'));
     await waitFor(() => {
-      expect(screen.getByTestId('sprint-list-panel-1')).toBeInTheDocument();
+      expect(screen.getByTestId('req-detail-stub')).toBeInTheDocument();
     });
-    await waitFor(() => {
-      expect(screen.getByText('SPR-A')).toBeInTheDocument();
-      expect(screen.getByText('SPR-B')).toBeInTheDocument();
-    });
-    expect(screen.getByTestId('sprints-new-btn')).toBeInTheDocument();
   });
 });

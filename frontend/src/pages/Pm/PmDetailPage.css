@@ -1,0 +1,145 @@
+/* v0.0.61 — shared CSS for PM detail pages (Requirement / Sprint / Story / Task).
+ * Hero + breadcrumb + tabs primitive. Used by all 4 /pm/...id detail pages so the
+ * Requirement → Sprint → Story → Task drilldown feels uniform. */
+
+.pm-detail-page {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* breadcrumb above the hero */
+.pm-breadcrumb {
+  font-size: 12px;
+  color: var(--rainier-color-text-3);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.pm-breadcrumb a {
+  color: var(--rainier-color-text-2);
+}
+.pm-breadcrumb a:hover {
+  color: var(--rainier-color-primary);
+}
+.pm-breadcrumb-sep {
+  color: var(--rainier-border-strong);
+}
+.pm-breadcrumb-current {
+  color: var(--rainier-color-text-1);
+  font-weight: 500;
+}
+
+/* hero strip — code + title + chips + actions, single line, never stacks */
+.pm-detail-hero {
+  background: var(--rainier-bg-card);
+  border: 1px solid var(--rainier-border);
+  border-radius: var(--rainier-radius-card);
+  box-shadow: var(--rainier-shadow-card);
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: nowrap;
+}
+.pm-detail-hero-code {
+  font-family: SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  color: var(--rainier-color-text-3);
+  white-space: nowrap;
+}
+.pm-detail-hero-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--rainier-color-text-1);
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pm-detail-hero-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+/* tabs */
+.pm-tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--rainier-border);
+  padding: 0 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.pm-tabs::-webkit-scrollbar {
+  display: none;
+}
+.pm-tab {
+  background: transparent;
+  border: none;
+  font: inherit;
+  font-size: 13px;
+  color: var(--rainier-color-text-2);
+  padding: 10px 14px;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: color 0.12s, border-color 0.12s;
+  white-space: nowrap;
+}
+.pm-tab:hover {
+  color: var(--rainier-color-text-1);
+}
+.pm-tab[data-active='true'] {
+  color: var(--rainier-color-primary);
+  border-bottom-color: var(--rainier-color-primary);
+  font-weight: 600;
+}
+.pm-tab-count {
+  font-variant-numeric: tabular-nums;
+  margin-left: 4px;
+  opacity: 0.7;
+}
+
+/* tab pane = a Card-shaped panel below the tab bar */
+.pm-tab-pane {
+  background: var(--rainier-bg-card);
+  border: 1px solid var(--rainier-border);
+  border-radius: var(--rainier-radius-card);
+  box-shadow: var(--rainier-shadow-card);
+  padding: 16px 18px;
+}
+
+/* compact two-column info grid for the 基本信息 tab.
+ * Labels left, values right; values can wrap but pairs stay together. */
+.pm-info-grid {
+  display: grid;
+  grid-template-columns: minmax(120px, max-content) 1fr;
+  gap: 10px 16px;
+  align-items: baseline;
+}
+.pm-info-label {
+  color: var(--rainier-color-text-3);
+  font-size: 13px;
+  white-space: nowrap;
+}
+.pm-info-value {
+  color: var(--rainier-color-text-1);
+  font-size: 14px;
+  min-width: 0;
+  word-break: break-word;
+}
+.pm-info-section {
+  border-top: 1px solid var(--rainier-border);
+  margin-top: 16px;
+  padding-top: 14px;
+}
+.pm-info-section-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--rainier-color-text-2);
+  margin-bottom: 10px;
+}

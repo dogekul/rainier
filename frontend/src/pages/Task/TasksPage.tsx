@@ -1,4 +1,5 @@
 import { useCallback, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
@@ -18,6 +19,7 @@ import { usePaginated } from '../../hooks/usePaginated';
 import { TaskEditDrawer } from './TaskEditDrawer';
 
 export function TasksPage() {
+  const navigate = useNavigate();
   const fetcher = useCallback(
     async ({ page, size, search }: { page: number; size: number; search: string }) =>
       listTasks({ page, size, search: search || undefined }),
@@ -63,21 +65,11 @@ export function TasksPage() {
       key: 'actions',
       title: '操作',
       render: (t) => (
-        <>
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={() => {
-              setEditing(t);
-              setDrawerOpen(true);
-            }}
-          >
-            编辑
-          </Button>{' '}
+        <span onClick={(e) => e.stopPropagation()}>
           <Button type="button" variant="secondary" onClick={() => setConfirmDelete(t)}>
             删除
           </Button>
-        </>
+        </span>
       ),
     },
   ];
@@ -99,7 +91,13 @@ export function TasksPage() {
         </Button>
       </div>
       <Card>
-        <Table<Task> columns={columns} dataSource={list.items} rowKey="id" />
+        <Table<Task>
+          columns={columns}
+          dataSource={list.items}
+          rowKey="id"
+          onRowClick={(t) => navigate(`/pm/tasks/${t.id}`)}
+          rowTestId={(t) => `task-row-${t.id}`}
+        />
         <Pagination
           page={list.page}
           size={list.size}

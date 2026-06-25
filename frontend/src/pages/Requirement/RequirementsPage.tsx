@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
@@ -8,19 +8,21 @@ import { Table, type TableColumn } from '../../components/ui/Table';
 import {
   createRequirement,
   deleteRequirement,
-  getRequirement,
   listRequirements,
-  updateRequirement,
   REQUIREMENT_STATUS_LABELS,
   type Requirement,
 } from '../../api/requirement';
 import { PRIORITY_LABELS } from '../../api/demand';
 import { usePaginated } from '../../hooks/usePaginated';
 import { RequirementEditDrawer } from './RequirementEditDrawer';
-import { SprintListPanel } from './SprintListPanel';
 import { OwnerChip, StatusChip } from '../../components/board';
 
+/**
+ * v0.0.61 — 需求列表页。行点击 → /pm/requirements/:id 详情页（替代之前的「展开」+ 编辑抽屉模式）。
+ * 「新建」仍用抽屉（创建动作短，不需要全屏）。?openId=N 深链改为 redirect 到 /:id 详情。
+ */
 export function RequirementsPage() {
+  const navigate = useNavigate();
   const fetcher = useCallback(
     async ({ page, size, search }: { page: number; size: number; search: string }) =>
       listRequirements({ page, size, search: search || undefined }),
@@ -29,62 +31,19 @@ export function RequirementsPage() {
   const list = usePaginated<Requirement>(fetcher, { initialSize: 20 });
 
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [editing, setEditing] = useState<Requirement | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<Requirement | null>(null);
 
-  // v0.0.59 — 深链 ?openId=N：来自 商机详情页/运营详情页 的「跳转到此需求」，自动打开编辑抽屉。
-  const [searchParams, setSearchParams] = useSearchParams();
+  // v0.0.61 — ?openId=N 深链：来自商机/运营详情页的「跳转到此需求」，改为 redirect 到 /pm/requirements/:id 详情页。
+  const [searchParams] = useSearchParams();
   useEffect(() => {
     const openId = Number(searchParams.get('openId'));
     if (Number.isFinite(openId) && openId > 0) {
-      void getRequirement(openId)
-        .then((r) => {
-          setEditing(r);
-          setDrawerOpen(true);
-        })
-        .catch(() => {
-          // ignore — id 不存在/无权限
-        })
-        .finally(() => {
-          const next = new URLSearchParams(searchParams);
-          next.delete('openId');
-          setSearchParams(next, { replace: true });
-        });
+      navigate(`/pm/requirements/${openId}`, { replace: true });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-  // v0.0.9: track which Requirement rows are expanded to reveal Story sub-list.
-  const [expanded, setExpanded] = useState<Set<number>>(new Set());
-  const toggleExpanded = (id: number) => {
-    setExpanded((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  };
-  // Memoize so StoryListPanel's effect doesn't re-trigger on every parent render
-  // (a fresh-function identity would cause an infinite refetch loop).
-  const refetchRequirements = list.refetch;
-  const onSprintCountChange = useCallback(() => {
-    void refetchRequirements();
-  }, [refetchRequirements]);
 
   const columns: TableColumn<Requirement>[] = [
-    {
-      key: 'expand',
-      title: '',
-      render: (r) => (
-        <Button
-          type="button"
-          variant="secondary"
-          onClick={() => toggleExpanded(r.id)}
-          data-testid={`req-expand-btn-${r.id}`}
-        >
-          {expanded.has(r.id) ? '收起' : '展开'}
-        </Button>
-      ),
-    },
     { key: 'code', title: '编码', render: (r) => r.code },
     { key: 'title', title: '标题', render: (r) => r.title },
     {
@@ -114,22 +73,13 @@ export function RequirementsPage() {
     {
       key: 'actions',
       title: '操作',
+      // stopPropagation so clicking action buttons doesn't also navigate the row.
       render: (r) => (
-        <>
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={() => {
-              setEditing(r);
-              setDrawerOpen(true);
-            }}
-          >
-            编辑
-          </Button>{' '}
+        <span onClick={(e) => e.stopPropagation()}>
           <Button type="button" variant="secondary" onClick={() => setConfirmDelete(r)}>
             删除
           </Button>
-        </>
+        </span>
       ),
     },
   ];
@@ -141,10 +91,7 @@ export function RequirementsPage() {
         <span className="rainier-spacer" />
         <Button
           type="button"
-          onClick={() => {
-            setEditing(null);
-            setDrawerOpen(true);
-          }}
+          onClick={() => setDrawerOpen(true)}
           data-testid="req-new-btn"
         >
           新建需求
@@ -155,15 +102,8 @@ export function RequirementsPage() {
           columns={columns}
           dataSource={list.items}
           rowKey="id"
-          isExpanded={(r) => expanded.has(r.id)}
-          renderExpanded={(r) => (
-            <SprintListPanel
-              requirementId={r.id}
-              requirementCode={r.code}
-              requirementTitle={r.title}
-              onCountChange={onSprintCountChange}
-            />
-          )}
+          onRowClick={(r) => navigate(`/pm/requirements/${r.id}`)}
+          rowTestId={(r) => `req-row-${r.id}`}
         />
         <Pagination
           page={list.page}
@@ -174,17 +114,15 @@ export function RequirementsPage() {
       </Card>
       <RequirementEditDrawer
         open={drawerOpen}
-        editing={editing}
+        editing={null}
         onClose={() => setDrawerOpen(false)}
         onCreate={async (body) => {
           await createRequirement(body);
           setDrawerOpen(false);
           void list.refetch();
         }}
-        onUpdate={async (id, body) => {
-          await updateRequirement(id, body);
-          setDrawerOpen(false);
-          void list.refetch();
+        onUpdate={async () => {
+          // List page only opens drawer in CREATE mode; edits happen on the detail page.
         }}
       />
       <ConfirmDialog
