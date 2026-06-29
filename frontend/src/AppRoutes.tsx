@@ -42,6 +42,7 @@ import { SprintDetailPage } from './pages/Sprint/SprintDetailPage';
 import TasksPage from './pages/Task';
 import { TaskDetailPage } from './pages/Task/TaskDetailPage';
 import RolesPage from './pages/Role';
+import SubordinatesPage from './pages/Subordinates';
 import UsersPage from './pages/User';
 import UserOrganizationsPage from './pages/UserOrganization';
 import UserRolesPage from './pages/UserRole';
@@ -57,6 +58,7 @@ export function AppRoutes() {
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/inbox" element={<InboxPage />} />
           <Route path="/team" element={<TeamLeadPage />} />
+          <Route path="/me/subordinates" element={<SubordinatesPage />} />
           <Route path="/portfolio" element={<PortfolioPage />} />
           <Route path="/pmo" element={<PmoPortfolioPage />} />
           <Route path="/reviews" element={<ReviewsPage />} />

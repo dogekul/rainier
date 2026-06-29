@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, NavLink, Outlet } from 'react-router-dom';
 import { isElevated, useAuthStore } from '../store/auth';
+import { listLedTeams } from '../api/teamLead';
 import { AiErrorOverdueBanner } from './AiErrorOverdueBanner';
 import { NavIcon } from './NavIcon';
 import { NotificationBell } from './NotificationBell';
@@ -38,6 +39,7 @@ export const navGroups: NavGroup[] = [
       { to: '/inbox', label: '需求收件箱', icon: 'inbox' },
       { to: '/demand-submit', label: '提个诉求', icon: 'edit' },
       { to: '/team', label: '团队负责人面板', icon: 'users' },
+      { to: '/me/subordinates', label: '我的下属', icon: 'users' },
     ],
   },
   {
@@ -138,10 +140,33 @@ export function AppLayout() {
   const user = useAuthStore((s) => s.user);
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
   const [siderCollapsed, setSiderCollapsed] = useState(false);
+  // v0.0.111 (H4) — only HEADs see「我的下属」; defaults to false so plain users never see the link
+  // even briefly. Fetch fires once on mount; failure is treated as "not a HEAD" (silently hide).
+  const [isHead, setIsHead] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    void listLedTeams()
+      .then((teams) => {
+        if (active) setIsHead(teams.length > 0);
+      })
+      .catch(() => {
+        if (active) setIsHead(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   // v0.0.20: plain users see only the all-users groups (工作台 + 需求管理); admins see all six.
   const elevated = isElevated(user);
-  const visibleGroups = navGroups.filter((g) => !g.requiresAdmin || elevated);
+  const visibleGroups = navGroups
+    .filter((g) => !g.requiresAdmin || elevated)
+    .map((g) =>
+      g.key === 'workbench'
+        ? { ...g, items: g.items.filter((it) => it.to !== '/me/subordinates' || isHead) }
+        : g,
+    );
 
   const toggleGroup = (key: string) =>
     setCollapsedGroups((prev) => {
