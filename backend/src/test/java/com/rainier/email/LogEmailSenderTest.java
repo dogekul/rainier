@@ -2,7 +2,6 @@
 package com.rainier.email;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -86,15 +85,6 @@ class LogEmailSenderTest {
     assertThat(r.isSuccess()).isFalse();
     assertThat(r.getErrorMessage()).isNotNull();
     assertThat(repo.count()).isEqualTo(0L);
-  }
-
-  /** Scenario 4 — SmtpEmailSenderStub.send 直接 new + 调用 → UnsupportedOperationException. */
-  @Test
-  void smtpStub_send_throwsUnsupported() {
-    SmtpEmailSenderStub stub = new SmtpEmailSenderStub();
-    EmailMessage msg = new EmailMessage();
-    msg.setTo(Arrays.asList("a@x.com"));
-    assertThatThrownBy(() -> stub.send(msg)).isInstanceOf(UnsupportedOperationException.class);
   }
 
   /** Scenario 5 — 多收件人 JSON 序列化正确。 */

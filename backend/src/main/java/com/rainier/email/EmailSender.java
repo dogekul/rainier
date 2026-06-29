@@ -3,7 +3,7 @@ package com.rainier.email;
 
 /**
  * 邮件发送抽象（v0.0.92, D4）。默认装配 {@link LogEmailSender}（不真发，只 log + 落库）； {@code
- * app.email.kind=smtp} 时装配 {@link SmtpEmailSenderStub}（占位，未实现）。
+ * app.email.kind=smtp} 时装配 {@link SmtpEmailSender}（v0.0.107 G3，走 {@code JavaMailSender} 真发）。
  */
 public interface EmailSender {
 

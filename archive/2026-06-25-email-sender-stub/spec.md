@@ -17,6 +17,8 @@
 **When** 调用 send  
 **Then** 抛 `UnsupportedOperationException`
 
+> **v0.0.107 G3 update** — `SmtpEmailSenderStub` 已被替换为真实 `SmtpEmailSender`（走 `spring-boot-starter-mail` 的 `JavaMailSender`，发 `SimpleMailMessage` 纯文本邮件）。本 Scenario 在 v0.0.107 起不再适用；对应行为请见 `changes/2026-06-25-password-reset-real-email/spec.md` Scenarios 4–5（真发 + MailException 容错落 STATUS_FAILED 行）。
+
 ### Scenario 4 — GET /api/emails 需 admin（非 admin 403）
 **Given** 非 admin token  
 **When** GET /api/emails  

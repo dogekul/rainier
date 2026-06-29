@@ -108,6 +108,31 @@ app:
   # delivery. CHANGE in prod via SPRING env override; the controller does a constant-time compare.
   gitlab:
     webhook-secret: changeme
+  # v0.0.92 (D4) — email backend. kind=log → LogEmailSender (no real send, just log + persist
+  # SentEmailRecord); kind=smtp → SmtpEmailSender (v0.0.107 G3, uses spring-boot-starter-mail's
+  # JavaMailSender). Default is log; flip to smtp + populate spring.mail.* below for real delivery.
+  email:
+    kind: log
+  # v0.0.107 (G3) — base URL used to build the password-reset link emailed to users
+  # (http://{base}/reset-password?token=...). Override per environment via SPRING env.
+  frontend:
+    base-url: http://localhost
+
+# v0.0.107 (G3) — SMTP transport. Only consumed when app.email.kind=smtp. Defaults below are a
+# placeholder; replace via env vars (SPRING_MAIL_HOST etc.) before flipping app.email.kind=smtp.
+# Uncomment & populate to enable.
+# spring:
+#   mail:
+#     host: smtp.example.com
+#     port: 587
+#     username: noreply@example.com
+#     password: changeme
+#     properties:
+#       mail:
+#         smtp:
+#           auth: true
+#           starttls:
+#             enable: true
 
 logging:
   level:

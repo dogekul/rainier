@@ -4,16 +4,22 @@ package com.rainier.password.service;
 import com.rainier.common.exception.BadRequestException;
 import com.rainier.common.exception.NotFoundException;
 import com.rainier.common.exception.UnauthorizedException;
+import com.rainier.email.EmailMessage;
+import com.rainier.email.EmailSender;
+import com.rainier.email.SendResult;
 import com.rainier.password.domain.PasswordResetToken;
 import com.rainier.password.repository.PasswordResetTokenRepository;
 import com.rainier.user.domain.User;
 import com.rainier.user.repository.UserRepository;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -38,14 +44,31 @@ public class PasswordService {
   private final UserRepository userRepo;
   private final PasswordResetTokenRepository tokenRepo;
   private final PasswordEncoder encoder;
+  private final EmailSender emailSender;
+  private final String frontendBaseUrl;
 
   public PasswordService(
       UserRepository userRepo,
       PasswordResetTokenRepository tokenRepo,
-      PasswordEncoder encoder) {
+      PasswordEncoder encoder,
+      EmailSender emailSender,
+      @Value("${app.frontend.base-url:http://localhost}") String frontendBaseUrl) {
     this.userRepo = userRepo;
     this.tokenRepo = tokenRepo;
     this.encoder = encoder;
+    this.emailSender = emailSender;
+    this.frontendBaseUrl = stripTrailingSlash(frontendBaseUrl);
+  }
+
+  private static String stripTrailingSlash(String s) {
+    if (s == null) {
+      return "http://localhost";
+    }
+    String trimmed = s.trim();
+    if (trimmed.endsWith("/")) {
+      return trimmed.substring(0, trimmed.length() - 1);
+    }
+    return trimmed;
   }
 
   /** {@code POST /api/me/password} — verify currentPassword, then overwrite hash. */
@@ -106,13 +129,66 @@ public class PasswordService {
     Instant now = Instant.now();
     token.setExpiresAt(now.plus(TOKEN_TTL_MINUTES, ChronoUnit.MINUTES));
     tokenRepo.saveAndFlush(token);
-    // DEV ONLY — in prod this is replaced by an email send.
+    // INFO log token as dev fallback — kept on purpose so a broken SMTP relay does not lock users out
+    // (operator can still recover the token from logs while ops fix the email pipeline).
     LOG.info(
         "[password-reset] issued token={} userId={} loginName={} expiresAt={}",
         token.getToken(),
         user.getId(),
         loginName,
         token.getExpiresAt());
+
+    // v0.0.107 (G3) — fire the actual reset email. fault-tolerant: never let an email failure flip
+    // the response to 500. token is already persisted above.
+    sendResetEmail(user, token.getToken());
+  }
+
+  /** Build + send the password-reset email. Swallows all exceptions (logs warn). */
+  private void sendResetEmail(User user, String token) {
+    String to = user.getEmailAddress();
+    if (to == null || to.trim().isEmpty()) {
+      // Should not happen — issueResetToken upstream guards on email match. Guard anyway so a future
+      // refactor that loosens the upstream check doesn't NPE here.
+      LOG.warn("[password-reset] skipping email — user id={} has no emailAddress", user.getId());
+      return;
+    }
+    String link = frontendBaseUrl + "/reset-password?token=" + token;
+    String bodyText =
+        "您好，\n\n"
+            + "请点击下方链接重置 Rainier 账户密码：\n"
+            + link
+            + "\n\n该链接 1 小时内有效。若非本人操作请忽略此邮件。\n\n— Rainier";
+    String bodyHtml =
+        "<p>您好，</p>"
+            + "<p>请点击下方链接重置 Rainier 账户密码：</p>"
+            + "<p><a href=\""
+            + link
+            + "\">"
+            + link
+            + "</a></p>"
+            + "<p>该链接 1 小时内有效。若非本人操作请忽略此邮件。</p>"
+            + "<p>— Rainier</p>";
+
+    EmailMessage msg = new EmailMessage();
+    msg.setSubject("Rainier 密码重置");
+    List<String> recipients = new ArrayList<String>();
+    recipients.add(to.trim());
+    msg.setTo(recipients);
+    msg.setBodyText(bodyText);
+    msg.setBodyHtml(bodyHtml);
+
+    try {
+      SendResult r = emailSender.send(msg);
+      if (r == null || !r.isSuccess()) {
+        LOG.warn(
+            "[password-reset] email send returned failure userId={} reason={}",
+            user.getId(),
+            r == null ? "null result" : r.getErrorMessage());
+      }
+    } catch (RuntimeException ex) {
+      LOG.warn(
+          "[password-reset] email send failed userId={} error={}", user.getId(), ex.getMessage());
+    }
   }
 
   /** {@code POST /api/auth/reset-password} — consume token + overwrite hash. */
