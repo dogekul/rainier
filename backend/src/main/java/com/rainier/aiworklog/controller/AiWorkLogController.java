@@ -61,6 +61,16 @@ public class AiWorkLogController {
     return service.decide(id, req.getDecision(), req.getReason(), currentUser(request));
   }
 
+  /**
+   * F1 (v0.0.100): undo a previously ACCEPTED log — restores the entity via the matching executor,
+   * flips the log back to PROPOSED, and auto-records a public AiError(OPEN). Returns 400 when the
+   * log is not ACCEPTED or has no reverse snapshot.
+   */
+  @PostMapping("/{id}/reverse")
+  public AiWorkLogDetail reverse(@PathVariable Long id, HttpServletRequest request) {
+    return service.reverse(id, currentUser(request));
+  }
+
   /** The decider's identity (token subject), falling back to "system" for unauthenticated contexts. */
   private static String currentUser(HttpServletRequest request) {
     Object u = request.getAttribute(AuthController.ATTR_USERNAME);

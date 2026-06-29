@@ -5,6 +5,7 @@ import com.rainier.common.persistence.BaseEntity;
 import java.time.Instant;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.Lob;
 import javax.persistence.Table;
 
 /**
@@ -49,6 +50,23 @@ public class AiWorkLog extends BaseEntity {
 
   @Column(name = "reject_reason", length = 512)
   private String rejectReason;
+
+  /**
+   * F1 (v0.0.100): JSON snapshot of the entity state just before this ACCEPTED log executed —
+   * e.g. {"taskId":42,"oldStatus":"DOING","newStatus":"DONE"}. Non-null implies the log is
+   * reversible; cleared when reversed.
+   */
+  @Lob
+  @Column(name = "reverse_snapshot")
+  private String reverseSnapshot;
+
+  /** F1 (v0.0.100): when a previously ACCEPTED log was rolled back (revived to PROPOSED). */
+  @Column(name = "reversed_at")
+  private Instant reversedAt;
+
+  /** F1 (v0.0.100): who reversed it (token subject, falls back to "system"). */
+  @Column(name = "reversed_by", length = 32)
+  private String reversedBy;
 
   public String getAgentType() {
     return agentType;
@@ -128,5 +146,29 @@ public class AiWorkLog extends BaseEntity {
 
   public void setRejectReason(String rejectReason) {
     this.rejectReason = rejectReason;
+  }
+
+  public String getReverseSnapshot() {
+    return reverseSnapshot;
+  }
+
+  public void setReverseSnapshot(String reverseSnapshot) {
+    this.reverseSnapshot = reverseSnapshot;
+  }
+
+  public Instant getReversedAt() {
+    return reversedAt;
+  }
+
+  public void setReversedAt(Instant reversedAt) {
+    this.reversedAt = reversedAt;
+  }
+
+  public String getReversedBy() {
+    return reversedBy;
+  }
+
+  public void setReversedBy(String reversedBy) {
+    this.reversedBy = reversedBy;
   }
 }

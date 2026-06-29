@@ -18,6 +18,9 @@ public class AiWorkLogDetail {
   private String decidedBy;
   private Instant decidedAt;
   private String rejectReason;
+  private String reverseSnapshot;
+  private Instant reversedAt;
+  private String reversedBy;
   private Instant createTime;
 
   public static AiWorkLogDetail from(AiWorkLog a) {
@@ -33,6 +36,9 @@ public class AiWorkLogDetail {
     dto.decidedBy = a.getDecidedBy();
     dto.decidedAt = a.getDecidedAt();
     dto.rejectReason = a.getRejectReason();
+    dto.reverseSnapshot = a.getReverseSnapshot();
+    dto.reversedAt = a.getReversedAt();
+    dto.reversedBy = a.getReversedBy();
     dto.createTime = a.getCreateTime();
     return dto;
   }
@@ -79,6 +85,18 @@ public class AiWorkLogDetail {
 
   public String getRejectReason() {
     return rejectReason;
+  }
+
+  public String getReverseSnapshot() {
+    return reverseSnapshot;
+  }
+
+  public Instant getReversedAt() {
+    return reversedAt;
+  }
+
+  public String getReversedBy() {
+    return reversedBy;
   }
 
   public Instant getCreateTime() {
