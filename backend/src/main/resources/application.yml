@@ -56,6 +56,18 @@ app:
     # On startup, if NO role has adminAccess=true, elevate this role code so the system isn't
     # locked out (granting the first admin via PUT /api/roles would itself need admin).
     bootstrap-admin-role: PMO
+    # v0.0.77 B4: fine-grained @RequiresPermission enforcement. Defaults to true; before v0.0.105
+    # this was never actually enabled in prod because admin roles had no PermissionPoint pre-bound
+    # → admin self-lock. AdminPermissionBootstrap (G1) now seeds all enum values onto every admin
+    # role at startup, making it safe to keep this ON.
+    fine-grained-permissions:
+      enabled: true
+    # v0.0.105 G1: pre-bind every PermissionPoint enum value to every adminAccess=true Role at
+    # startup. Idempotent (existsByRoleIdAndPermissionPoint). Disabled in the test profile so the
+    # 870+ existing tests get a clean rainier_role_permission table; AdminPermissionBootstrapTest
+    # flips it on via @TestPropertySource.
+    admin-permission-bootstrap:
+      enabled: true
     # v0.0.27: require a valid Bearer token on ALL /api/** (identity baseline), not just /api/auth/me.
     # Whitelist: POST /api/auth/login + GET /api/health. Disabled in the test profile so the legacy
     # unauthenticated mockMvc tests stay green; AuthBaselineTest flips it on.

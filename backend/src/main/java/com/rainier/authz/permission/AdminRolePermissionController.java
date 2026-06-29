@@ -2,6 +2,7 @@
 package com.rainier.authz.permission;
 
 import com.rainier.authz.PermissionPoint;
+import com.rainier.authz.RequiresPermission;
 import com.rainier.common.exception.BadRequestException;
 import com.rainier.common.exception.NotFoundException;
 import com.rainier.role.repository.RoleRepository;
@@ -22,8 +23,12 @@ import org.springframework.web.bind.annotation.RestController;
 
 /**
  * v0.0.77 B4 — admin维护角色↔权限点 M2M。Path 在 {@link com.rainier.authz.AdminPaths} Tier A {@code /api/admin}
- * 兜底之下，仍需 admin 身份；本控制器自身不再加 {@code @RequiresPermission}（避免引导期死锁——首次启用本特性时
- * 还没有任何 role 持有 ROLE_MANAGE）。
+ * 兜底之下，仍需 admin 身份。
+ *
+ * <p>v0.0.105 G1 — 写方法补上 {@code @RequiresPermission(ROLE_MANAGE)}：因为
+ * {@link AdminPermissionBootstrap} 已在启动时给所有 adminAccess=true 的 role 预绑全部 PermissionPoint，
+ * 启用 fine-grained-permissions flag 后 admin 不再自锁，可以安全引入这层守卫。
+ * {@code list} 仍只走 AdminPaths 兜底（只读不敏感）。
  */
 @RestController
 @RequestMapping("/api/admin/roles")
@@ -51,6 +56,7 @@ public class AdminRolePermissionController {
   }
 
   @PostMapping("/{roleId}/permissions")
+  @RequiresPermission(PermissionPoint.ROLE_MANAGE)
   @Transactional
   public Map<String, Object> grant(@PathVariable Long roleId, @RequestBody Map<String, String> body) {
     requireRole(roleId);
@@ -73,6 +79,7 @@ public class AdminRolePermissionController {
   }
 
   @DeleteMapping("/{roleId}/permissions/{permissionPoint}")
+  @RequiresPermission(PermissionPoint.ROLE_MANAGE)
   @Transactional
   public Map<String, Object> revoke(
       @PathVariable Long roleId, @PathVariable String permissionPoint) {
