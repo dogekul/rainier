@@ -50,6 +50,13 @@ export const navGroups: NavGroup[] = [
     ],
   },
   {
+    key: 'pmo',
+    title: 'PMO',
+    items: [
+      { to: '/pmo', label: '公司项目地图', icon: 'map' },
+    ],
+  },
+  {
     key: 'crm',
     title: '客户',
     items: [

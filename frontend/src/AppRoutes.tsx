@@ -8,6 +8,7 @@ import FeaturesPage from './pages/Feature';
 import CockpitPage from './pages/Cockpit';
 import TeamLeadPage from './pages/TeamLead';
 import PortfolioPage from './pages/Portfolio';
+import PmoPortfolioPage from './pages/Pmo';
 import ProfilePage from './pages/Profile';
 import ReviewsPage from './pages/Reviews';
 import MetricsPage from './pages/Metrics';
@@ -57,6 +58,7 @@ export function AppRoutes() {
           <Route path="/inbox" element={<InboxPage />} />
           <Route path="/team" element={<TeamLeadPage />} />
           <Route path="/portfolio" element={<PortfolioPage />} />
+          <Route path="/pmo" element={<PmoPortfolioPage />} />
           <Route path="/reviews" element={<ReviewsPage />} />
           <Route path="/metrics" element={<MetricsPage />} />
           <Route path="/notifications" element={<NotificationsPage />} />
