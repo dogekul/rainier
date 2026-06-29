@@ -43,3 +43,20 @@ export async function fixAiError(id: number, fixAction: string): Promise<AiError
   const res = await client.post<AiError>(`/ai/errors/${id}/fix`, { fixAction });
   return res.data;
 }
+
+/** v0.0.104 (F5) — GET /api/ai/errors/overdue-count payload shape. */
+export interface AiErrorOverdueCount {
+  count: number;
+  thresholdHours: number;
+}
+
+/**
+ * F5 — GET /api/ai/errors/overdue-count?hours=N. all-users readable (Tier B GET passthrough).
+ * Drives the global AppLayout overdue banner.
+ */
+export async function fetchAiErrorOverdueCount(hours: number = 24): Promise<AiErrorOverdueCount> {
+  const res = await client.get<AiErrorOverdueCount>('/ai/errors/overdue-count', {
+    params: { hours },
+  });
+  return res.data;
+}

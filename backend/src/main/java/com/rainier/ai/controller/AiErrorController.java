@@ -35,6 +35,20 @@ public class AiErrorController {
     return service.list(status, page);
   }
 
+  /**
+   * F5 (v0.0.104) — number of OPEN errors older than {@code hours} (default 24). all-users readable
+   * (Tier B → GET is open). Drives the global AppLayout overdue banner.
+   */
+  @GetMapping("/overdue-count")
+  public java.util.Map<String, Object> overdueCount(
+      @RequestParam(name = "hours", required = false, defaultValue = "24") int hours) {
+    long count = service.countOverdueOpen(hours);
+    java.util.Map<String, Object> body = new java.util.LinkedHashMap<>();
+    body.put("count", count);
+    body.put("thresholdHours", hours);
+    return body;
+  }
+
   @GetMapping("/{id}")
   public AiErrorDetail get(@PathVariable Long id) {
     return service.findById(id);

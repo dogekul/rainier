@@ -1,0 +1,32 @@
+.rainier-ai-overdue-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 8px 16px;
+  background: #ffe7e7;
+  color: #a8071a;
+  border-bottom: 1px solid #ffa39e;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.rainier-ai-overdue-banner-text {
+  font-weight: 500;
+}
+
+.rainier-ai-overdue-banner-text strong {
+  font-size: 14px;
+  color: #cf1322;
+  margin-right: 2px;
+}
+
+.rainier-ai-overdue-banner-link {
+  color: #a8071a;
+  text-decoration: underline;
+  font-weight: 600;
+}
+
+.rainier-ai-overdue-banner-link:hover {
+  color: #820014;
+}

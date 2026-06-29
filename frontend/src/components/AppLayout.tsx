@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, NavLink, Outlet } from 'react-router-dom';
 import { isElevated, useAuthStore } from '../store/auth';
+import { AiErrorOverdueBanner } from './AiErrorOverdueBanner';
 import { NavIcon } from './NavIcon';
 import { NotificationBell } from './NotificationBell';
 import './AppLayout.css';
@@ -145,6 +146,7 @@ export function AppLayout() {
 
   return (
     <div className="rainier-shell">
+      <AiErrorOverdueBanner />
       <header className="rainier-shell-header">
         <div className="rainier-shell-header-left">
           <button

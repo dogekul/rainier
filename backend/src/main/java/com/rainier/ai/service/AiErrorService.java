@@ -105,6 +105,18 @@ public class AiErrorService {
     return AiErrorDetail.from(getOrThrow(id));
   }
 
+  /**
+   * F5 (v0.0.104) — 计数 OPEN 且 occurredAt 早于 (now - thresholdHours) 的行。thresholdHours &lt;= 0
+   * 视为 400 — 否则会退化成 "所有 OPEN"。
+   */
+  public long countOverdueOpen(int thresholdHours) {
+    if (thresholdHours <= 0) {
+      throw new BadRequestException("thresholdHours must be > 0");
+    }
+    LocalDateTime threshold = LocalDateTime.now().minusHours(thresholdHours);
+    return repo.countByStatusAndOccurredAtBefore(AiErrorStatus.OPEN, threshold);
+  }
+
   private AiError getOrThrow(Long id) {
     return repo
         .findById(id)
