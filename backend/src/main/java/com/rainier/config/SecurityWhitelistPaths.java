@@ -28,6 +28,9 @@ public final class SecurityWhitelistPaths {
   /** v0.0.76 B3 — anonymous password recovery: redeem token + set new password. */
   public static final String RESET_PASSWORD_PATH = "/api/auth/reset-password";
 
+  /** v0.0.101 F2 — external webhook ingress; auth is via source-specific header token. */
+  public static final String WEBHOOKS_PREFIX = "/api/webhooks/";
+
   private SecurityWhitelistPaths() {}
 
   /**
@@ -52,6 +55,11 @@ public final class SecurityWhitelistPaths {
       return true;
     }
     if (HttpMethod.GET.matches(method) && HEALTH_PATH.equals(path)) {
+      return true;
+    }
+    // v0.0.101 F2 — webhook endpoints authenticate via source-specific tokens (e.g. X-Gitlab-Token),
+    // not via Bearer; whitelist the entire prefix so the baseline gate does not 401 them.
+    if (path.startsWith(WEBHOOKS_PREFIX)) {
       return true;
     }
     return false;

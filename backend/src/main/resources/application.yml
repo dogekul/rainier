@@ -92,6 +92,10 @@ app:
     kind: local
     local:
       root: ./.storage/files
+  # v0.0.101 F2 — shared secret echoed by GitLab in the X-Gitlab-Token header on every webhook
+  # delivery. CHANGE in prod via SPRING env override; the controller does a constant-time compare.
+  gitlab:
+    webhook-secret: changeme
 
 logging:
   level:

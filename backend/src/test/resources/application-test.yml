@@ -63,6 +63,9 @@ app:
     kind: local
     local:
       root: ./target/.storage-test
+  # v0.0.101 F2 — fixed test secret so GitLabWebhookControllerTest can assert 202/401 deterministically.
+  gitlab:
+    webhook-secret: test-secret
 
 rainier:
   product-module:
