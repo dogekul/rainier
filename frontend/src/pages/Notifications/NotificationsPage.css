@@ -1,0 +1,59 @@
+/* v0.0.102 (F3) — /notifications list-page styles. */
+.notif-page-tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.notif-page-tab {
+  background: transparent;
+  border: 1px solid var(--rainier-border);
+  padding: 6px 14px;
+  border-radius: var(--rainier-radius-button);
+  font-size: 13px;
+  cursor: pointer;
+  color: var(--rainier-color-text-2);
+  font-family: inherit;
+}
+
+.notif-page-tab.is-active {
+  background: var(--rainier-bg-selected);
+  color: var(--rainier-color-primary);
+  border-color: var(--rainier-color-primary);
+  font-weight: 600;
+}
+
+.notif-page-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--rainier-border);
+}
+
+.notif-page-row:last-child {
+  border-bottom: none;
+}
+
+.notif-page-row-title {
+  font-weight: 600;
+  color: var(--rainier-color-text-1);
+}
+
+.notif-page-row-body {
+  font-size: 12px;
+  color: var(--rainier-color-text-2);
+  line-height: 1.4;
+  margin-top: 2px;
+}
+
+.notif-page-row-meta {
+  font-size: 11px;
+  color: var(--rainier-color-text-3);
+  margin-top: 2px;
+}
+
+.notif-page-row-main {
+  flex: 1;
+  min-width: 0;
+}

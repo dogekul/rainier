@@ -17,6 +17,7 @@ import AuditLogsPage from './pages/AuditLog';
 import CompliancePage from './pages/Compliance';
 import AiWorkLogsPage from './pages/AiWorkLog';
 import AiErrorsPage from './pages/AiError';
+import NotificationsPage from './pages/Notifications';
 import CustomerPage from './pages/Customer';
 import OpportunityBoardPage from './pages/Crm/OpportunityBoardPage';
 import OpportunityDetailPage from './pages/Crm/OpportunityDetailPage';
@@ -58,6 +59,7 @@ export function AppRoutes() {
           <Route path="/portfolio" element={<PortfolioPage />} />
           <Route path="/reviews" element={<ReviewsPage />} />
           <Route path="/metrics" element={<MetricsPage />} />
+          <Route path="/notifications" element={<NotificationsPage />} />
           <Route path="/ai/work-logs" element={<AiWorkLogsPage />} />
           <Route path="/ai/errors" element={<AiErrorsPage />} />
           <Route path="/crm/customers" element={<CustomerPage />} />

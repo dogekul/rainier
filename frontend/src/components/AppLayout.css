@@ -54,6 +54,12 @@
   color: var(--rainier-color-text-2);
 }
 
+/* v0.0.102 (F3) — right side of the top bar: bell + username. */
+.rainier-shell-header-right {
+  display: flex;
+  align-items: center;
+}
+
 .rainier-shell-body {
   display: flex;
   flex: 1;

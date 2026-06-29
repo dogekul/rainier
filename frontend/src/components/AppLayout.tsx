@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, NavLink, Outlet } from 'react-router-dom';
 import { isElevated, useAuthStore } from '../store/auth';
 import { NavIcon } from './NavIcon';
+import { NotificationBell } from './NotificationBell';
 import './AppLayout.css';
 
 export interface NavItem {
@@ -160,9 +161,12 @@ export function AppLayout() {
             Rainier
           </Link>
         </div>
-        <span className="rainier-shell-user" data-testid="appshell-username">
-          {user?.username ?? ''}
-        </span>
+        <div className="rainier-shell-header-right">
+          <NotificationBell />
+          <span className="rainier-shell-user" data-testid="appshell-username">
+            {user?.username ?? ''}
+          </span>
+        </div>
       </header>
       <div className="rainier-shell-body">
         {!siderCollapsed && (
