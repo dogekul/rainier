@@ -134,7 +134,7 @@ public class ProjectService {
   }
 
   public PageResponse<ProjectDetail> list(
-      String status, String projectType, Boolean enabled, PageParams page) {
+      String status, String projectType, Boolean enabled, Long organizationId, PageParams page) {
     Specification<Project> spec =
         (root, query, cb) -> {
           javax.persistence.criteria.Predicate p = cb.conjunction();
@@ -146,6 +146,11 @@ public class ProjectService {
           }
           if (enabled != null) {
             p = cb.and(p, cb.equal(root.get("enabled"), enabled));
+          }
+          // v0.0.108 H1 — 领域/部门负责人按 organizationId 寻址项目（精确等值，不含子树；子树展开
+          // 留给 ScopeService.resolveProjectIds 的未来扩展）。
+          if (organizationId != null) {
+            p = cb.and(p, cb.equal(root.get("organizationId"), organizationId));
           }
           String search = page.getSearch();
           if (search != null && !search.isEmpty()) {

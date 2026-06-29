@@ -64,8 +64,9 @@ public class ProjectController {
       @RequestParam(required = false) String status,
       @RequestParam(required = false) String projectType,
       @RequestParam(required = false) Boolean enabled,
+      @RequestParam(required = false) Long organizationId,
       @Valid PageParams page) {
-    return service.list(status, projectType, enabled, page);
+    return service.list(status, projectType, enabled, organizationId, page);
   }
 
   @PutMapping("/{id}")

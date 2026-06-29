@@ -62,6 +62,11 @@ app:
   migration:
     project-member-role:
       enabled: false
+    # v0.0.108 H1: Project organization_id backfill OFF in the default test profile so
+    # legacy project tests keep direct control over the org column. ProjectOrgBackfillTest
+    # constructs the runner directly via Spring DI; flag stays off.
+    project-org-backfill:
+      enabled: false
   # v0.0.91 (D3): tests use a throwaway dir under target/ so they never collide with the dev
   # ./.storage/files tree; LocalFsFileStorage creates dirs lazily on construction.
   storage:
