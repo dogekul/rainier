@@ -50,3 +50,33 @@ export async function decideAiWorkLog(
   const res = await client.post<AiWorkLog>(`/ai-work-logs/${id}/decision`, { decision, reason });
   return res.data;
 }
+
+/**
+ * F4 (v0.0.103) — list the latest PROPOSED suggestions for the workbench card. No per-user
+ * filter yet (AiWorkLog has no targetOwnerUserId), so we just take the freshest size=3.
+ */
+export async function listMyProposals(size: number = 3): Promise<AiWorkLog[]> {
+  const res = await client.get<PaginatedResult<AiWorkLog>>('/ai-work-logs', {
+    params: { status: 'PROPOSED', page: 0, size },
+  });
+  return res.data.content;
+}
+
+/** F4 sugar — `decideAiWorkLog(id, 'ACCEPTED')`. */
+export function acceptWorkLog(id: number): Promise<AiWorkLog> {
+  return decideAiWorkLog(id, 'ACCEPTED');
+}
+
+/** F4 sugar — `decideAiWorkLog(id, 'REJECTED', reason)`. */
+export function rejectWorkLog(id: number, reason: string): Promise<AiWorkLog> {
+  return decideAiWorkLog(id, 'REJECTED', reason);
+}
+
+/**
+ * F4 — undo a previously ACCEPTED log via the F1 backend endpoint. 400 when the log is no longer
+ * ACCEPTED or its reverseSnapshot has been cleared.
+ */
+export async function reverseWorkLog(id: number): Promise<AiWorkLog> {
+  const res = await client.post<AiWorkLog>(`/ai-work-logs/${id}/reverse`);
+  return res.data;
+}

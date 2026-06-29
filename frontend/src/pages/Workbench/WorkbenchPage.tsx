@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Card } from '../../components/ui';
 import { StatusChip } from '../../components/board';
+import { AiSuggestionCard } from '../../components/AiSuggestionCard';
 import { isOverdue, todayISO } from '../../utils/board';
 import { useAuthStore } from '../../store/auth';
 import {
@@ -224,8 +225,9 @@ export function WorkbenchPage() {
           )}
         </Card>
 
-        {/* right: my story + my projects */}
+        {/* right: AI suggestions (F4) + my story + my projects */}
         <div className="wb-col">
+          <AiSuggestionCard />
           <Card>
             <div className="wb-card-head">
               <h3>我的 Story</h3>

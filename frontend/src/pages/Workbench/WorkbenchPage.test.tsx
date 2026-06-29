@@ -61,6 +61,28 @@ vi.mock('../../api/task', async (importOriginal) => {
   };
 });
 
+// F4 — WorkbenchPage now embeds <AiSuggestionCard /> which loads PROPOSED AiWorkLogs on mount.
+// Stub the API so unrelated workbench tests don't see network noise.
+vi.mock('../../api/aiWorkLog', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../api/aiWorkLog')>();
+  return {
+    ...actual,
+    listMyProposals: vi.fn().mockResolvedValue([
+      {
+        id: 901,
+        agentType: 'STATUS_SYNC',
+        action: 'UPDATE_TASK_STATUS',
+        summary: '建议关闭任务 #1',
+        evidence: '{}',
+        status: 'PROPOSED',
+      },
+    ]),
+    acceptWorkLog: vi.fn(),
+    rejectWorkLog: vi.fn(),
+    reverseWorkLog: vi.fn(),
+  };
+});
+
 vi.mock('../../api/story', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../../api/story')>();
   return {
@@ -156,5 +178,20 @@ describe('WorkbenchPage', () => {
         expect.objectContaining({ status: 'IN_PROGRESS' }),
       );
     });
+  });
+
+  /** TC-WB-AI-CARD: F4 workbench embeds the AI suggestion card and renders the seeded row. */
+  it('embeds the AI suggestion card (F4 TC-WB-AI-CARD)', async () => {
+    render(
+      <MemoryRouter>
+        <WorkbenchPage />
+      </MemoryRouter>,
+    );
+    await waitFor(() =>
+      expect(screen.getByTestId('ai-suggest-card')).toBeInTheDocument(),
+    );
+    await waitFor(() =>
+      expect(screen.getByTestId('ai-suggest-row-901')).toBeInTheDocument(),
+    );
   });
 });
