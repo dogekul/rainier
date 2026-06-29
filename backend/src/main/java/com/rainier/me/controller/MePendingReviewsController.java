@@ -4,6 +4,7 @@ package com.rainier.me.controller;
 import com.rainier.auth.controller.AuthController;
 import com.rainier.common.exception.UnauthorizedException;
 import com.rainier.me.dto.PendingReview;
+import com.rainier.me.dto.ReviewStats;
 import com.rainier.me.service.MeReviewService;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
@@ -29,6 +30,15 @@ public class MePendingReviewsController {
   @GetMapping(path = "/pending-reviews", produces = "application/json")
   public List<PendingReview> pendingReviews(HttpServletRequest request) {
     return service.pendingReviews(currentUsername(request));
+  }
+
+  /**
+   * v0.0.112 (H5): counters for 架构师 landing page — pending Story/Task counts plus this-week
+   * APPROVED/REJECTED counts (see {@link ReviewStats}).
+   */
+  @GetMapping(path = "/review-stats", produces = "application/json")
+  public ReviewStats reviewStats(HttpServletRequest request) {
+    return service.reviewStats(currentUsername(request));
   }
 
   private static String currentUsername(HttpServletRequest request) {

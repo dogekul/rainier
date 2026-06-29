@@ -11,6 +11,7 @@ import PortfolioPage from './pages/Portfolio';
 import PmoPortfolioPage from './pages/Pmo';
 import ProfilePage from './pages/Profile';
 import ReviewsPage from './pages/Reviews';
+import ArchitectDashboardPage from './pages/Architect';
 import MetricsPage from './pages/Metrics';
 import Workbench from './pages/Workbench';
 import Login from './pages/Login';
@@ -62,6 +63,7 @@ export function AppRoutes() {
           <Route path="/portfolio" element={<PortfolioPage />} />
           <Route path="/pmo" element={<PmoPortfolioPage />} />
           <Route path="/reviews" element={<ReviewsPage />} />
+          <Route path="/architect" element={<ArchitectDashboardPage />} />
           <Route path="/metrics" element={<MetricsPage />} />
           <Route path="/notifications" element={<NotificationsPage />} />
           <Route path="/ai/work-logs" element={<AiWorkLogsPage />} />

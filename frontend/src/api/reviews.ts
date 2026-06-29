@@ -49,3 +49,21 @@ export async function submitTaskReview(
 ): Promise<void> {
   await client.post(`/tasks/${taskId}/review`, { decision, reason });
 }
+
+/**
+ * v0.0.112 (H5) — counters powering the 架构师 landing page. {@code approvedThisWeek /
+ * rejectedThisWeek} use Story/Task {@code updateTime} as a proxy for {@code reviewedAt}
+ * (current ISO week, Monday 00:00 UTC).
+ */
+export interface ReviewStats {
+  pendingStoryCount: number;
+  pendingTaskCount: number;
+  approvedThisWeek: number;
+  rejectedThisWeek: number;
+}
+
+/** GET /api/me/review-stats — counters for the 架构师 landing page. */
+export async function getReviewStats(): Promise<ReviewStats> {
+  const res = await client.get<ReviewStats>('/me/review-stats');
+  return res.data;
+}

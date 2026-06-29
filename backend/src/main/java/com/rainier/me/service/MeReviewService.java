@@ -3,6 +3,7 @@ package com.rainier.me.service;
 
 import com.rainier.common.domain.Priority;
 import com.rainier.me.dto.PendingReview;
+import com.rainier.me.dto.ReviewStats;
 import com.rainier.project.domain.Project;
 import com.rainier.project.repository.ProjectRepository;
 import com.rainier.sprint.domain.Sprint;
@@ -14,6 +15,10 @@ import com.rainier.task.domain.Task;
 import com.rainier.task.repository.TaskRepository;
 import com.rainier.user.domain.User;
 import com.rainier.user.repository.UserRepository;
+import java.time.DayOfWeek;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -127,6 +132,46 @@ public class MeReviewService {
             .thenComparing(
                 PendingReview::getCreateTime, Comparator.nullsLast(Comparator.naturalOrder())));
     return rows;
+  }
+
+  /**
+   * v0.0.112 (H5): counters powering the 架构师 landing page. {@code approvedThisWeek /
+   * rejectedThisWeek} use {@code updateTime} as a {@code reviewedAt} proxy — see {@link
+   * com.rainier.me.dto.ReviewStats}.
+   */
+  public ReviewStats reviewStats(String username) {
+    User me = userRepo.findByLoginName(username).orElse(null);
+    if (me == null) {
+      return new ReviewStats(0L, 0L, 0L, 0L);
+    }
+    long pendingStories =
+        storyRepo.findByReviewerUserIdAndReviewStatus(me.getId(), ReviewStatus.PENDING).size();
+    long pendingTasks =
+        taskRepo.findByReviewerUserIdAndReviewStatus(me.getId(), ReviewStatus.PENDING).size();
+    Instant startOfWeek = startOfCurrentWeekUtc();
+    long approved =
+        countDecided(me.getId(), ReviewStatus.APPROVED, startOfWeek);
+    long rejected =
+        countDecided(me.getId(), ReviewStatus.REJECTED, startOfWeek);
+    return new ReviewStats(pendingStories, pendingTasks, approved, rejected);
+  }
+
+  private long countDecided(Long reviewerId, String decision, Instant since) {
+    long stories =
+        storyRepo.findByReviewerUserIdAndReviewStatus(reviewerId, decision).stream()
+            .filter(s -> s.getUpdateTime() != null && !s.getUpdateTime().isBefore(since))
+            .count();
+    long tasks =
+        taskRepo.findByReviewerUserIdAndReviewStatus(reviewerId, decision).stream()
+            .filter(t -> t.getUpdateTime() != null && !t.getUpdateTime().isBefore(since))
+            .count();
+    return stories + tasks;
+  }
+
+  private static Instant startOfCurrentWeekUtc() {
+    LocalDate today = LocalDate.now(ZoneOffset.UTC);
+    LocalDate monday = today.minusDays(today.getDayOfWeek().getValue() - DayOfWeek.MONDAY.getValue());
+    return monday.atStartOfDay(ZoneOffset.UTC).toInstant();
   }
 
   private static int priorityRank(String priority) {
