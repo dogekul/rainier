@@ -31,6 +31,9 @@ import org.springframework.transaction.annotation.Transactional;
  *   <li>{@code mine} — projects the caller has a role on (UserRole.projectId) or owns.
  *   <li>{@code led} — projects tagged to an org the caller HEADs OR any of its descendant org nodes
  *       (department/domain → team subtree).
+ *   <li>{@code footprint} (v0.0.109) — projects ANY active member of the caller's led org-subtree
+ *       owns or has a role on. People-centric; orthogonal to {@code Project.organizationId}, so
+ *       legacy untagged projects still show up.
  *   <li>{@code all} — every project (portfolio-wide; PMO / exec).
  * </ul>
  */
@@ -70,7 +73,57 @@ public class ScopeService {
     if ("led".equals(s)) {
       return ledProjectIds(me.getId());
     }
+    if ("footprint".equals(s)) {
+      return teamFootprintProjects(me.getId());
+    }
     return mineProjectIds(me.getId());
+  }
+
+  /**
+   * v0.0.109 — projects any active member of the leader's HEAD org-subtree owns or has a role on.
+   *
+   * <p>People-centric scope, orthogonal to {@code Project.organizationId}: legacy untagged projects
+   * still show up as long as a team member touches them. Returns empty list if the leader heads no
+   * org, or the org-subtree has no active members. Distinct project ids preserved in BFS order.
+   */
+  public List<Long> teamFootprintProjects(Long leaderId) {
+    if (leaderId == null) {
+      return new ArrayList<>();
+    }
+    List<UserOrganization> heads =
+        userOrgRepo.findByUserIdAndRoleAndLeftAtIsNull(leaderId, UserOrgRole.HEAD);
+    Set<Long> rootOrgIds =
+        heads.stream()
+            .map(UserOrganization::getOrganizationId)
+            .filter(Objects::nonNull)
+            .collect(Collectors.toCollection(LinkedHashSet::new));
+    if (rootOrgIds.isEmpty()) {
+      return new ArrayList<>();
+    }
+    Set<Long> orgIds = descendantOrgIds(rootOrgIds);
+    Set<Long> memberIds = new LinkedHashSet<>();
+    for (Long orgId : orgIds) {
+      for (UserOrganization uo : userOrgRepo.findByOrganizationIdAndLeftAtIsNull(orgId)) {
+        if (uo.getUserId() != null) {
+          memberIds.add(uo.getUserId());
+        }
+      }
+    }
+    if (memberIds.isEmpty()) {
+      return new ArrayList<>();
+    }
+    Set<Long> projectIds = new LinkedHashSet<>();
+    for (Long memberId : memberIds) {
+      for (Project p : projectRepo.findByOwnerUserId(memberId)) {
+        projectIds.add(p.getId());
+      }
+      for (UserRole ur : userRoleRepo.findByUserId(memberId)) {
+        if (ur.getProjectId() != null) {
+          projectIds.add(ur.getProjectId());
+        }
+      }
+    }
+    return new ArrayList<>(projectIds);
   }
 
   private List<Long> mineProjectIds(Long userId) {

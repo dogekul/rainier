@@ -4,7 +4,7 @@ import { DashboardCard, EmptyState, StatusBar, StatusChip } from '../../componen
 import { rygToTier, RYG_LABEL } from '../../utils/board';
 import { isOpenTaskStatus, loadTier } from '../../utils/ryg';
 import { listLedTeams, listTeamMembers, type LedTeam } from '../../api/teamLead';
-import { getPortfolio, type PortfolioRow } from '../../api/portfolio';
+import { getPortfolio, type PortfolioRow, type PortfolioScope } from '../../api/portfolio';
 import { listTasks } from '../../api/task';
 import { listStories } from '../../api/story';
 
@@ -23,12 +23,17 @@ interface MemberLoad {
  *
  * <p>v0.0.29: the project RYG now uses GET /api/me/portfolio?scope=led — the projects under the orgs
  * the lead HEADs (and their org-subtree), NOT the lead's personal projects. This fixes the mis-scope.
+ *
+ * <p>v0.0.109 (H2): default RYG scope flips to {@code footprint} — projects any team-subtree member
+ * owns or has a role on, regardless of the project's {@code organizationId} tag. Legacy untagged
+ * projects now surface. A toggle lets the lead fall back to {@code led} (only org-tagged projects).
  */
 export function TeamLeadPage() {
   const [teams, setTeams] = useState<LedTeam[] | null>(null);
   const [teamId, setTeamId] = useState<number | null>(null);
   const [loads, setLoads] = useState<MemberLoad[]>([]);
   const [health, setHealth] = useState<PortfolioRow[]>([]);
+  const [rygScope, setRygScope] = useState<Extract<PortfolioScope, 'footprint' | 'led'>>('footprint');
 
   // Which teams do I lead? Auto-select the sole team (0 clicks) or default to the first.
   useEffect(() => {
@@ -77,10 +82,10 @@ export function TeamLeadPage() {
     };
   }, [teamId]);
 
-  // Project RYG over the TEAM's footprint (orgs I lead + subtree), server-computed + worst-first sorted.
+  // Project RYG over the selected scope (default: team footprint), server-computed + worst-first sorted.
   useEffect(() => {
     let active = true;
-    void getPortfolio('led')
+    void getPortfolio(rygScope)
       .then((rows) => {
         if (active) setHealth(rows);
       })
@@ -90,7 +95,7 @@ export function TeamLeadPage() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [rygScope]);
 
   if (teams != null && teams.length === 0) {
     return (
@@ -156,7 +161,61 @@ export function TeamLeadPage() {
         )}
       </DashboardCard>
 
-      <DashboardCard title="项目红黄绿" extra={`${health.length} 个项目`} testId="tl-projects">
+      <DashboardCard
+        title="项目红黄绿"
+        extra={
+          <span style={{ display: 'inline-flex', gap: 8, alignItems: 'center' }}>
+            <span
+              role="tablist"
+              aria-label="项目作用域"
+              data-testid="tl-ryg-scope"
+              style={{ display: 'inline-flex', gap: 4 }}
+            >
+              <button
+                type="button"
+                role="tab"
+                aria-selected={rygScope === 'footprint'}
+                data-testid="tl-ryg-scope-footprint"
+                onClick={() => setRygScope('footprint')}
+                style={{
+                  padding: '2px 8px',
+                  border: '1px solid var(--rainier-color-border)',
+                  borderRadius: 4,
+                  background:
+                    rygScope === 'footprint' ? 'var(--rainier-color-primary)' : 'transparent',
+                  color:
+                    rygScope === 'footprint' ? '#fff' : 'var(--rainier-color-text-2)',
+                  cursor: 'pointer',
+                  fontSize: 12,
+                }}
+              >
+                团队足迹
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={rygScope === 'led'}
+                data-testid="tl-ryg-scope-led"
+                onClick={() => setRygScope('led')}
+                style={{
+                  padding: '2px 8px',
+                  border: '1px solid var(--rainier-color-border)',
+                  borderRadius: 4,
+                  background:
+                    rygScope === 'led' ? 'var(--rainier-color-primary)' : 'transparent',
+                  color: rygScope === 'led' ? '#fff' : 'var(--rainier-color-text-2)',
+                  cursor: 'pointer',
+                  fontSize: 12,
+                }}
+              >
+                我直管项目
+              </button>
+            </span>
+            <span style={{ color: 'var(--rainier-color-text-2)' }}>{`${health.length} 个项目`}</span>
+          </span>
+        }
+        testId="tl-projects"
+      >
         {health.length === 0 ? (
           <p style={{ color: 'var(--rainier-color-text-2)', margin: 0 }}>暂无项目。</p>
         ) : (

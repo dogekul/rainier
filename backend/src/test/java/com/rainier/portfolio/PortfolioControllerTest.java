@@ -229,4 +229,35 @@ class PortfolioControllerTest {
   void portfolio_noToken_returns401() throws Exception {
     mockMvc.perform(get("/api/me/portfolio")).andExpect(status().isUnauthorized());
   }
+
+  /**
+   * TC-PF-FP-001 (v0.0.109 H2): scope=footprint surfaces UNTAGGED projects owned by org-subtree
+   * members — the whole point: legacy projects without {@code organizationId} are now visible to
+   * the team lead.
+   */
+  @Test
+  void portfolioFootprint_includesUntaggedMemberOwnedProjects() throws Exception {
+    Long alice = seedUser("alice");
+    Long bob = seedUser("bob");
+    Long dept = seedOrg("DEPT", OrganizationType.DEPARTMENT, null);
+    Long team = seedOrg("TEAM", OrganizationType.TEAM, dept);
+    headOf(alice, dept);
+    UserOrganization bobUo = new UserOrganization();
+    bobUo.setUserId(bob);
+    bobUo.setOrganizationId(team);
+    bobUo.setRole(UserOrgRole.MEMBER);
+    bobUo.setIsPrimary(false);
+    bobUo.setJoinedAt(Instant.parse("2026-01-01T00:00:00Z"));
+    userOrgRepo.saveAndFlush(bobUo);
+    seedProject("P-BOB", bob, null); // untagged → led would miss; footprint catches
+    seedProject("P-OUTSIDER", seedUser("dave"), null); // outside subtree → excluded
+    String token = authService.issueToken("alice");
+
+    mockMvc
+        .perform(
+            get("/api/me/portfolio?scope=footprint").header("Authorization", "Bearer " + token))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$", hasSize(1)))
+        .andExpect(jsonPath("$[0].projectCode").value("P-BOB"));
+  }
 }

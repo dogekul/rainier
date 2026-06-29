@@ -1,9 +1,10 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { TeamLeadPage } from './TeamLeadPage';
 import { useAuthStore } from '../../store/auth';
 import * as teamApi from '../../api/teamLead';
+import * as portfolioApi from '../../api/portfolio';
 
 vi.mock('../../api/teamLead', async (orig) => ({
   ...(await orig<typeof import('../../api/teamLead')>()),
@@ -140,5 +141,25 @@ describe('TeamLeadPage', () => {
     (teamApi.listLedTeams as ReturnType<typeof vi.fn>).mockResolvedValueOnce([]);
     renderTL();
     await waitFor(() => expect(screen.getByTestId('team-lead-empty')).toBeInTheDocument());
+  });
+
+  /** TC-TL-FP-01 (v0.0.109 H2): default RYG scope is footprint. */
+  it('requests footprint scope by default (TC-TL-FP-01)', async () => {
+    renderTL();
+    await waitFor(() => expect(screen.getByTestId('tl-project-9')).toBeInTheDocument());
+    expect(portfolioApi.getPortfolio).toHaveBeenCalledWith('footprint');
+    expect(screen.getByTestId('tl-ryg-scope-footprint')).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByTestId('tl-ryg-scope-led')).toHaveAttribute('aria-selected', 'false');
+  });
+
+  /** TC-TL-FP-02 (v0.0.109 H2): toggle to "我直管项目" re-fetches with scope=led. */
+  it('refetches with led scope when toggled (TC-TL-FP-02)', async () => {
+    renderTL();
+    await waitFor(() => expect(screen.getByTestId('tl-project-9')).toBeInTheDocument());
+    fireEvent.click(screen.getByTestId('tl-ryg-scope-led'));
+    await waitFor(() =>
+      expect(portfolioApi.getPortfolio).toHaveBeenCalledWith('led'),
+    );
+    expect(screen.getByTestId('tl-ryg-scope-led')).toHaveAttribute('aria-selected', 'true');
   });
 });

@@ -15,11 +15,12 @@ export interface PortfolioRow {
   ryg: string;
 }
 
-export type PortfolioScope = 'mine' | 'led' | 'all';
+export type PortfolioScope = 'mine' | 'led' | 'footprint' | 'all';
 
 /**
  * GET /api/me/portfolio?scope= — scoped project-health rollup (open/overdue/blocked + RYG per project).
- * `mine` = my projects, `led` = projects under the orgs I head (subtree), `all` = company-wide.
+ * `mine` = my projects, `led` = projects tagged to orgs I head (subtree), `footprint` (v0.0.109) =
+ * projects any active member of my org-subtree owns/has-role-on (people-centric), `all` = company-wide.
  */
 export async function getPortfolio(scope: PortfolioScope = 'mine'): Promise<PortfolioRow[]> {
   const res = await client.get<PortfolioRow[]>('/me/portfolio', { params: { scope } });
