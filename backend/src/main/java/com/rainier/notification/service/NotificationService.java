@@ -14,8 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 /**
  * 站内通知 service（v0.0.72, A8）。最小内核：send / listFor(onlyUnread) / markRead / markAllRead。
  *
- * <p>NOTE：本版每次 RiskService.runAll 都可能产出重复推送，刻意不在本服务做去重；后续若引入抑制窗口，集中在
- * 调用方做。
+ * <p>NOTE：本服务仍保持通用 send 语义；风险通知去重由 RiskService 基于 rule/entity 指纹处理。
  */
 @Service
 @Transactional(readOnly = true)

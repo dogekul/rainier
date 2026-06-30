@@ -117,6 +117,15 @@ app:
   # (http://{base}/reset-password?token=...). Override per environment via SPRING env.
   frontend:
     base-url: http://localhost
+  # v0.0.117 I4 — periodic risk scans plus duplicate suppression for unread CRIT notifications.
+  risk:
+    notifications:
+      suppress-hours: 24
+    scan:
+      enabled: true
+      scope: mine
+      initial-delay-ms: 60000
+      fixed-delay-ms: 300000
 
 # v0.0.107 (G3) — SMTP transport. Only consumed when app.email.kind=smtp. Defaults below are a
 # placeholder; replace via env vars (SPRING_MAIL_HOST etc.) before flipping app.email.kind=smtp.

@@ -138,4 +138,23 @@ class RiskServicePushIntegrationTest {
         .as("expected at least one CRIT notification for alice with title containing 风险")
         .isTrue();
   }
+
+  /** TC-RDEDUP-001: 同一 CRIT finding 连续扫描两次，只保留一条未读风险通知。 */
+  @Test
+  void runAll_sameCritFindingTwice_suppressesDuplicateNotification() {
+    riskService.runAll("alice", "mine");
+    riskService.runAll("alice", "mine");
+
+    int matching = 0;
+    for (Notification n : notificationRepo.findAll()) {
+      if (aliceId.equals(n.getUserId())
+          && "CRIT".equals(n.getLevel())
+          && "STORY".equals(n.getEntityType())
+          && n.getBody() != null
+          && n.getBody().contains("BlockedStoryRule")) {
+        matching++;
+      }
+    }
+    assertThat(matching).isEqualTo(1);
+  }
 }

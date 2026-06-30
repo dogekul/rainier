@@ -1,6 +1,7 @@
 /* (C) 2026 Rainier — internal use only. */
 package com.rainier.risk;
 
+import com.rainier.notification.repository.NotificationRepository;
 import com.rainier.notification.service.NotificationService;
 import com.rainier.portfolio.ScopeService;
 import com.rainier.user.domain.User;
@@ -8,6 +9,7 @@ import com.rainier.user.repository.UserRepository;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,16 +27,22 @@ public class RiskService {
   private final ScopeService scopeService;
   private final UserRepository userRepo;
   private final NotificationService notificationService;
+  private final NotificationRepository notificationRepo;
+  private final long notificationSuppressHours;
 
   public RiskService(
       List<RiskRule> rules,
       ScopeService scopeService,
       UserRepository userRepo,
-      NotificationService notificationService) {
+      NotificationService notificationService,
+      NotificationRepository notificationRepo,
+      @Value("${app.risk.notifications.suppress-hours:24}") long notificationSuppressHours) {
     this.rules = rules;
     this.scopeService = scopeService;
     this.userRepo = userRepo;
     this.notificationService = notificationService;
+    this.notificationRepo = notificationRepo;
+    this.notificationSuppressHours = notificationSuppressHours;
   }
 
   @Transactional
@@ -63,8 +71,10 @@ public class RiskService {
   }
 
   /**
-   * v0.0.72 (A8): 对每条 CRIT finding 旁路写入一条站内通知。本版接受重复发送 —— 每次 runAll 都可能产生
-   * 多条同一 finding 的通知。后续若引入抑制窗口，集中在此处。
+   * v0.0.72 (A8): 对每条 CRIT finding 旁路写入一条站内通知。
+   *
+   * <p>v0.0.117: suppress duplicate unread notifications for the same user/rule/entity/title within
+   * a short window. Once a user marks the notification read, a later scan may surface the risk again.
    */
   private void pushCritFindings(Long userId, List<RiskFinding> findings) {
     if (notificationService == null || userId == null || findings == null || findings.isEmpty()) {
@@ -76,8 +86,26 @@ public class RiskService {
       }
       String title = "风险: " + (f.getMessage() == null ? f.getRuleName() : f.getMessage());
       String body = f.getRuleName() == null ? null : ("rule=" + f.getRuleName());
+      if (hasRecentUnreadDuplicate(userId, f, title)) {
+        continue;
+      }
       notificationService.send(
           userId, title, body, RiskFinding.LEVEL_CRIT, f.getEntityType(), f.getEntityId());
     }
+  }
+
+  private boolean hasRecentUnreadDuplicate(Long userId, RiskFinding f, String title) {
+    if (notificationRepo == null || notificationSuppressHours <= 0) {
+      return false;
+    }
+    LocalDateTime threshold = LocalDateTime.now().minusHours(notificationSuppressHours);
+    return notificationRepo
+        .existsByUserIdAndLevelAndEntityTypeAndEntityIdAndTitleAndReadAtIsNullAndCreatedAtAfter(
+            userId,
+            RiskFinding.LEVEL_CRIT,
+            f.getEntityType(),
+            f.getEntityId(),
+            title,
+            threshold);
   }
 }

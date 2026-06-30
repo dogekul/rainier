@@ -76,6 +76,9 @@ app:
   # v0.0.101 F2 — fixed test secret so GitLabWebhookControllerTest can assert 202/401 deterministically.
   gitlab:
     webhook-secret: test-secret
+  risk:
+    scan:
+      enabled: false
 
 rainier:
   product-module:

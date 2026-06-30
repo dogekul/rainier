@@ -20,6 +20,14 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
   Page<Notification> findByUserIdAndReadAtIsNullOrderByCreatedAtDescIdDesc(
       Long userId, Pageable pageable);
 
+  boolean existsByUserIdAndLevelAndEntityTypeAndEntityIdAndTitleAndReadAtIsNullAndCreatedAtAfter(
+      Long userId,
+      String level,
+      String entityType,
+      Long entityId,
+      String title,
+      LocalDateTime createdAt);
+
   @Modifying
   @Query(
       "UPDATE Notification n SET n.readAt = :readAt "
