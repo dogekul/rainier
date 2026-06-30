@@ -54,6 +54,7 @@ export function ProtectedRoute() {
           name: res.name,
           roles: res.roles,
           projects: res.projects,
+          defaultLandingPath: res.defaultLandingPath || '/',
         });
       } catch {
         // A 401 is already handled by the axios interceptor (→ /login); any other error leaves the
@@ -72,6 +73,9 @@ export function ProtectedRoute() {
   }
   if (hydrated && isAdminPath(location.pathname) && !isElevated(user)) {
     return <Navigate to="/" replace />;
+  }
+  if (hydrated && location.pathname === '/' && user?.defaultLandingPath && user.defaultLandingPath !== '/') {
+    return <Navigate to={user.defaultLandingPath} replace />;
   }
   return <Outlet />;
 }

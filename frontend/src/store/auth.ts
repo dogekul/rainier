@@ -13,6 +13,7 @@ export interface AuthUser {
   name?: string | null;
   roles?: MeRole[];
   projects?: MeProject[];
+  defaultLandingPath?: string;
 }
 
 interface AuthState {

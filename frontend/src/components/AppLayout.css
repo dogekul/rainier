@@ -58,6 +58,17 @@
 .rainier-shell-header-right {
   display: flex;
   align-items: center;
+  gap: 12px;
+}
+
+.rainier-shell-home-link {
+  color: var(--rainier-color-text-2);
+  font-size: 13px;
+  text-decoration: none;
+}
+
+.rainier-shell-home-link:hover {
+  color: var(--rainier-color-primary);
 }
 
 .rainier-shell-body {

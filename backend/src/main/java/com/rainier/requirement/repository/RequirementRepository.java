@@ -17,6 +17,9 @@ public interface RequirementRepository
   /** v0.0.42 me-inbox — requirements owned by a user (del_flag=0 via @Where). */
   List<Requirement> findByOwnerUserId(Long ownerUserId);
 
+  /** v0.0.113 (H6): default landing resolver — requirement owner → PO inbox. */
+  boolean existsByOwnerUserId(Long ownerUserId);
+
   /** v0.0.70 risk-radar — requirements scoped to a portfolio of projects. */
   List<Requirement> findByProjectIdIn(java.util.Collection<Long> projectIds);
 

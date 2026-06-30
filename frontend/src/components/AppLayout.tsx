@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, NavLink, Outlet } from 'react-router-dom';
+import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
 import { isElevated, useAuthStore } from '../store/auth';
 import { listLedTeams } from '../api/teamLead';
 import { AiErrorOverdueBanner } from './AiErrorOverdueBanner';
@@ -140,6 +140,7 @@ export const navGroups: NavGroup[] = [
  */
 export function AppLayout() {
   const user = useAuthStore((s) => s.user);
+  const location = useLocation();
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
   const [siderCollapsed, setSiderCollapsed] = useState(false);
   // v0.0.111 (H4) — only HEADs see「我的下属」; defaults to false so plain users never see the link
@@ -198,6 +199,11 @@ export function AppLayout() {
           </Link>
         </div>
         <div className="rainier-shell-header-right">
+          {location.pathname !== '/' && (
+            <Link to="/" className="rainier-shell-home-link" data-testid="appshell-home-link">
+              返回工作台
+            </Link>
+          )}
           <NotificationBell />
           <span className="rainier-shell-user" data-testid="appshell-username">
             {user?.username ?? ''}

@@ -1,8 +1,10 @@
 import { render, screen, waitFor } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { me } from '../api/auth';
 import { AppRoutes } from '../AppRoutes';
 import { useAuthStore } from '../store/auth';
+import { ProtectedRoute } from './ProtectedRoute';
 
 // The protected landing page (WorkbenchPage) fetches GET /api/auth/me on mount — stub it so this
 // routing/protection test doesn't hit the network. id:null keeps it from loading tasks/stories.
@@ -51,5 +53,31 @@ describe('ProtectedRoute via full route tree', () => {
     await waitFor(() =>
       expect(screen.getByTestId('workbench-greeting')).toHaveTextContent('Alice'),
     );
+  });
+
+  it('redirects / to defaultLandingPath after hydration (H6-S8)', async () => {
+    useAuthStore.setState({ token: 'fake-token', user: { username: 'pmo' } });
+    vi.mocked(me).mockResolvedValueOnce({
+      id: 2,
+      username: 'pmo',
+      name: 'PMO',
+      roles: [],
+      projects: [],
+      defaultLandingPath: '/pmo',
+    });
+
+    render(
+      <MemoryRouter initialEntries={['/']}>
+        <Routes>
+          <Route element={<ProtectedRoute />}>
+            <Route path="/" element={<div data-testid="home-page" />} />
+            <Route path="/pmo" element={<div data-testid="pmo-page" />} />
+          </Route>
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => expect(screen.getByTestId('pmo-page')).toBeInTheDocument());
+    expect(screen.queryByTestId('home-page')).not.toBeInTheDocument();
   });
 });

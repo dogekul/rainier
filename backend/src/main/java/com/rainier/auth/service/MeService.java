@@ -9,6 +9,7 @@ import com.rainier.project.repository.ProjectRepository;
 import com.rainier.projectadmin.service.ProjectAdminService;
 import com.rainier.projectmember.domain.ProjectMember;
 import com.rainier.projectmember.repository.ProjectMemberRepository;
+import com.rainier.requirement.repository.RequirementRepository;
 import com.rainier.role.domain.Role;
 import com.rainier.role.repository.RoleRepository;
 import com.rainier.user.domain.User;
@@ -42,6 +43,7 @@ public class MeService {
   private final ProjectRepository projectRepo;
   private final ProjectMemberRepository projectMemberRepo;
   private final ProjectAdminService projectAdminService;
+  private final RequirementRepository requirementRepo;
 
   public MeService(
       UserRepository userRepo,
@@ -49,13 +51,15 @@ public class MeService {
       RoleRepository roleRepo,
       ProjectRepository projectRepo,
       ProjectMemberRepository projectMemberRepo,
-      ProjectAdminService projectAdminService) {
+      ProjectAdminService projectAdminService,
+      RequirementRepository requirementRepo) {
     this.userRepo = userRepo;
     this.userRoleRepo = userRoleRepo;
     this.roleRepo = roleRepo;
     this.projectRepo = projectRepo;
     this.projectMemberRepo = projectMemberRepo;
     this.projectAdminService = projectAdminService;
+    this.requirementRepo = requirementRepo;
   }
 
   public MeResponse forUsername(String username) {
@@ -69,7 +73,8 @@ public class MeService {
           Collections.<MeRole>emptyList(),
           Collections.<MeProject>emptyList(),
           "BASIC",
-          Collections.<Long>emptyList());
+          Collections.<Long>emptyList(),
+          "/");
     }
     List<UserRole> assignments = userRoleRepo.findByUserId(user.getId());
 
@@ -143,6 +148,32 @@ public class MeService {
         roles,
         new ArrayList<>(projects.values()),
         user.getAiAuthLevel(),
-        adminProjectIds);
+        adminProjectIds,
+        defaultLandingPath(user, roles));
+  }
+
+  private String defaultLandingPath(User user, List<MeRole> roles) {
+    for (MeRole r : roles) {
+      if (Boolean.TRUE.equals(r.getAdminAccess())) {
+        return "/sys/compliance";
+      }
+    }
+    for (MeRole r : roles) {
+      if ("PMO".equalsIgnoreCase(r.getRoleCode())) {
+        return "/pmo";
+      }
+    }
+    for (MeRole r : roles) {
+      if ("ARCHITECT".equalsIgnoreCase(r.getRoleCode())) {
+        return "/architect";
+      }
+    }
+    if (projectRepo.existsByOwnerUserId(user.getId())) {
+      return "/pm/cockpit";
+    }
+    if (requirementRepo.existsByOwnerUserId(user.getId())) {
+      return "/inbox";
+    }
+    return "/";
   }
 }

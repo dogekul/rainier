@@ -18,5 +18,8 @@ public interface ProjectRepository
   // v0.0.28 portfolio scope resolution.
   List<Project> findByOwnerUserId(Long ownerUserId);
 
+  /** v0.0.113 (H6): default landing resolver — project owner → PM cockpit. */
+  boolean existsByOwnerUserId(Long ownerUserId);
+
   List<Project> findByOrganizationIdIn(Collection<Long> organizationIds);
 }

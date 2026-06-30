@@ -31,6 +31,8 @@ export interface MeResponse {
   name: string | null;
   roles: MeRole[];
   projects: MeProject[];
+  /** H6: role/ownership-derived landing path after login or cold reload. */
+  defaultLandingPath?: string;
 }
 
 /** Calls {@code POST /api/auth/login}. */

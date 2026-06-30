@@ -25,7 +25,15 @@ public class MeResponse {
 
   public MeResponse(
       Long id, String username, String name, List<MeRole> roles, List<MeProject> projects) {
-    this(id, username, name, roles, projects, "BASIC", java.util.Collections.<Long>emptyList());
+    this(
+        id,
+        username,
+        name,
+        roles,
+        projects,
+        "BASIC",
+        java.util.Collections.<Long>emptyList(),
+        "/");
   }
 
   public MeResponse(
@@ -35,7 +43,7 @@ public class MeResponse {
       List<MeRole> roles,
       List<MeProject> projects,
       String aiAuthLevel) {
-    this(id, username, name, roles, projects, aiAuthLevel, java.util.Collections.<Long>emptyList());
+    this(id, username, name, roles, projects, aiAuthLevel, java.util.Collections.<Long>emptyList(), "/");
   }
 
   public MeResponse(
@@ -46,6 +54,18 @@ public class MeResponse {
       List<MeProject> projects,
       String aiAuthLevel,
       List<Long> adminProjectIds) {
+    this(id, username, name, roles, projects, aiAuthLevel, adminProjectIds, "/");
+  }
+
+  public MeResponse(
+      Long id,
+      String username,
+      String name,
+      List<MeRole> roles,
+      List<MeProject> projects,
+      String aiAuthLevel,
+      List<Long> adminProjectIds,
+      String defaultLandingPath) {
     this.id = id;
     this.username = username;
     this.name = name;
@@ -54,7 +74,12 @@ public class MeResponse {
     this.aiAuthLevel = aiAuthLevel == null ? "BASIC" : aiAuthLevel;
     this.adminProjectIds =
         adminProjectIds == null ? java.util.Collections.<Long>emptyList() : adminProjectIds;
+    this.defaultLandingPath =
+        defaultLandingPath == null || defaultLandingPath.trim().isEmpty() ? "/" : defaultLandingPath;
   }
+
+  /** v0.0.113 (H6): role/ownership-derived landing path used after login and cold reload. */
+  private final String defaultLandingPath;
 
   public Long getId() {
     return id;
@@ -82,6 +107,10 @@ public class MeResponse {
 
   public List<Long> getAdminProjectIds() {
     return adminProjectIds;
+  }
+
+  public String getDefaultLandingPath() {
+    return defaultLandingPath;
   }
 
   /** One role assignment of the current user (role + the project it applies to, if any). */

@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { login } from '../../api/auth';
+import { login, me } from '../../api/auth';
 import { Button, Card, Input } from '../../components/ui';
 import { useAuthStore } from '../../store/auth';
 import './Login.css';
@@ -20,7 +20,17 @@ export default function Login() {
     try {
       const res = await login(username, password);
       setAuth(res.token, res.user);
-      navigate('/', { replace: true });
+      const ctx = await me();
+      const landing = ctx.defaultLandingPath || '/';
+      setAuth(res.token, {
+        username: ctx.username,
+        id: ctx.id,
+        name: ctx.name,
+        roles: ctx.roles,
+        projects: ctx.projects,
+        defaultLandingPath: landing,
+      });
+      navigate(landing, { replace: true });
     } catch {
       setError('登录失败，请检查账号密码');
     } finally {
