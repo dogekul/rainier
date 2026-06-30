@@ -28,6 +28,7 @@ function profile(over: Partial<UserProfile> = {}): UserProfile {
     manager: { userId: 2, name: 'Bob', loginName: 'bob' },
     ownedStoryCount: 3,
     assignedTaskCount: 5,
+    capabilities: [],
     ...over,
   };
 }
@@ -71,5 +72,44 @@ describe('ProfilePage', () => {
     renderPage();
     await waitFor(() => expect(screen.getByTestId('profile-orgs-empty')).toBeInTheDocument());
     expect(screen.getByTestId('profile-manager-none')).toBeInTheDocument();
+  });
+
+  /** I1-S1: capabilities embedded in the profile payload render as skill chips. */
+  it('renders capability tags with level and source (I1-S1)', async () => {
+    vi.mocked(getMyProfile).mockResolvedValue(
+      profile({
+        capabilities: [
+          {
+            capabilityTagId: 11,
+            tagName: 'Java',
+            tagCategory: 'TECH',
+            level: 4,
+            source: 'SELF',
+          },
+          {
+            capabilityTagId: 12,
+            tagName: '沟通',
+            tagCategory: 'SOFT',
+            level: 2,
+            source: 'MANAGER',
+          },
+        ],
+      }),
+    );
+    renderPage();
+
+    await waitFor(() => expect(screen.getByTestId('profile-capabilities')).toBeInTheDocument());
+    expect(screen.getByTestId('profile-capability-11')).toHaveTextContent('Java');
+    expect(screen.getByTestId('profile-capability-11')).toHaveTextContent('技术');
+    expect(screen.getByTestId('profile-capability-11')).toHaveTextContent('L4');
+    expect(screen.getByTestId('profile-capability-12')).toHaveTextContent('主管');
+  });
+
+  /** I1-S2: no capabilities keeps the card visible with a clear empty state. */
+  it('shows an empty capability state when no tags are present (I1-S2)', async () => {
+    vi.mocked(getMyProfile).mockResolvedValue(profile({ capabilities: [] }));
+    renderPage();
+
+    await waitFor(() => expect(screen.getByTestId('profile-capabilities-empty')).toBeInTheDocument());
   });
 });

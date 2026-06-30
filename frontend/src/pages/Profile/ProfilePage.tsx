@@ -10,6 +10,12 @@ const ORG_TYPE_LABEL: Record<string, string> = {
   SUBGROUP: '小组',
 };
 const ROLE_LABEL: Record<string, string> = { HEAD: '负责人', MEMBER: '成员' };
+const CAPABILITY_CATEGORY_LABEL: Record<string, string> = {
+  TECH: '技术',
+  PRODUCT: '产品',
+  SOFT: '软技能',
+};
+const CAPABILITY_SOURCE_LABEL: Record<string, string> = { SELF: '自评', MANAGER: '主管' };
 
 /**
  * v0.0.40 —「我的档案」(my profile). Consumes GET /api/me/profile: the current user's org identity +
@@ -51,6 +57,7 @@ export function ProfilePage() {
   }
 
   const displayName = profile.name ?? profile.loginName;
+  const capabilities = profile.capabilities ?? [];
 
   return (
     <div className="rainier-page">
@@ -92,6 +99,39 @@ export function ProfilePage() {
           { label: '分配给我的任务', value: profile.assignedTaskCount },
         ]}
       />
+
+      <DashboardCard title="能力标签" testId="profile-capabilities">
+        {capabilities.length === 0 ? (
+          <EmptyState message="暂未维护能力标签。" testId="profile-capabilities-empty" />
+        ) : (
+          <table className="rainier-list-table">
+            <tbody>
+              {capabilities.map((c) => (
+                <tr key={c.capabilityTagId} data-testid={`profile-capability-${c.capabilityTagId}`}>
+                  <td style={{ padding: '6px 8px', fontWeight: 600 }}>
+                    {c.tagName ?? `#${c.capabilityTagId}`}
+                  </td>
+                  <td style={{ padding: '6px 8px', width: 120 }}>
+                    <StatusChip
+                      status={c.tagCategory ?? 'UNKNOWN'}
+                      label={
+                        c.tagCategory
+                          ? (CAPABILITY_CATEGORY_LABEL[c.tagCategory] ?? c.tagCategory)
+                          : '未分类'
+                      }
+                      tier={c.tagCategory === 'TECH' ? 'yellow' : c.tagCategory === 'SOFT' ? 'green' : 'gray'}
+                    />
+                  </td>
+                  <td style={{ padding: '6px 8px', width: 80 }}>L{c.level}</td>
+                  <td style={{ padding: '6px 8px', width: 100, color: 'var(--rainier-color-text-2)' }}>
+                    {c.source ? (CAPABILITY_SOURCE_LABEL[c.source] ?? c.source) : '—'}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </DashboardCard>
 
       <DashboardCard title="组织身份" testId="profile-orgs">
         {profile.memberships.length === 0 ? (

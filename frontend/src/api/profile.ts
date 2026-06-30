@@ -16,6 +16,15 @@ export interface ProfileManager {
   loginName: string | null;
 }
 
+/** v0.0.85 C5 capability row embedded in GET /api/me/profile. */
+export interface ProfileCapability {
+  capabilityTagId: number;
+  tagName: string | null;
+  tagCategory: string | null;
+  level: number;
+  source: string | null;
+}
+
 /** GET /api/me/profile payload — org identity + position + manager + contribution counts. */
 export interface UserProfile {
   userId: number | null;
@@ -27,6 +36,7 @@ export interface UserProfile {
   manager: ProfileManager | null;
   ownedStoryCount: number;
   assignedTaskCount: number;
+  capabilities?: ProfileCapability[];
 }
 
 /** GET /api/me/profile — the current user's contribution / capability profile. */
