@@ -1,0 +1,79 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: rainier-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${RAINIER_MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${RAINIER_MYSQL_DATABASE:-rainier}
+      MYSQL_USER: ${RAINIER_MYSQL_USERNAME:-rainier}
+      MYSQL_PASSWORD: ${RAINIER_MYSQL_PASSWORD}
+    volumes:
+      - rainier-mysql-data:/var/lib/mysql
+    networks:
+      - rainier-net
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "mysqladmin ping -h localhost -u root -p\"$${MYSQL_ROOT_PASSWORD}\"",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+
+  backend:
+    build:
+      context: ../../backend
+      dockerfile: Dockerfile
+    container_name: rainier-backend
+    restart: unless-stopped
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      RAINIER_MYSQL_HOST: mysql
+      RAINIER_MYSQL_PORT: "3306"
+      RAINIER_MYSQL_DATABASE: ${RAINIER_MYSQL_DATABASE:-rainier}
+      RAINIER_MYSQL_USERNAME: ${RAINIER_MYSQL_USERNAME:-rainier}
+      RAINIER_MYSQL_PASSWORD: ${RAINIER_MYSQL_PASSWORD}
+      APP_SECURITY_JWT_SECRET: ${RAINIER_JWT_SECRET}
+      APP_SECURITY_DEFAULT_PASSWORD: ${RAINIER_DEFAULT_PASSWORD}
+      APP_SECURITY_REAL_AUTH_ENABLED: ${RAINIER_REAL_AUTH_ENABLED:-false}
+      APP_GITLAB_WEBHOOK_SECRET: ${RAINIER_GITLAB_WEBHOOK_SECRET}
+      APP_FRONTEND_BASE_URL: ${RAINIER_FRONTEND_BASE_URL:-http://8.166.121.138}
+      APP_STORAGE_LOCAL_ROOT: /data/rainier/files
+      APP_RISK_SCAN_ENABLED: "true"
+    volumes:
+      - rainier-file-data:/data/rainier/files
+    depends_on:
+      mysql:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:8080:8080"
+    networks:
+      - rainier-net
+
+  frontend:
+    build:
+      context: ../../frontend
+      dockerfile: Dockerfile
+    container_name: rainier-frontend
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "80:80"
+    networks:
+      - rainier-net
+
+volumes:
+  rainier-mysql-data:
+    name: rainier-mysql-data
+  rainier-file-data:
+    name: rainier-file-data
+
+networks:
+  rainier-net:
+    name: rainier-net
+    driver: bridge
