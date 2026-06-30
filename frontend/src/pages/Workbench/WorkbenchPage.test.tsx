@@ -128,6 +128,10 @@ describe('WorkbenchPage', () => {
     });
     expect(screen.getByTestId('my-story-21')).toBeInTheDocument();
     expect(screen.getByTestId('my-project-9')).toBeInTheDocument();
+    expect(screen.getByTestId('my-project-9').querySelector('a')).toHaveAttribute(
+      'href',
+      '/pm/projects/9',
+    );
   });
 
   /** TC-WB-FOCUS: 今日聚焦 — overdue task flagged 逾期 and sorted above the no-due task. */

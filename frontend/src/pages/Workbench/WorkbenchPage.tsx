@@ -257,7 +257,7 @@ export function WorkbenchPage() {
             ) : (
               projects.map((p) => (
                 <div key={p.id} className="wb-list-row" data-testid={`my-project-${p.id}`}>
-                  <Link to="/pm/projects" className="wb-list-row-title">
+                  <Link to={`/pm/projects/${p.id}`} className="wb-list-row-title">
                     <span className="wb-list-row-code">{p.code}</span> {p.name}
                   </Link>
                 </div>
