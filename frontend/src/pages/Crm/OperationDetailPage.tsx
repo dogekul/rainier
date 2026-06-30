@@ -35,6 +35,7 @@ import {
   type IssueStatus,
   type OperationIssue,
 } from '../../api/operationIssue';
+import { listProjects, type Project } from '../../api/project';
 import { useAuthStore } from '../../store/auth';
 import './OpportunityDetailPage.css';
 
@@ -110,6 +111,12 @@ export default function OperationDetailPage() {
   const [iEditStatus, setIEditStatus] = useState<IssueStatus>('OPEN');
   const [iEditAssignee, setIEditAssignee] = useState<number | ''>('');
   const [iEditClose, setIEditClose] = useState('');
+  const [convertIssueId, setConvertIssueId] = useState<number | null>(null);
+  const [convertProjects, setConvertProjects] = useState<Project[]>([]);
+  const [convertProjectId, setConvertProjectId] = useState<number | ''>('');
+  const [convertLoading, setConvertLoading] = useState(false);
+  const [convertSaving, setConvertSaving] = useState(false);
+  const [convertError, setConvertError] = useState<string | null>(null);
 
   const prefill = (o: Operation) => {
     setECustomer(o.customerName ?? '');
@@ -154,6 +161,9 @@ export default function OperationDetailPage() {
     setError(null);
     setEditing(false);
     setIssueOpen(false);
+    setConvertIssueId(null);
+    setConvertProjectId('');
+    setConvertError(null);
     getOperation(id)
       .then((o) => {
         setOp(o);
@@ -232,6 +242,7 @@ export default function OperationDetailPage() {
   };
 
   const startEditIssue = (issue: OperationIssue) => {
+    setConvertIssueId(null);
     setEditIssueId(issue.id);
     setIEditStatus(issue.status);
     setIEditAssignee(issue.assigneeUserId ?? '');
@@ -259,23 +270,49 @@ export default function OperationDetailPage() {
   const [confirmDeleteIssueId, setConfirmDeleteIssueId] = useState<number | null>(null);
   const removeIssue = (issueId: number) => setConfirmDeleteIssueId(issueId);
 
-  // v0.0.95 D7 — 转工单：prompt 一个 projectId（保持轻量；正规对话框可在 E 批升级）。
-  const convertIssue = async (issue: OperationIssue) => {
-    const fallback = op?.projectId ? String(op.projectId) : '';
-    const input = window.prompt('转工单 — 请输入目标项目 ID', fallback);
-    if (input == null) return;
-    const projectId = Number(input);
+  const openConvertIssue = async (issue: OperationIssue) => {
+    setEditIssueId(null);
+    setConvertIssueId(issue.id);
+    setConvertProjectId('');
+    setConvertProjects([]);
+    setConvertError(null);
+    setConvertLoading(true);
+    try {
+      const page = await listProjects({ size: 200 });
+      const rows = page.content ?? [];
+      setConvertProjects(rows);
+      const fallback = op?.projectId ?? null;
+      const preferred = fallback != null && rows.some((p) => p.id === fallback) ? fallback : rows[0]?.id;
+      setConvertProjectId(preferred ?? '');
+      if (rows.length === 0) {
+        setConvertError('暂无可选项目，请先创建或关联项目');
+      }
+    } catch (e) {
+      const err = e as { response?: { data?: { message?: string } }; message?: string };
+      setConvertError(err?.response?.data?.message ?? err?.message ?? '项目列表加载失败');
+    } finally {
+      setConvertLoading(false);
+    }
+  };
+
+  const submitConvertIssue = async (issue: OperationIssue) => {
+    const projectId = Number(convertProjectId);
     if (!Number.isFinite(projectId) || projectId <= 0) {
-      window.alert('无效的项目 ID');
+      setConvertError('请选择目标项目');
       return;
     }
+    setConvertError(null);
+    setConvertSaving(true);
     try {
       const task = await convertOperationIssueToTask(issue.id, projectId);
       window.alert(`已创建工单 ${task.code}（项目 ${task.projectId}）。`);
+      setConvertIssueId(null);
       loadIssues();
     } catch (e) {
       const err = e as { response?: { data?: { message?: string } }; message?: string };
-      window.alert(err?.response?.data?.message ?? err?.message ?? '转工单失败');
+      setConvertError(err?.response?.data?.message ?? err?.message ?? '转工单失败');
+    } finally {
+      setConvertSaving(false);
     }
   };
 
@@ -773,7 +810,7 @@ export default function OperationDetailPage() {
                                 <Button
                                   type="button"
                                   variant="secondary"
-                                  onClick={() => void convertIssue(issue)}
+                                  onClick={() => void openConvertIssue(issue)}
                                   data-testid={`op-issue-convert-${issue.id}`}
                                 >
                                   转工单
@@ -795,6 +832,57 @@ export default function OperationDetailPage() {
                             <MarkdownView content={issue.description} />
                           </div>
                         ) : null}
+                        {convertIssueId === issue.id && (
+                          <div
+                            className="op-issue-edit"
+                            data-testid={`op-issue-convert-panel-${issue.id}`}
+                          >
+                            <div className="opp-form-block">
+                              <label className="opp-form-label">目标项目</label>
+                              <select
+                                className="rainier-form-select"
+                                value={convertProjectId}
+                                disabled={convertLoading || convertProjects.length === 0}
+                                onChange={(e) =>
+                                  setConvertProjectId(e.target.value === '' ? '' : Number(e.target.value))
+                                }
+                                data-testid={`op-issue-convert-project-${issue.id}`}
+                              >
+                                <option value="">（请选择）</option>
+                                {convertProjects.map((p) => (
+                                  <option key={p.id} value={p.id}>
+                                    {p.code} · {p.name}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                            {convertError && (
+                              <div className="opp-alert" data-testid={`op-issue-convert-error-${issue.id}`}>
+                                {convertError}
+                              </div>
+                            )}
+                            <div className="opp-actions-end">
+                              <Button
+                                type="button"
+                                variant="secondary"
+                                onClick={() => {
+                                  setConvertIssueId(null);
+                                  setConvertError(null);
+                                }}
+                              >
+                                取消
+                              </Button>
+                              <Button
+                                type="button"
+                                disabled={convertLoading || convertSaving || convertProjectId === ''}
+                                onClick={() => void submitConvertIssue(issue)}
+                                data-testid={`op-issue-convert-submit-${issue.id}`}
+                              >
+                                {convertSaving ? '转换中…' : '确认转工单'}
+                              </Button>
+                            </div>
+                          </div>
+                        )}
                         {editIssueId === issue.id && (
                           <div className="op-issue-edit">
                             <div className="opp-form-block">
