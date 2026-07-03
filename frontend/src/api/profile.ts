@@ -44,3 +44,9 @@ export async function getMyProfile(): Promise<UserProfile> {
   const res = await client.get<UserProfile>('/me/profile');
   return res.data;
 }
+
+/** GET /api/users/{id}/profile — an authorized subordinate / self profile view. */
+export async function getUserProfile(userId: number): Promise<UserProfile> {
+  const res = await client.get<UserProfile>(`/users/${userId}/profile`);
+  return res.data;
+}

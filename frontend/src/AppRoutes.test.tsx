@@ -83,6 +83,17 @@ vi.mock('./api/profile', async () => {
       ownedStoryCount: 0,
       assignedTaskCount: 0,
     }),
+    getUserProfile: vi.fn().mockResolvedValue({
+      userId: 42,
+      loginName: 'bob',
+      name: 'Bob',
+      positionName: null,
+      positionCategory: null,
+      memberships: [],
+      manager: null,
+      ownedStoryCount: 0,
+      assignedTaskCount: 0,
+    }),
   };
 });
 vi.mock('./api/compliance', async () => {
@@ -304,6 +315,21 @@ describe('AppRoutes /pm/*', () => {
     expect(src.split('/profile').length - 1).toBeGreaterThanOrEqual(1);
     render(
       <MemoryRouter initialEntries={['/profile']}>
+        <AppRoutes />
+      </MemoryRouter>,
+    );
+    await waitFor(() => {
+      expect(screen.getByTestId('profile-identity')).toBeInTheDocument();
+    });
+  });
+
+  /** TC-UPROF-001: /users/:id/profile route resolves to the subordinate profile page. */
+  it('registers /users/:id/profile → UserProfilePage (TC-UPROF-001)', async () => {
+    const path = resolve(__dirname, 'AppRoutes.tsx');
+    const src = readFileSync(path, 'utf-8');
+    expect(src.split('/users/:id/profile').length - 1).toBeGreaterThanOrEqual(1);
+    render(
+      <MemoryRouter initialEntries={['/users/42/profile']}>
         <AppRoutes />
       </MemoryRouter>,
     );

@@ -1,0 +1,78 @@
+change:
+  id: 2026-06-30-user-profile-route
+  title: v0.0.118-user-profile-route — 前端补齐 /users/:id/profile 下属档案路由
+  baseline: {tag: v0.0.117-risk-scan-dedup-scheduler, commit: 5579d2a}
+  type: fix
+  roadmap: "H4 subordinates-nav-entry caveat close"
+
+status: archived
+
+phase:
+  current: deliver
+  understand:
+    status: completed
+    confirmed_at: '2026-06-30'
+    gate1_decisions:
+      scope: frontend_route_only
+      backend_authz: reuse_existing_c3_endpoint
+      shared_ui: extract_profile_view
+  spec:
+    status: completed
+    artifacts: [design.md, "specs/user-profile-route/spec.md", test-plan.md]
+    confirmed_at: '2026-06-30'
+    gate_2: full_auto_by_user_directive
+  slice:
+    status: completed
+    artifacts: [tasks.md, slices.md]
+  build:
+    status: completed
+    completed_at: '2026-06-30 15:06 CST'
+    artifacts:
+      - frontend/src/api/profile.ts
+      - frontend/src/api/profile.test.ts
+      - frontend/src/pages/Profile/ProfileView.tsx
+      - frontend/src/pages/Profile/UserProfilePage.tsx
+      - frontend/src/pages/Profile/UserProfilePage.test.tsx
+      - frontend/src/pages/Profile/ProfilePage.tsx
+      - frontend/src/AppRoutes.tsx
+      - frontend/src/AppRoutes.test.tsx
+      - frontend/vite.config.ts
+  verify:
+    status: completed
+    completed_at: '2026-06-30 15:10 CST'
+    artifacts: [test-report.md]
+    results:
+      focused_vitest: passed
+      full_frontend_vitest: "330 passed / 0 failed"
+      frontend_lint: passed
+      frontend_build: passed
+      local_login_browser: passed
+      dev_proxy_cors_origin: passed
+      diff_check: passed
+      stdd_cli_bridge: unavailable_no_bin_stdd
+      backend_tests: skipped_frontend_only
+    confirmed_at: '2026-07-03'
+  deliver:
+    status: completed
+    completed_at: '2026-07-03'
+    archive_path: archive/2026-06-30-user-profile-route
+    merged_specs:
+      - specs/user-profile-route/spec.md
+      - specs/dev-runtime/spec.md
+    version_tag: v0.0.118-user-profile-route
+
+long_range:
+  enabled: true
+  mode: full_auto
+  pre_auth_completed: true
+  pre_auth_timestamp: '2026-06-30'
+  user_directive: '全自动到p5'
+
+scope:
+  type: frontend
+  capabilities_new: []
+  capabilities_modified: [me-profile, subordinates-nav-entry, frontend-scaffold, dev-runtime]
+  new_tables: 0
+  new_columns: []
+  new_deps: []
+  new_apis: []

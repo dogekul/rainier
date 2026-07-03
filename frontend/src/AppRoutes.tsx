@@ -40,6 +40,7 @@ import { RequirementDetailPage } from './pages/Requirement/RequirementDetailPage
 import { StoryDetailPage } from './pages/Requirement/StoryDetailPage';
 import SprintsPage from './pages/Sprint';
 import { SprintDetailPage } from './pages/Sprint/SprintDetailPage';
+import { UserProfilePage } from './pages/Profile/UserProfilePage';
 import TasksPage from './pages/Task';
 import { TaskDetailPage } from './pages/Task/TaskDetailPage';
 import RolesPage from './pages/Role';
@@ -60,6 +61,7 @@ export function AppRoutes() {
           <Route path="/inbox" element={<InboxPage />} />
           <Route path="/team" element={<TeamLeadPage />} />
           <Route path="/me/subordinates" element={<SubordinatesPage />} />
+          <Route path="/users/:id/profile" element={<UserProfilePage />} />
           <Route path="/portfolio" element={<PortfolioPage />} />
           <Route path="/pmo" element={<PmoPortfolioPage />} />
           <Route path="/reviews" element={<ReviewsPage />} />
